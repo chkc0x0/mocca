@@ -1,0 +1,8 @@
+.cache
+.vscode
+build
+skia
+skia.zip
+.wraplock
+subprojects/*-*
+packagecache
