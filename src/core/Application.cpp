@@ -20,9 +20,8 @@ namespace mocca
 		main = nullptr;
 	}
 
-	auto Application::Run() -> bool
+	void Application::Tick(double dt)
 	{
-		return true;
 	}
 
 	constexpr auto ApplicationID::ValidateID(std::string_view id) -> bool

@@ -30,7 +30,7 @@ namespace mocca
 		Application(const std::string& appId);
 		~Application();
 
-		auto Run() -> bool;
+		void Tick(double dt);
 		void DumpTree();
 
 		void SetDefaultLogCallback();
