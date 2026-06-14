@@ -1,6 +1,6 @@
 project('mocca', 'cpp', version: '0.0.1', default_options: ['cpp_std=c++23'])
 
-sources = ['src/core/Application.cpp', 'src/core/Logger.cpp']
+sources = ['src/core/Application.cpp', 'src/core/Logger.cpp', 'src/core/Detail.cpp']
 
 cmake = import('cmake')
 
