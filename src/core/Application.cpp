@@ -7,7 +7,8 @@ namespace mocca
 	{
 		if (main != nullptr)
 		{
-			mc_error(ErrorCode::InvalidState, "an application instance already exists");
+			mc_error(ErrorCode::InvalidState,
+					 "an application instance already exists");
 			return;
 		}
 
@@ -22,6 +23,12 @@ namespace mocca
 
 	void Application::Tick(double dt)
 	{
+		for (auto& surface : _surfaces)
+		{
+			surface->Tick(dt);
+		}
+
+		_context._store.ClearDirty();
 	}
 
 	constexpr auto ApplicationID::ValidateID(std::string_view id) -> bool
@@ -98,6 +105,22 @@ namespace mocca
 			Domain = segments[0];
 			Organization = segments[1];
 			Name = segments[2];
+		}
+	}
+
+	auto ApplicationID::GetCompoundID() const -> std::string
+	{
+		return std::string(Domain) + "." + std::string(Organization) + "." +
+			   std::string(Name);
+	}
+
+	void Application::Print()
+	{
+		mc_info("[Application id={}]", GetAppID().GetCompoundID());
+
+		for (auto& surface : _surfaces)
+		{
+			surface->Print(1);
 		}
 	}
 

@@ -28,17 +28,11 @@ namespace mocca::detail
 				}
 				else if constexpr (std::is_same_v<T, TextElement>)
 				{
-					node->Kind = TextNode{.Content = arm.Content};
+					node->Kind = TextElement{.Content = arm.Content};
 				}
 				else if constexpr (std::is_same_v<T, ComponentElement>)
 				{
-					node->Kind = ComponentNode{.Fn = arm.Fn};
-
-					// run it
-					auto produced = arm.Fn();
-					auto childNode = BuildNodeTree(produced);
-					childNode->Parent = node.get();
-					node->Children.push_back(std::move(childNode));
+					node->Kind = ComponentElement{.Fn = arm.Fn};
 				}
 			},
 			element.Node);
@@ -63,7 +57,7 @@ namespace mocca::detail
 
 		if (IsText())
 		{
-			const auto& textNode = std::get<TextNode>(Kind);
+			const auto& textNode = std::get<TextElement>(Kind);
 			std::cout << indent << "  " << textNode.Content << '\n';
 		}
 
@@ -104,12 +98,9 @@ namespace mocca::detail
 			oldNode = BuildNodeTree(*newElement);
 		}
 
-		// props here
 		if (oldNode->IsText())
 		{
-			auto& textNode = std::get<TextNode>(oldNode->Kind);
-			const auto& textElement = std::get<TextElement>(newElement->Node);
-			textNode.Content = textElement.Content;
+			oldNode->Kind = std::get<TextElement>(newElement->Node);
 		}
 
 		std::vector<Element> childElements;
@@ -125,9 +116,7 @@ namespace mocca::detail
 				std::get<ComponentElement>(newElement->Node);
 
 			// set up ctx
-			auto id = getCtx()->_enterComponentRender(oldNode->Id);
-			auto produced = component.Fn();
-			getCtx()->_exitComponentRender(id);
+			auto produced = Element::Render(component.Fn, oldNode->Id);
 			childElements.push_back(produced);
 		}
 
@@ -197,5 +186,16 @@ namespace mocca::detail
 
 		oldNode->Children = std::move(newChildren);
 		return oldNode;
+	}
+}
+
+namespace mocca
+{
+	auto Element::Render(const ComponentFn& fn, std::uint64_t id) -> Element
+	{
+		auto prev = getCtx()->_enterComponentRender(id);
+		auto produced = fn();
+		getCtx()->_exitComponentRender(prev);
+		return produced;
 	}
 }

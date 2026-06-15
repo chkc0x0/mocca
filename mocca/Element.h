@@ -90,6 +90,8 @@ namespace mocca
 		{
 			return std::holds_alternative<ComponentElement>(Node);
 		}
+
+		static auto Render(const ComponentFn& fn, std::uint64_t id) -> Element;
 	};
 
 	inline auto box(std::vector<Element> children = {},

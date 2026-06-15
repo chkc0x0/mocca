@@ -2,7 +2,6 @@
 #include "Element.h"
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -10,16 +9,6 @@
 namespace mocca::detail
 {
 	using NodeId = std::uint64_t;
-
-	struct TextNode
-	{
-		std::string Content;
-	};
-
-	struct ComponentNode
-	{
-		ComponentFn Fn;
-	};
 
 	struct Node
 	{
@@ -30,7 +19,7 @@ namespace mocca::detail
 
 		std::vector<std::unique_ptr<Node>> Children;
 
-		std::variant<std::monostate, TextNode, ComponentNode> Kind;
+		std::variant<std::monostate, TextElement, ComponentElement> Kind;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -38,11 +27,11 @@ namespace mocca::detail
 		}
 		[[nodiscard]] auto IsText() const -> bool
 		{
-			return std::holds_alternative<TextNode>(Kind);
+			return std::holds_alternative<TextElement>(Kind);
 		}
 		[[nodiscard]] auto IsComponent() const -> bool
 		{
-			return std::holds_alternative<ComponentNode>(Kind);
+			return std::holds_alternative<ComponentElement>(Kind);
 		}
 
 		[[nodiscard]] auto NodeKind() const -> std::string_view
@@ -131,6 +120,11 @@ namespace mocca::detail
 		void SetMarkDirty(std::function<void(NodeId)> fn)
 		{
 			_markDirty = std::move(fn);
+		}
+
+		void ClearDirty()
+		{
+			_dirtySet.clear();
 		}
 
 	private:

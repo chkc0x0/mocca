@@ -27,6 +27,7 @@ namespace mocca
 
 		friend struct detail::Node;
 		friend struct Element;
+		friend class Application;
 
 		template <typename T>
 		friend auto useState(T initial)
