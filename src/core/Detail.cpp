@@ -116,7 +116,7 @@ namespace mocca::detail
 				std::get<ComponentElement>(newElement->Node);
 
 			// set up ctx
-			auto produced = Element::Render(component.Fn, oldNode->Id);
+			auto produced = Element::Render(component.Fn, component.Props, oldNode->Id);
 			childElements.push_back(produced);
 		}
 
@@ -191,10 +191,20 @@ namespace mocca::detail
 
 namespace mocca
 {
+	// for the surface
 	auto Element::Render(const ComponentFn& fn, std::uint64_t id) -> Element
 	{
 		auto prev = getCtx()->_enterComponentRender(id);
 		auto produced = fn();
+		getCtx()->_exitComponentRender(prev);
+		return produced;
+	}
+
+	// anywhere else
+	auto Element::Render(const ComponentPropsFn& fn, const std::any& props, std::uint64_t id) -> Element
+	{
+		auto prev = getCtx()->_enterComponentRender(id);
+		auto produced = fn(props);
 		getCtx()->_exitComponentRender(prev);
 		return produced;
 	}

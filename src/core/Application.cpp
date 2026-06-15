@@ -29,6 +29,7 @@ namespace mocca
 		}
 
 		_context._store.ClearDirty();
+		_context._store.FlushEffects();
 	}
 
 	constexpr auto ApplicationID::ValidateID(std::string_view id) -> bool

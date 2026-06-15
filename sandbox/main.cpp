@@ -6,17 +6,20 @@ using namespace mocca;
 
 std::function<void(int)> setter;
 
-auto Counter() -> Element
+auto Counter(int start) -> Element
 {
-	auto [count, setCount] = useState(0);
+	auto [count, setCount] = useState(start);
 
 	setter = setCount;
+
+	useEffect([]() -> void { mc_info("hi"); });
+
 	return text(std::format("Counter: {}", count));
 }
 
 auto buildExampleTree() -> Element
 {
-	return box({box({text("Hello")}), component(Counter),
+	return box({box({text("Hello")}), component(Counter, 5),
 				box({
 					text("Item A", "a"),
 					text("Item B", "b"),
@@ -36,7 +39,10 @@ auto main(int argc, const char** argv) -> int
 
 	app.RegisterSurface<mocca::Surface>({.Root = buildExampleTree});
 
+	app.Print();
 	setter(1);
 	app.Tick(0);
+	app.Print();
+
 	return 0;
 }

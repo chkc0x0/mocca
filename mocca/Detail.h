@@ -10,6 +10,11 @@ namespace mocca::detail
 {
 	using NodeId = std::uint64_t;
 
+	template <typename T>
+	concept EqualityComparable = requires(const T& a, const T& b) {
+		{ a == b } -> std::convertible_to<bool>;
+	};
+
 	struct Node
 	{
 		NodeId Id;
@@ -62,45 +67,81 @@ namespace mocca::detail
 		void Print(int depth = 0);
 	};
 
-	struct StateKey
+	struct HookKey
 	{
 		NodeId Id;
 		std::uint32_t Hook;
-		auto operator==(const StateKey&) const -> bool = default;
+		auto operator==(const HookKey&) const -> bool = default;
 	};
-	struct StateKeyHash
+	struct HookKeyHash
 	{
-		auto operator()(const StateKey& k) const -> std::size_t
+		auto operator()(const HookKey& k) const -> std::size_t
 		{
 			return std::hash<std::uint64_t>{}(k.Id) ^
 				   (std::hash<std::uint32_t>{}(k.Hook) << 1);
 		}
 	};
 
-	class StateStore
+	struct EffectDependency
+	{
+		std::any Value;
+		std::function<bool(const std::any&)> Equals;
+
+		template <typename T> static auto Make(T v) -> EffectDependency
+		{
+			EffectDependency d;
+			d.Value = v;
+			if constexpr (EqualityComparable<T>)
+			{
+				T captured = v;
+				d.Equals = [captured](const std::any& other) -> bool
+				{
+					const T* o = std::any_cast<T>(&other);
+					return o && (captured == *o);
+				};
+			}
+			else
+			{
+				d.Equals = [](const std::any&) -> auto { return false; };
+			}
+			return d;
+		}
+
+		auto operator==(const std::any& other) const -> bool
+		{
+			return Equals(other);
+		}
+	};
+
+	struct EffectSlot
+	{
+		std::vector<EffectDependency> LastDeps;
+		CleanupFn Cleanup;
+		bool HasRun = false;
+	};
+
+	class HookStore
 	{
 	public:
 		template <typename T>
 		auto GetOrCreate(NodeId id, std::uint32_t hook, T initial) -> T&
 		{
-			StateKey key{.Id = id, .Hook = hook};
+			HookKey key{.Id = id, .Hook = hook};
 			auto it = _slots.find(key);
 			if (it == _slots.end())
 			{
 				// single insert, keep the returned iterator (no double-lookup)
-				it =
-					_slots.emplace(key, std::make_shared<T>(std::move(initial)))
-						.first;
+				it = _slots.emplace(key, std::any(std::move(initial))).first;
 			}
-			return *static_cast<T*>(it->second.get());
+			return any_cast<T&>(it->second);
 		}
 
 		template <typename T> void Set(NodeId id, std::uint32_t hook, T value)
 		{
-			auto it = _slots.find(StateKey{.Id = id, .Hook = hook});
+			auto it = _slots.find(HookKey{.Id = id, .Hook = hook});
 			if (it != _slots.end())
 			{
-				*static_cast<T*>(it->second.get()) = std::move(value);
+				it->second = std::move(value);
 				if (_markDirty)
 				{
 					_markDirty(id);
@@ -108,13 +149,52 @@ namespace mocca::detail
 			}
 		}
 
+		auto GetEffectSlot(NodeId id, std::uint32_t hook) -> EffectSlot&
+		{
+			HookKey key{.Id = id, .Hook = hook};
+			auto it = _slots.find(key);
+			if (it == _slots.end())
+			{
+				it = _slots.emplace(key, std::any(EffectSlot{})).first;
+			}
+			return std::any_cast<EffectSlot&>(it->second);
+		}
+
+		void FlushEffects()
+		{
+			auto q = std::move(_effectQueue);
+			_effectQueue.clear();
+			for (auto& run : q)
+			{
+				run();
+			}
+		}
+
 		void RemoveComponent(NodeId id)
 		{
-			// called on node removal/replace (the clang-flagged obligation)
 			for (auto it = _slots.begin(); it != _slots.end();)
 			{
-				it = (it->first.Id == id) ? _slots.erase(it) : std::next(it);
+				if (it->first.Id == id)
+				{
+					if (auto* eff = std::any_cast<EffectSlot>(&it->second))
+					{
+						if (eff->Cleanup)
+						{
+							eff->Cleanup();
+						}
+					}
+					it = _slots.erase(it);
+				}
+				else
+				{
+					++it;
+				}
 			}
+		}
+
+		void PushEffect(const CleanupFn& fn)
+		{
+			_effectQueue.push_back(fn);
 		}
 
 		void SetMarkDirty(std::function<void(NodeId)> fn)
@@ -128,8 +208,9 @@ namespace mocca::detail
 		}
 
 	private:
-		std::unordered_map<StateKey, std::shared_ptr<void>, StateKeyHash>
-			_slots;
+		std::unordered_map<HookKey, std::any, HookKeyHash> _slots;
+		std::vector<std::function<void()>> _effectQueue;
+
 		std::unordered_set<NodeId> _dirtySet;
 		std::function<void(NodeId)> _markDirty = [this](NodeId id) -> void
 		{ _dirtySet.insert(id); };

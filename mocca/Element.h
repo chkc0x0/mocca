@@ -1,4 +1,5 @@
 #pragma once
+#include <any>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -57,6 +58,10 @@ namespace mocca
 	struct Element;
 
 	using ComponentFn = std::function<Element()>;
+	using ComponentPropsFn = std::function<Element(const std::any&)>;
+
+	using CleanupFn = std::function<void()>;
+	using EffectFn = std::function<CleanupFn()>;
 
 	struct BoxElement
 	{
@@ -70,7 +75,8 @@ namespace mocca
 
 	struct ComponentElement
 	{
-		ComponentFn Fn;
+		ComponentPropsFn Fn;
+		std::any Props;
 	};
 
 	struct Element
@@ -92,6 +98,8 @@ namespace mocca
 		}
 
 		static auto Render(const ComponentFn& fn, std::uint64_t id) -> Element;
+		static auto Render(const ComponentPropsFn& fn, const std::any& props,
+						   std::uint64_t id) -> Element;
 	};
 
 	inline auto box(std::vector<Element> children = {},
@@ -111,7 +119,19 @@ namespace mocca
 	inline auto component(const ComponentFn& fn, ElementKey key = mc_keyNone)
 		-> Element
 	{
-		return Element{.Node = ComponentElement{.Fn = fn}, .Key = key};
+		ComponentPropsFn erased = [fn](const std::any&) -> auto
+		{ return fn(); };
+		return Element{.Node = ComponentElement{.Fn = erased}, .Key = key};
+	}
+
+	template <typename Props, typename Fn>
+	inline auto component(Fn fn, Props props, ElementKey key = mc_keyNone)
+		-> Element
+	{
+		ComponentPropsFn erased = [fn](const std::any& boxed) -> auto
+		{ return fn(std::any_cast<const Props&>(boxed)); };
+		return Element{.Node = ComponentElement{.Fn = erased, .Props = props},
+					   .Key = key};
 	}
 }
 
