@@ -26,10 +26,28 @@ namespace mocca
 		ElementKey(int value) : _value(static_cast<uint64_t>(value)) {};
 		ElementKey() : _value(0) {};
 		ElementKey(const char* str) : ElementKey(std::string_view(str)) {};
-		
+
 		operator uint64_t() const
 		{
 			return _value;
+		}
+
+		auto operator<=>(const ElementKey& other) const
+		{
+			return _value <=> other._value;
+		}
+
+		auto operator==(const ElementKey& other) const -> bool
+		{
+			return _value == other._value;
+		}
+		auto operator==(int other) const -> bool
+		{
+			return _value == static_cast<uint64_t>(other);
+		}
+		auto operator==(std::string_view other) const -> bool
+		{
+			return ElementKey(other) == *this;
 		}
 
 	private:
@@ -93,4 +111,15 @@ namespace mocca
 	{
 		return Element{.Node = ComponentElement{.Fn = fn}, .Key = key};
 	}
+}
+
+namespace std
+{
+	template <> struct hash<mocca::ElementKey>
+	{
+		auto operator()(const mocca::ElementKey& key) const noexcept -> size_t
+		{
+			return std::hash<uint64_t>{}(static_cast<uint64_t>(key));
+		}
+	};
 }

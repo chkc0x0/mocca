@@ -1,4 +1,5 @@
 #pragma once
+#include "Context.h"
 #include "Logger.h"
 #include <format>
 #include <string>
@@ -76,5 +77,8 @@ namespace mocca
 			void* LogUserData{nullptr};
 			ErrorCode LastError{ErrorCode::None};
 		} _logger;
+
+		Context _context;
+		friend auto getCtx() -> Context*;
 	};
 }

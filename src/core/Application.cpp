@@ -100,4 +100,14 @@ namespace mocca
 			Name = segments[2];
 		}
 	}
+
+	auto getCtx() -> Context*
+	{
+		if (Application::main == nullptr)
+		{
+			mc_error(ErrorCode::InvalidState, "no application instance exists");
+			return nullptr;
+		}
+		return &Application::main->_context;
+	}
 }

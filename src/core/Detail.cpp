@@ -1,4 +1,5 @@
 #include "Detail.h"
+#include "Context.h"
 #include <cstddef>
 #include <iostream>
 
@@ -80,8 +81,14 @@ namespace mocca::detail
 	auto Node::Reconcile(std::unique_ptr<Node> oldNode,
 						 const Element* newElement) -> std::unique_ptr<Node>
 	{
-		if (newElement == nullptr)
+		if (newElement == nullptr && oldNode == nullptr)
 		{
+			return nullptr;
+		}
+
+		if (newElement == nullptr && oldNode != nullptr)
+		{
+			getCtx()->_store.RemoveComponent(oldNode->Id);
 			return nullptr;
 		}
 
@@ -90,19 +97,20 @@ namespace mocca::detail
 			oldNode = BuildNodeTree(*newElement);
 		}
 		else if (oldNode->Kind.index() != newElement->Node.index() ||
-			oldNode->Key != newElement->Key)
+				 oldNode->Key != newElement->Key)
 		{
 			// zombie instead of killing old tree - later
+			getCtx()->_store.RemoveComponent(oldNode->Id);
 			oldNode = BuildNodeTree(*newElement);
 		}
 
 		// props here
 		if (oldNode->IsText())
-        {
-            auto& textNode = std::get<TextNode>(oldNode->Kind);
-            const auto& textElement = std::get<TextElement>(newElement->Node);
-            textNode.Content = textElement.Content;
-        }
+		{
+			auto& textNode = std::get<TextNode>(oldNode->Kind);
+			const auto& textElement = std::get<TextElement>(newElement->Node);
+			textNode.Content = textElement.Content;
+		}
 
 		std::vector<Element> childElements;
 
@@ -115,43 +123,79 @@ namespace mocca::detail
 		{
 			const auto& component =
 				std::get<ComponentElement>(newElement->Node);
+
+			// set up ctx
+			auto id = getCtx()->_enterComponentRender(oldNode->Id);
 			auto produced = component.Fn();
+			getCtx()->_exitComponentRender(id);
 			childElements.push_back(produced);
 		}
 
-		size_t maxCount =
-			std::max(oldNode->Children.size(), childElements.size());
+		std::unordered_map<ElementKey, std::unique_ptr<Node>> oldKeyed;
+		std::vector<std::unique_ptr<Node>> oldUnkeyed;
 
-		for (size_t i = 0; i < maxCount; i++)
+		for (auto& child : oldNode->Children)
 		{
-			std::unique_ptr<Node> oldChild;
-            if (i < oldNode->Children.size())
-            {
-                oldChild = std::move(oldNode->Children[i]);
-            }
-
-            const Element* newChild = nullptr;
-            if (i < childElements.size())
-            {
-                newChild = &childElements[i];
-            }
-
-            auto reconciledChild = Reconcile(std::move(oldChild), newChild);
-            if (reconciledChild != nullptr)
-            {
-                reconciledChild->Parent = oldNode.get();
-            }
-
-            if (i < oldNode->Children.size())
-            {
-                oldNode->Children[i] = std::move(reconciledChild);
-            }
-            else if (reconciledChild != nullptr)
-            {
-                oldNode->Children.push_back(std::move(reconciledChild));
-            }
+			if (child && child->Key != mc_keyNone)
+			{
+				oldKeyed.emplace(child->Key, std::move(child));
+			}
+			else if (child)
+			{
+				oldUnkeyed.push_back(std::move(child));
+			}
 		}
 
+		std::vector<std::unique_ptr<Node>> newChildren;
+		size_t unkeyedCursor = 0;
+
+		// match by key
+		for (auto& child : childElements)
+		{
+			std::unique_ptr<Node> matchedOld;
+			if (child.Key != mc_keyNone)
+			{
+				auto it = oldKeyed.find(child.Key);
+				if (it != oldKeyed.end())
+				{
+					matchedOld = std::move(it->second);
+					oldKeyed.erase(it);
+				}
+			}
+			else
+			{
+				if (unkeyedCursor < oldUnkeyed.size())
+				{
+					matchedOld = std::move(oldUnkeyed[unkeyedCursor++]);
+				}
+			}
+
+			auto reconciled = Reconcile(std::move(matchedOld), &child);
+			if (reconciled)
+			{
+				reconciled->Parent = oldNode.get();
+				newChildren.push_back(std::move(reconciled));
+			}
+		}
+
+		// kill orphans
+		for (auto& [k, n] : oldKeyed)
+		{
+			if (n)
+			{
+				getCtx()->_store.RemoveComponent(n->Id);
+			}
+		}
+
+		if (oldUnkeyed.size() > unkeyedCursor)
+		{
+			for (size_t i = unkeyedCursor; i < oldUnkeyed.size(); i++)
+			{
+				getCtx()->_store.RemoveComponent(oldUnkeyed[i]->Id);
+			}
+		}
+
+		oldNode->Children = std::move(newChildren);
 		return oldNode;
 	}
 }
