@@ -1,5 +1,6 @@
 #pragma once
 #include "Detail.h"
+#include "Surface.h"
 
 namespace mocca
 {
@@ -8,6 +9,7 @@ namespace mocca
 	public:
 	private:
 		detail::HookStore _store;
+		Surface* _currentSurface;
 
 		detail::NodeId _componentId;
 		uint32_t _hookIndex;

@@ -40,6 +40,25 @@ namespace mocca::detail
 		return node;
 	}
 
+	void Node::Paint(Canvas& canvas)
+	{
+		if (IsBox())
+		{
+			canvas.DrawRect(0, 0, 0, 0, {.R = 200, .G = 200, .B = 200});
+		}
+
+		if (IsText())
+		{
+			canvas.DrawText(0, 0, std::get<TextElement>(Kind).Content,
+							{.R = 0, .G = 0, .B = 0});
+		}
+
+		for (auto& children : Children)
+		{
+			children->Paint(canvas);
+		}
+	}
+
 	void Node::Print(int depth)
 	{
 		std::string indent(static_cast<size_t>(depth * 2), ' ');
@@ -116,7 +135,8 @@ namespace mocca::detail
 				std::get<ComponentElement>(newElement->Node);
 
 			// set up ctx
-			auto produced = Element::Render(component.Fn, component.Props, oldNode->Id);
+			auto produced =
+				Element::Render(component.Fn, component.Props, oldNode->Id);
 			childElements.push_back(produced);
 		}
 
@@ -201,7 +221,8 @@ namespace mocca
 	}
 
 	// anywhere else
-	auto Element::Render(const ComponentPropsFn& fn, const std::any& props, std::uint64_t id) -> Element
+	auto Element::Render(const ComponentPropsFn& fn, const std::any& props,
+						 std::uint64_t id) -> Element
 	{
 		auto prev = getCtx()->_enterComponentRender(id);
 		auto produced = fn(props);

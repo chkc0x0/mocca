@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "Element.h"
+#include "sandbox/RaylibWindow.h"
 #include <iostream>
 
 using namespace mocca;
@@ -12,7 +13,8 @@ auto Counter(int start) -> Element
 
 	setter = setCount;
 
-	useEffect([]() -> void { mc_info("hi"); });
+	useEffect([]() -> void { // do something
+                             });
 
 	return text(std::format("Counter: {}", count));
 }
@@ -37,12 +39,15 @@ auto main(int argc, const char** argv) -> int
 	auto app = Application("com.mocca.sandbox");
 	app.SetLogCallback(logCallback, 0);
 
-	app.RegisterSurface<mocca::Surface>({.Root = buildExampleTree});
+	app.RegisterSurface<RaylibWindow>({.Width = 800,
+									   .Height = 600,
+									   .Title = "Sandbox",
+									   .Root = buildExampleTree});
 
-	app.Print();
-	setter(1);
-	app.Tick(0);
-	app.Print();
+	while (app.IsRunning())
+	{
+		app.Tick(0);
+	}
 
 	return 0;
 }

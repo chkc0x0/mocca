@@ -1,4 +1,5 @@
 #pragma once
+#include "Canvas.h"
 #include "Element.h"
 #include <cstdint>
 #include <memory>
@@ -65,6 +66,7 @@ namespace mocca::detail
 			-> std::unique_ptr<Node>;
 
 		void Print(int depth = 0);
+		void Paint(Canvas& canvas);
 	};
 
 	struct HookKey
@@ -207,12 +209,16 @@ namespace mocca::detail
 			_dirtySet.clear();
 		}
 
+		void InsertDirty(NodeId id)
+		{
+			_dirtySet.insert(id);
+		}
+
 	private:
 		std::unordered_map<HookKey, std::any, HookKeyHash> _slots;
 		std::vector<std::function<void()>> _effectQueue;
 
 		std::unordered_set<NodeId> _dirtySet;
-		std::function<void(NodeId)> _markDirty = [this](NodeId id) -> void
-		{ _dirtySet.insert(id); };
+		std::function<void(NodeId)> _markDirty;
 	};
 }

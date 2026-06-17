@@ -14,6 +14,13 @@ namespace mocca
 
 		_id = ApplicationID(appId);
 		main = this;
+
+		_context._store.SetMarkDirty(
+			[this](detail::NodeId id)
+			{
+				_context._store.InsertDirty(id);
+				_context._currentSurface->MarkDirty();
+			});
 	}
 
 	Application::~Application()
@@ -23,9 +30,26 @@ namespace mocca
 
 	void Application::Tick(double dt)
 	{
-		for (auto& surface : _surfaces)
+		for (auto it = _surfaces.begin(); it != _surfaces.end();)
 		{
-			surface->Tick(dt);
+			if (!it->get()->IsRunning())
+			{
+				it->reset();
+				it = _surfaces.erase(it);
+				continue;
+			}
+
+			_context._currentSurface = it->get();
+			if (it->get()->IsDirty())
+			{
+				it->get()->Tick(dt);
+				it->get()->Paint();
+			}
+
+			it->get()->Update();
+			_context._currentSurface = nullptr;
+
+			++it;
 		}
 
 		_context._store.ClearDirty();

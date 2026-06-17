@@ -90,6 +90,10 @@ namespace mocca
 		}
 
 		void Print();
+		auto IsRunning() -> bool
+		{
+			return _surfaces.size() != 0;
+		}
 
 	private:
 		ApplicationID _id;
