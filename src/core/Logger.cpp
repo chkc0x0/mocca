@@ -1,24 +1,23 @@
 #include "Application.h"
+#include <print>
 
 namespace mocca
 {
-	void Application::Log(LogMessage& message)
+	void Logger::Log(LogMessage& message)
 	{
-		if (Application::main == nullptr ||
-			Application::main->_logger.Callback == nullptr)
+		if (callback == nullptr)
 		{
 			return;
 		}
 
-		Application::main->_logger.Callback(
-			message, Application::main->_logger.LogUserData);
-		Application::main->_logger.LastError = message.Code;
+		callback(message, logUserData);
+		lastError = message.Code;
 	}
 
 	void Application::SetDefaultLogCallback()
 	{
-		SetLogCallback(
-			[](const LogMessage& message, void* user)
+		Logger::SetLogCallback(
+			[](const LogMessage& message, void* user) -> void
 			{
 				char buf[9];
 				auto tm = time(nullptr);
@@ -43,10 +42,17 @@ namespace mocca
 					break;
 				}
 
-				std::fprintf(stderr, "%s %s (%.*s:%d): %s\n", buf, severityStr,
-							 (int)message.File.size(), message.File.data(),
-							 message.Line,
-							 std::string(message.Message).c_str());
-			});
+				std::println(
+					stderr,
+					"{} {} ({:.{}}:{}): {}",
+					buf,
+					severityStr,
+					message.File.data(),
+					(int)message.File.size(),
+					message.Line,
+					std::string(message.Message)
+				);
+			}
+		);
 	}
 }

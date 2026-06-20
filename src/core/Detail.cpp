@@ -6,11 +6,54 @@
 namespace mocca::detail
 {
 	static NodeId nextNodeId = 0;
+
+	Node::Node()
+	{
+		YogaNode = YGNodeNew();
+	}
+
+	Node::~Node()
+	{
+		YGNodeFree(YogaNode);
+	}
+
+	void Node::BuildYogaTree()
+	{
+		ApplyLayoutStyles();
+		YGNodeRemoveAllChildren(YogaNode);
+
+		uint32_t index = 0;
+		for (auto& child : Children)
+		{
+			if (!child)
+			{
+				continue;
+			}
+			child->BuildYogaTree();
+			YGNodeInsertChild(YogaNode, child->YogaNode, index++);
+		}
+	}
+
+	void Node::ApplyLayoutStyles()
+	{
+		const auto& s = Style;
+
+		if (s.Width.IsValue())
+		{
+			YGNodeStyleSetWidth(YogaNode, s.Width.GetValue().Value);
+		}
+		if (s.Height.IsValue())
+		{
+			YGNodeStyleSetHeight(YogaNode, s.Height.GetValue().Value);
+		}
+	}
+
 	auto Node::BuildNodeTree(const Element& element) -> std::unique_ptr<Node>
 	{
 		auto node = std::make_unique<Node>();
 		node->Id = nextNodeId++;
 		node->Key = element.Key;
+		node->Style = element.Style;
 
 		std::visit(
 			[&](const auto& arm) -> auto
@@ -35,22 +78,44 @@ namespace mocca::detail
 					node->Kind = ComponentElement{.Fn = arm.Fn};
 				}
 			},
-			element.Node);
+			element.Node
+		);
 
 		return node;
 	}
 
+	auto Node::GetX() const -> float
+	{
+		return YGNodeLayoutGetLeft(YogaNode) +
+			   (Parent == nullptr ? 0 : Parent->GetX());
+	}
+
+	auto Node::GetY() const -> float
+	{
+		return YGNodeLayoutGetTop(YogaNode) +
+			   (Parent == nullptr ? 0 : Parent->GetY());
+	}
+
 	void Node::Paint(Canvas& canvas)
 	{
+		float x = GetX();
+		float y = GetY();
+		float w = YGNodeLayoutGetWidth(YogaNode);
+		float h = YGNodeLayoutGetHeight(YogaNode);
+
 		if (IsBox())
 		{
-			canvas.DrawRect(0, 0, 0, 0, {.R = 200, .G = 200, .B = 200});
+			canvas.DrawRect(x, y, w, h, {.R = 200, .G = 200, .B = 200});
 		}
 
 		if (IsText())
 		{
-			canvas.DrawText(0, 0, std::get<TextElement>(Kind).Content,
-							{.R = 0, .G = 0, .B = 0});
+			canvas.DrawText(
+				x,
+				y,
+				std::get<TextElement>(Kind).Content,
+				{.R = 0, .G = 0, .B = 0}
+			);
 		}
 
 		for (auto& children : Children)
@@ -91,59 +156,37 @@ namespace mocca::detail
 		}
 	}
 
-	auto Node::Reconcile(std::unique_ptr<Node> oldNode,
-						 const Element* newElement) -> std::unique_ptr<Node>
+	auto Node::CollectChildElements(const Element* newElement, NodeId ownerId)
+		-> std::vector<Element>
 	{
-		if (newElement == nullptr && oldNode == nullptr)
-		{
-			return nullptr;
-		}
-
-		if (newElement == nullptr && oldNode != nullptr)
-		{
-			getCtx()->_store.RemoveComponent(oldNode->Id);
-			return nullptr;
-		}
-
-		if (oldNode == nullptr)
-		{
-			oldNode = BuildNodeTree(*newElement);
-		}
-		else if (oldNode->Kind.index() != newElement->Node.index() ||
-				 oldNode->Key != newElement->Key)
-		{
-			// zombie instead of killing old tree - later
-			getCtx()->_store.RemoveComponent(oldNode->Id);
-			oldNode = BuildNodeTree(*newElement);
-		}
-
-		if (oldNode->IsText())
-		{
-			oldNode->Kind = std::get<TextElement>(newElement->Node);
-		}
-
 		std::vector<Element> childElements;
 
 		if (std::holds_alternative<BoxElement>(newElement->Node))
 		{
-			const auto& box = std::get<BoxElement>(newElement->Node);
-			childElements = box.Children;
+			childElements = std::get<BoxElement>(newElement->Node).Children;
 		}
 		else if (std::holds_alternative<ComponentElement>(newElement->Node))
 		{
-			const auto& component =
-				std::get<ComponentElement>(newElement->Node);
-
-			// set up ctx
+			const auto& component = std::get<ComponentElement>(
+				newElement->Node
+			);
 			auto produced =
-				Element::Render(component.Fn, component.Props, oldNode->Id);
-			childElements.push_back(produced);
+				Element::Render(component.Fn, component.Props, ownerId);
+			childElements.push_back(std::move(produced));
 		}
 
+		return childElements;
+	}
+
+	auto Node::ReconcileChildren(
+		std::vector<std::unique_ptr<Node>> oldChildren,
+		const std::vector<Element>& childElements,
+		Node* parent
+	) -> std::vector<std::unique_ptr<Node>>
+	{
 		std::unordered_map<ElementKey, std::unique_ptr<Node>> oldKeyed;
 		std::vector<std::unique_ptr<Node>> oldUnkeyed;
-
-		for (auto& child : oldNode->Children)
+		for (auto& child : oldChildren)
 		{
 			if (child && child->Key != mc_keyNone)
 			{
@@ -157,9 +200,7 @@ namespace mocca::detail
 
 		std::vector<std::unique_ptr<Node>> newChildren;
 		size_t unkeyedCursor = 0;
-
-		// match by key
-		for (auto& child : childElements)
+		for (const auto& child : childElements)
 		{
 			std::unique_ptr<Node> matchedOld;
 			if (child.Key != mc_keyNone)
@@ -171,18 +212,15 @@ namespace mocca::detail
 					oldKeyed.erase(it);
 				}
 			}
-			else
+			else if (unkeyedCursor < oldUnkeyed.size())
 			{
-				if (unkeyedCursor < oldUnkeyed.size())
-				{
-					matchedOld = std::move(oldUnkeyed[unkeyedCursor++]);
-				}
+				matchedOld = std::move(oldUnkeyed[unkeyedCursor++]);
 			}
 
 			auto reconciled = Reconcile(std::move(matchedOld), &child);
 			if (reconciled)
 			{
-				reconciled->Parent = oldNode.get();
+				reconciled->Parent = parent;
 				newChildren.push_back(std::move(reconciled));
 			}
 		}
@@ -195,16 +233,55 @@ namespace mocca::detail
 				getCtx()->_store.RemoveComponent(n->Id);
 			}
 		}
-
-		if (oldUnkeyed.size() > unkeyedCursor)
+		for (size_t i = unkeyedCursor; i < oldUnkeyed.size(); i++)
 		{
-			for (size_t i = unkeyedCursor; i < oldUnkeyed.size(); i++)
-			{
-				getCtx()->_store.RemoveComponent(oldUnkeyed[i]->Id);
-			}
+			getCtx()->_store.RemoveComponent(oldUnkeyed[i]->Id);
 		}
 
-		oldNode->Children = std::move(newChildren);
+		return newChildren;
+	}
+
+	auto Node::Reconcile(
+		std::unique_ptr<Node> oldNode,
+		const Element* newElement
+	) -> std::unique_ptr<Node>
+	{
+		if (newElement == nullptr && oldNode == nullptr)
+		{
+			return nullptr;
+		}
+		if (newElement == nullptr) // oldNode != nullptr implied
+		{
+			getCtx()->_store.RemoveComponent(oldNode->Id);
+			return nullptr;
+		}
+
+		if (oldNode == nullptr)
+		{
+			oldNode = BuildNodeTree(*newElement);
+		}
+		else if (
+			oldNode->Kind.index() != newElement->Node.index() ||
+			oldNode->Key != newElement->Key
+		)
+		{
+			// TODO(zombie): later
+			getCtx()->_store.RemoveComponent(oldNode->Id);
+			oldNode = BuildNodeTree(*newElement);
+		}
+
+		if (oldNode->IsText())
+		{
+			oldNode->Kind = std::get<TextElement>(newElement->Node);
+		}
+
+		auto childElements = CollectChildElements(newElement, oldNode->Id);
+		oldNode->Children = ReconcileChildren(
+			std::move(oldNode->Children),
+			childElements,
+			oldNode.get()
+		);
+
 		return oldNode;
 	}
 }
@@ -221,8 +298,11 @@ namespace mocca
 	}
 
 	// anywhere else
-	auto Element::Render(const ComponentPropsFn& fn, const std::any& props,
-						 std::uint64_t id) -> Element
+	auto Element::Render(
+		const ComponentPropsFn& fn,
+		const std::any& props,
+		std::uint64_t id
+	) -> Element
 	{
 		auto prev = getCtx()->_enterComponentRender(id);
 		auto produced = fn(props);

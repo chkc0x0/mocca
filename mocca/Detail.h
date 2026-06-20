@@ -1,6 +1,7 @@
 #pragma once
 #include "Canvas.h"
 #include "Element.h"
+#include "yoga/Yoga.h"
 #include <cstdint>
 #include <memory>
 #include <unordered_set>
@@ -18,10 +19,15 @@ namespace mocca::detail
 
 	struct Node
 	{
+		Node();
+		~Node();
+
 		NodeId Id;
 		ElementKey Key = mc_keyNone;
 
 		Node* Parent = nullptr; // not read yet
+		YGNodeRef YogaNode{nullptr};
+		DeclaredStyle Style;
 
 		std::vector<std::unique_ptr<Node>> Children;
 
@@ -60,10 +66,27 @@ namespace mocca::detail
 
 		static auto BuildNodeTree(const Element& element)
 			-> std::unique_ptr<Node>;
+		void BuildYogaTree();
+		void ApplyLayoutStyles();
 
-		static auto Reconcile(std::unique_ptr<Node> oldNode,
-							  const Element* newElement)
-			-> std::unique_ptr<Node>;
+		[[nodiscard]] auto GetX() const -> float;
+		[[nodiscard]] auto GetY() const -> float;
+
+		static auto CollectChildElements(
+			const Element* newElement,
+			NodeId ownerId
+		) -> std::vector<Element>;
+
+		static auto ReconcileChildren(
+			std::vector<std::unique_ptr<Node>> oldChildren,
+			const std::vector<Element>& childElements,
+			Node* parent
+		) -> std::vector<std::unique_ptr<Node>>;
+
+		static auto Reconcile(
+			std::unique_ptr<Node> oldNode,
+			const Element* newElement
+		) -> std::unique_ptr<Node>;
 
 		void Print(int depth = 0);
 		void Paint(Canvas& canvas);

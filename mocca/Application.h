@@ -2,7 +2,6 @@
 #include "Context.h"
 #include "Logger.h"
 #include "Surface.h"
-#include <format>
 #include <string>
 #include <utility>
 
@@ -15,7 +14,7 @@ namespace mocca
 		ApplicationID() : _id("<not set>") {};
 
 		static constexpr auto ValidateID(std::string_view id) -> bool;
-		auto GetCompoundID() const -> std::string;
+		[[nodiscard]] auto GetCompoundID() const -> std::string;
 
 		std::string_view Name;
 		std::string_view Organization;
@@ -46,13 +45,7 @@ namespace mocca
 			return main->_id;
 		}
 
-		void SetDefaultLogCallback();
-
-		void SetLogCallback(LogCallback callback, void* userData = nullptr)
-		{
-			_logger.Callback = std::move(callback);
-			_logger.LogUserData = userData;
-		}
+		static void SetDefaultLogCallback();
 
 		template <typename T, typename... Args>
 		auto RegisterSurface(const SurfaceDesc& desc, Args&&... args) -> T*
@@ -61,32 +54,6 @@ namespace mocca
 			auto ptr = surface.get();
 			_surfaces.push_back(std::move(surface));
 			return ptr;
-		}
-
-		static void Log(LogMessage& message);
-
-		// you're not really intended to use this
-		// use the macros instead
-		template <typename... Args>
-		static void Log(LogLevel severity, std::string_view message,
-						std::string_view file, std::string_view function,
-						int line, ErrorCode code, Args&&... args)
-		{
-			if (Application::main == nullptr ||
-				Application::main->_logger.Callback == nullptr)
-			{
-				return;
-			}
-
-			auto msg = std::vformat(message, std::make_format_args(args...));
-			LogMessage logMessage{.Severity = severity,
-								  .Message = msg,
-								  .File = file,
-								  .Function = function,
-								  .Line = line,
-								  .Code = code};
-
-			Log(logMessage);
 		}
 
 		void Print();
@@ -106,6 +73,12 @@ namespace mocca
 		} _logger;
 
 		std::vector<std::unique_ptr<Surface>> _surfaces;
+
+		// dead surfaces live +1 frame so code after tick doesnt uaf.
+		// this is quite hacky and it'll probably break someday,
+		// assumes nothing holds a ref to surfaces for >1 frame
+		std::vector<std::unique_ptr<Surface>> _deadSurfaces;
+
 		Context _context;
 		friend auto getCtx() -> Context*;
 	};

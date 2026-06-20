@@ -14,19 +14,39 @@ auto Counter(int start) -> Element
 	setter = setCount;
 
 	useEffect([]() -> void { // do something
-                             });
+	});
 
 	return text(std::format("Counter: {}", count));
 }
 
 auto buildExampleTree() -> Element
 {
-	return box({box({text("Hello")}), component(Counter, 5),
-				box({
-					text("Item A", "a"),
-					text("Item B", "b"),
+	using namespace mocca::styles;
+
+	return box(
+		BoxDescriptor{
+			.Style = {.Width = px(200), .Height = px(500)},
+			.Children = {
+				box(BoxDescriptor{
+					.Style = {.Width = px(50), .Height = px(50)},
+					.Children =
+						{
+							text("Hello"),
+							component(Counter, 5),
+						}
 				}),
-				box({})});
+				box({
+					.Style = {.Width = px(50), .Height = px(100)},
+					.Children =
+						{
+							text({.Key = "a", .Content = "Item A"}),
+							text({.Key = "b", .Content = "Item B"}),
+						},
+				}),
+				box({.Style = {.Width = px(50), .Height = px(50)}}),
+			},
+		}
+	);
 }
 
 void logCallback(const LogMessage& message, void* user)
@@ -37,12 +57,14 @@ void logCallback(const LogMessage& message, void* user)
 auto main(int argc, const char** argv) -> int
 {
 	auto app = Application("com.mocca.sandbox");
-	app.SetLogCallback(logCallback, 0);
+	mocca::Logger::SetLogCallback(logCallback, 0);
 
-	app.RegisterSurface<RaylibWindow>({.Width = 800,
-									   .Height = 600,
-									   .Title = "Sandbox",
-									   .Root = buildExampleTree});
+	auto* window = app.RegisterSurface<RaylibWindow>(
+		{.Width = 800,
+		 .Height = 600,
+		 .Title = "Sandbox",
+		 .Root = buildExampleTree}
+	);
 
 	while (app.IsRunning())
 	{

@@ -1,6 +1,7 @@
 #include "Surface.h"
 #include "Application.h"
 #include "Logger.h"
+#include "yoga/YGNode.h"
 
 namespace mocca
 {
@@ -8,6 +9,19 @@ namespace mocca
 	{
 		auto tree = Element::Render(_desc.Root, 0);
 		_root = detail::Node::Reconcile(std::move(_root), &tree);
+
+		if (!_root)
+		{
+			return;
+		}
+
+		_root->BuildYogaTree();
+		YGNodeCalculateLayout(
+			_root->YogaNode,
+			_desc.Width,
+			_desc.Height,
+			YGDirectionLTR
+		);
 	}
 
 	void Surface::Paint()

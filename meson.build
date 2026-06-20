@@ -12,7 +12,7 @@ cmake = import('cmake')
 cmake_options = cmake.subproject_options()
 cmake_options.add_cmake_defines({'WITH_PIC': true})
 
-dependencies = [cmake.subproject('raylib', options: cmake_options).dependency('raylib')]
+dependencies = [cmake.subproject('raylib', options: cmake_options).dependency('raylib'), cmake.subproject('yoga').dependency('yogacore')]
 
 if get_option('debug')
     add_project_arguments('-DDEBUG', language: 'cpp')

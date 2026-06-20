@@ -1,4 +1,5 @@
 #pragma once
+#include "Style.h"
 #include <any>
 #include <cstdint>
 #include <functional>
@@ -83,6 +84,7 @@ namespace mocca
 	{
 		std::variant<BoxElement, TextElement, ComponentElement> Node;
 		ElementKey Key = mc_keyNone;
+		DeclaredStyle Style;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -98,22 +100,82 @@ namespace mocca
 		}
 
 		static auto Render(const ComponentFn& fn, std::uint64_t id) -> Element;
-		static auto Render(const ComponentPropsFn& fn, const std::any& props,
-						   std::uint64_t id) -> Element;
+		static auto Render(
+			const ComponentPropsFn& fn,
+			const std::any& props,
+			std::uint64_t id
+		) -> Element;
 	};
 
-	inline auto box(std::vector<Element> children = {},
-					ElementKey key = mc_keyNone) -> Element
+	struct BoxDescriptor
 	{
-		return Element{.Node = BoxElement{.Children = std::move(children)},
-					   .Key = key};
+	public:
+		ElementKey Key = mc_keyNone;
+		DeclaredStyle Style;
+		std::vector<Element> Children;
+	};
+
+	struct TextDescriptor
+	{
+	public:
+		ElementKey Key = mc_keyNone;
+		DeclaredStyle Style;
+		std::string Content;
+	};
+
+	struct ComponentDescriptor
+	{
+	public:
+		ElementKey Key = mc_keyNone;
+		DeclaredStyle Style;
+		ComponentFn Fn;
+	};
+
+	inline auto box(BoxDescriptor desc = {}) -> Element
+	{
+		return Element{
+			.Node = BoxElement{.Children = std::move(desc.Children)},
+			.Key = desc.Key,
+			.Style = desc.Style
+		};
+	}
+
+	inline auto box(std::vector<Element> children, ElementKey key = mc_keyNone)
+		-> Element
+	{
+		return Element{
+			.Node = BoxElement{.Children = std::move(children)},
+			.Key = key
+		};
+	}
+
+	inline auto text(TextDescriptor desc) -> Element
+	{
+		return Element{
+			.Node = TextElement{.Content = std::move(desc.Content)},
+			.Key = desc.Key,
+			.Style = desc.Style
+		};
 	}
 
 	inline auto text(std::string content, ElementKey key = mc_keyNone)
 		-> Element
 	{
-		return Element{.Node = TextElement{.Content = std::move(content)},
-					   .Key = key};
+		return Element{
+			.Node = TextElement{.Content = std::move(content)},
+			.Key = key
+		};
+	}
+
+	inline auto component(const ComponentDescriptor& desc) -> Element
+	{
+		ComponentPropsFn erased = [desc](const std::any&) -> auto
+		{ return desc.Fn(); };
+		return Element{
+			.Node = ComponentElement{.Fn = erased},
+			.Key = desc.Key,
+			.Style = desc.Style
+		};
 	}
 
 	inline auto component(const ComponentFn& fn, ElementKey key = mc_keyNone)
@@ -124,14 +186,19 @@ namespace mocca
 		return Element{.Node = ComponentElement{.Fn = erased}, .Key = key};
 	}
 
+	// do note that desc.Fn will *not* be used
 	template <typename Props, typename Fn>
-	inline auto component(Fn fn, Props props, ElementKey key = mc_keyNone)
+	inline auto
+	component(Fn fn, Props props, const ComponentDescriptor& desc = {})
 		-> Element
 	{
 		ComponentPropsFn erased = [fn](const std::any& boxed) -> auto
 		{ return fn(std::any_cast<const Props&>(boxed)); };
-		return Element{.Node = ComponentElement{.Fn = erased, .Props = props},
-					   .Key = key};
+		return Element{
+			.Node = ComponentElement{.Fn = erased, .Props = props},
+			.Key = desc.Key,
+			.Style = desc.Style
+		};
 	}
 }
 

@@ -30,12 +30,14 @@ namespace mocca
 
 	void Application::Tick(double dt)
 	{
+		_deadSurfaces.clear();
+
 		for (auto it = _surfaces.begin(); it != _surfaces.end();)
 		{
 			if (!it->get()->IsRunning())
 			{
-				it->reset();
-				it = _surfaces.erase(it);
+				_deadSurfaces.push_back(std::move(*it));
+				_surfaces.erase(it);
 				continue;
 			}
 
