@@ -25,10 +25,10 @@ auto buildExampleTree() -> Element
 
 	return box(
 		BoxDescriptor{
-			.Style = {.Width = px(200), .Height = px(500)},
+			.Style = {.Width = {px(200)}, .Height = {px(500)}},
 			.Children = {
 				box(BoxDescriptor{
-					.Style = {.Width = px(50), .Height = px(50)},
+					.Style = {.Width = {percent(50)}, .Height = {px(50)}},
 					.Children =
 						{
 							text("Hello"),
@@ -36,14 +36,14 @@ auto buildExampleTree() -> Element
 						}
 				}),
 				box({
-					.Style = {.Width = px(50), .Height = px(100)},
+					.Style = {.Width = {px(50)}, .Height = {px(100)}},
 					.Children =
 						{
 							text({.Key = "a", .Content = "Item A"}),
 							text({.Key = "b", .Content = "Item B"}),
 						},
 				}),
-				box({.Style = {.Width = px(50), .Height = px(50)}}),
+				box({.Style = {.Width = {px(50)}, .Height = {px(50)}}}),
 			},
 		}
 	);

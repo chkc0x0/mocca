@@ -1,5 +1,6 @@
 #include "Detail.h"
 #include "Context.h"
+#include "Style.h"
 #include <cstddef>
 #include <iostream>
 
@@ -10,11 +11,36 @@ namespace mocca::detail
 	Node::Node()
 	{
 		YogaNode = YGNodeNew();
+		YGNodeSetContext(YogaNode, this);
 	}
 
 	Node::~Node()
 	{
 		YGNodeFree(YogaNode);
+	}
+
+	auto measureFunc(
+		const YGNode* ref,
+		float with,
+		YGMeasureMode widthMode,
+		float height,
+		YGMeasureMode heightMode
+	) -> YGSize
+	{
+		auto* self = static_cast<Node*>(YGNodeGetContext(ref));
+		if ((self == nullptr) || !self->IsText())
+		{
+			return YGSize{0, 0};
+		}
+
+		const std::string& content = std::get<TextElement>(self->Kind).Content;
+
+		// TODO: read font size from computed style once styling exists. Hardcoded now.
+		constexpr int fontSize = 16;
+
+		auto width = static_cast<float>(content.size() * 8);
+
+		return YGSize{.width = width, .height = static_cast<float>(fontSize)};
 	}
 
 	void Node::BuildYogaTree()
@@ -34,17 +60,24 @@ namespace mocca::detail
 		}
 	}
 
-	void Node::ApplyLayoutStyles()
+	void Node::ApplyLayoutStyles() const
 	{
-		const auto& s = Style;
+#define mc_styleProperty(name, ...)                                            \
+	styles::detail::applying::apply##name(YogaNode, Style.name);
+		mc_layoutProperties
+#undef mc_styleProperty
+	}
 
-		if (s.Width.IsValue())
+	void Node::ComputeStyle(const ComputedStyle& parentComputed)
+	{
+		Style = ComputedStyle::Cascade(Declared, parentComputed);
+
+		for (auto& child : Children)
 		{
-			YGNodeStyleSetWidth(YogaNode, s.Width.GetValue().Value);
-		}
-		if (s.Height.IsValue())
-		{
-			YGNodeStyleSetHeight(YogaNode, s.Height.GetValue().Value);
+			if (child)
+			{
+				child->ComputeStyle(Style);
+			}
 		}
 	}
 
@@ -53,7 +86,7 @@ namespace mocca::detail
 		auto node = std::make_unique<Node>();
 		node->Id = nextNodeId++;
 		node->Key = element.Key;
-		node->Style = element.Style;
+		node->Declared = element.Style;
 
 		std::visit(
 			[&](const auto& arm) -> auto
@@ -273,6 +306,8 @@ namespace mocca::detail
 		if (oldNode->IsText())
 		{
 			oldNode->Kind = std::get<TextElement>(newElement->Node);
+			YGNodeSetMeasureFunc(oldNode->YogaNode, &measureFunc);
+			YGNodeMarkDirty(oldNode->YogaNode);
 		}
 
 		auto childElements = CollectChildElements(newElement, oldNode->Id);
@@ -308,5 +343,21 @@ namespace mocca
 		auto produced = fn(props);
 		getCtx()->_exitComponentRender(prev);
 		return produced;
+	}
+
+	auto ComputedStyle::Cascade(
+		const DeclaredStyle& declared,
+		const ComputedStyle& parent
+	) -> ComputedStyle
+	{
+		ComputedStyle computed;
+#define mc_styleProperty(name, type, inherits, initial)                        \
+	computed.name = declared.name.Resolve(                                     \
+		parent.name,                                                           \
+		styles::detail::properties::name##Property                             \
+	);
+		mc_layoutProperties
+#undef mcStyleProperty
+			return computed;
 	}
 }

@@ -1,6 +1,6 @@
 #include "Surface.h"
-#include "Application.h"
 #include "Logger.h"
+#include "Style.h"
 #include "yoga/YGNode.h"
 
 namespace mocca
@@ -14,6 +14,8 @@ namespace mocca
 		{
 			return;
 		}
+
+		_root->ComputeStyle(styles::DefaultStyle);
 
 		_root->BuildYogaTree();
 		YGNodeCalculateLayout(

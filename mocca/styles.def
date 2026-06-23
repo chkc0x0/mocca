@@ -1,0 +1,8 @@
+#ifndef mc_styleProperty
+#define mc_styleProperty(name, type, inherits, initial)
+#endif
+
+#define mc_layoutProperties \
+    mc_styleProperty(Width, SizingValue, false, (SizingValue{Auto})) \
+    mc_styleProperty(Height, SizingValue, false, (SizingValue{Auto}))
+    

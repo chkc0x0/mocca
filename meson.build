@@ -5,6 +5,7 @@ sources = [
     'src/core/Logger.cpp',
     'src/core/Detail.cpp',
     'src/core/Surface.cpp',
+    'src/core/Style.cpp'
 ]
 
 cmake = import('cmake')

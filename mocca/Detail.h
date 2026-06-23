@@ -27,7 +27,9 @@ namespace mocca::detail
 
 		Node* Parent = nullptr; // not read yet
 		YGNodeRef YogaNode{nullptr};
-		DeclaredStyle Style;
+
+		DeclaredStyle Declared;
+		ComputedStyle Style;
 
 		std::vector<std::unique_ptr<Node>> Children;
 
@@ -67,7 +69,8 @@ namespace mocca::detail
 		static auto BuildNodeTree(const Element& element)
 			-> std::unique_ptr<Node>;
 		void BuildYogaTree();
-		void ApplyLayoutStyles();
+		void ApplyLayoutStyles() const;
+		void ComputeStyle(const ComputedStyle& parentComputed);
 
 		[[nodiscard]] auto GetX() const -> float;
 		[[nodiscard]] auto GetY() const -> float;
