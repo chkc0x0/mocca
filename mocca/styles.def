@@ -1,8 +1,18 @@
 #ifndef mc_styleProperty
 #define mc_styleProperty(name, type, inherits, initial)
+#define mc_stylePropertyEdge(name, type)
 #endif
 
 #define mc_layoutProperties \
-    mc_styleProperty(Width, SizingValue, false, (SizingValue{Auto})) \
-    mc_styleProperty(Height, SizingValue, false, (SizingValue{Auto}))
+    mc_styleProperty(Width, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
+    mc_styleProperty(Height, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
+    mc_styleProperty(Padding, Edges<Length>, false, (Edges<Length>{0}), DeclaredEdges<Length>) \
+    mc_styleProperty(Margin, Edges<AutoValue<Length>>, false, (Edges<AutoValue<Length>>{0}), DeclaredEdges<AutoValue<Length>>) \
+    mc_styleProperty(AlignContent, AlignContent, false, AlignContent::FlexStart, StyleValue<AlignContent>) \
+    mc_styleProperty(AlignItems, Alignment, false, Alignment::Stretch, StyleValue<Alignment>) \
+    mc_styleProperty(AlignSelf, AutoValue<Alignment>, false, Auto, StyleValue<AutoValue<Alignment>>) \
+    mc_styleProperty(AspectRatio, float, false, 0.0F, StyleValue<float>)
     
+#define mc_propertyEdges \
+    mc_stylePropertyEdge(padding, Length) \
+    mc_stylePropertyEdge(margin, AutoValue<Length>)

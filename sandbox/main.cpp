@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "Element.h"
+#include "StyleHelpers.h"
 #include "sandbox/RaylibWindow.h"
 #include <iostream>
 
@@ -25,7 +26,13 @@ auto buildExampleTree() -> Element
 
 	return box(
 		BoxDescriptor{
-			.Style = {.Width = {px(200)}, .Height = {px(500)}},
+			.Style =
+				{.Width = {px(200)},
+				 .Height = {px(500)},
+				 .Margin = margin(Auto),
+				 .AlignContent = StyleKeyword::Inherit,
+				 .AlignItems = Alignment::Stretch,
+				 .AlignSelf = {Auto}},
 			.Children = {
 				box(BoxDescriptor{
 					.Style = {.Width = {percent(50)}, .Height = {px(50)}},
@@ -36,7 +43,11 @@ auto buildExampleTree() -> Element
 						}
 				}),
 				box({
-					.Style = {.Width = {px(50)}, .Height = {px(100)}},
+					.Style =
+						{.Width = {Auto},
+						 .Height = {px(100)},
+						 .Padding = padding(px(5)),
+						 .Margin = margin(px(5))},
 					.Children =
 						{
 							text({.Key = "a", .Content = "Item A"}),

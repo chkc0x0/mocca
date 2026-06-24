@@ -351,7 +351,7 @@ namespace mocca
 	) -> ComputedStyle
 	{
 		ComputedStyle computed;
-#define mc_styleProperty(name, type, inherits, initial)                        \
+#define mc_styleProperty(name, ...)                                            \
 	computed.name = declared.name.Resolve(                                     \
 		parent.name,                                                           \
 		styles::detail::properties::name##Property                             \

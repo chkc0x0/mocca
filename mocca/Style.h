@@ -13,6 +13,27 @@ namespace mocca
 		Initial
 	};
 
+	enum class AlignContent : char
+	{
+		FlexStart,
+		Center,
+		FlexEnd,
+		Stretch,
+		Baseline,
+		SpaceBetween,
+		SpaceAround,
+		SpaceEvenly
+	};
+
+	enum class Alignment : char
+	{
+		FlexStart,
+		Center,
+		FlexEnd,
+		Stretch,
+		Baseline
+	};
+
 	template <typename T> struct StyleValue
 	{
 	public:
@@ -75,6 +96,31 @@ namespace mocca
 			return prop.Inherits ? parentValue : prop.DefaultValue;
 		}
 
+		template <typename Prop>
+		auto Resolve(
+			const T& parentValue,
+			const T& defaultValue,
+			const Prop& prop
+		) const -> T
+		{
+			if (IsValue())
+			{
+				return GetValue();
+			}
+
+			if (IsInherited())
+			{
+				return parentValue;
+			}
+
+			if (IsInitial())
+			{
+				return defaultValue;
+			}
+
+			return prop.Inherits ? parentValue : defaultValue;
+		}
+
 	private:
 		std::variant<T, StyleKeyword> _data;
 	};
@@ -91,22 +137,50 @@ namespace mocca
 		LengthUnit Unit{};
 		float Value{0};
 
-		Length(float pixels = 0) : Value(pixels) {};
+		Length() = default;
+		Length(float pixels) : Value(pixels) {};
 		Length(LengthUnit unit, float value) : Unit(unit), Value(value) {};
+	};
+
+	template <typename T> struct Edges
+	{
+		T Left;
+		T Top;
+		T Right;
+		T Bottom;
+	};
+
+	template <typename T> struct DeclaredEdges
+	{
+		StyleValue<T> Left;
+		StyleValue<T> Top;
+		StyleValue<T> Right;
+		StyleValue<T> Bottom;
+
+		template <typename Prop>
+		auto Resolve(const Edges<T>& parentValue, const Prop& prop) const
+			-> Edges<T>
+		{
+			Edges<T> edges;
+
+			edges.Left =
+				Left.Resolve(parentValue.Left, prop.DefaultValue.Left, prop);
+			edges.Top =
+				Top.Resolve(parentValue.Top, prop.DefaultValue.Top, prop);
+			edges.Right =
+				Right.Resolve(parentValue.Right, prop.DefaultValue.Right, prop);
+			edges.Bottom = Bottom.Resolve(
+				parentValue.Bottom,
+				prop.DefaultValue.Bottom,
+				prop
+			);
+
+			return edges;
+		}
 	};
 
 	namespace styles
 	{
-		inline auto px(float value) -> Length
-		{
-			return {value};
-		}
-
-		inline auto percent(float value) -> Length
-		{
-			return {LengthUnit::Percent, value};
-		}
-
 		namespace detail
 		{
 			struct AutoTag
@@ -129,6 +203,9 @@ namespace mocca
 		inline constexpr detail::StretchTag Stretch{};
 	}
 
+	template <typename T>
+	using AutoValue = std::variant<T, styles::detail::AutoTag>;
+
 	using SizingValue = std::variant<
 		Length,
 		styles::detail::AutoTag,
@@ -140,7 +217,8 @@ namespace mocca
 	{
 	public:
 #undef mc_styleProperty
-#define mc_styleProperty(name, type, ...) StyleValue<type> name;
+#define mc_styleProperty(name, type, inherits, initial, declType, ...)         \
+	declType name;
 		mc_layoutProperties
 #undef mc_styleProperty
 	};
@@ -160,7 +238,7 @@ namespace mocca
 	namespace styles
 	{
 		inline static ComputedStyle DefaultStyle = {
-#define mc_styleProperty(name, type, inherits, initial) .name = (initial),
+#define mc_styleProperty(name, type, inherits, initial, ...) .name = (initial),
 			mc_layoutProperties
 #undef mc_styleProperty
 		};
@@ -176,7 +254,7 @@ namespace mocca
 				T DefaultValue;
 			};
 
-#define mc_styleProperty(name, type, inherits, initial)                        \
+#define mc_styleProperty(name, type, inherits, initial, ...)                   \
 	static const StyleProperty<type> name##Property{                           \
 		.Name = #name,                                                         \
 		.Type = #type,                                                         \
@@ -189,7 +267,8 @@ namespace mocca
 
 		namespace detail::applying
 		{
-#define mc_styleProperty(name, type, inherits, initial) void apply##name(YGNodeRef ref, type value);
+#define mc_styleProperty(name, type, inherits, initial, ...)                   \
+	void apply##name(YGNodeRef ref, type value);
 			mc_layoutProperties
 #undef mc_styleProperty
 		}
