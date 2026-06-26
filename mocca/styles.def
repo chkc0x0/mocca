@@ -1,3 +1,6 @@
+#pragma once
+#include <limits>
+
 #ifndef mc_styleProperty
 #define mc_styleProperty(name, type, inherits, initial)
 #define mc_stylePropertyEdge(name, type)
@@ -5,14 +8,34 @@
 
 #define mc_layoutProperties \
     mc_styleProperty(Width, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
+    mc_styleProperty(MinWidth, SizingValueNoAuto, false, (SizingValueNoAuto{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValueNoAuto>) \
+    mc_styleProperty(MaxWidth, SizingValueNoAuto, false, (SizingValueNoAuto{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValueNoAuto>) \
     mc_styleProperty(Height, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
+    mc_styleProperty(MinHeight, SizingValueNoAuto, false, (SizingValueNoAuto{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValueNoAuto>) \
+    mc_styleProperty(MaxHeight, SizingValueNoAuto, false, (SizingValueNoAuto{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValueNoAuto>) \
     mc_styleProperty(Padding, Edges<Length>, false, (Edges<Length>{0}), DeclaredEdges<Length>) \
+    mc_styleProperty(Border, Edges<Length>, false, (Edges<Length>{0}), DeclaredEdges<Length>) \
     mc_styleProperty(Margin, Edges<AutoValue<Length>>, false, (Edges<AutoValue<Length>>{0}), DeclaredEdges<AutoValue<Length>>) \
-    mc_styleProperty(AlignContent, AlignContent, false, AlignContent::FlexStart, StyleValue<AlignContent>) \
+    mc_styleProperty(AlignContent, Alignment, false, Alignment::FlexStart, StyleValue<Alignment>) \
     mc_styleProperty(AlignItems, Alignment, false, Alignment::Stretch, StyleValue<Alignment>) \
     mc_styleProperty(AlignSelf, AutoValue<Alignment>, false, Auto, StyleValue<AutoValue<Alignment>>) \
-    mc_styleProperty(AspectRatio, float, false, 0.0F, StyleValue<float>)
+    mc_styleProperty(AspectRatio, float, false, 0.0F, StyleValue<float>) \
+    mc_styleProperty(Display, DisplayType, false, DisplayType::Flex, StyleValue<DisplayType>) \
+    mc_styleProperty(FlexBasis, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
+    mc_styleProperty(FlexGrow, float, false, 0.0F, StyleValue<float>) \
+    mc_styleProperty(FlexShrink, float, false, 1.0F, StyleValue<float>) \
+    mc_styleProperty(Flex, float, false, std::numeric_limits<double>::quiet_NaN(), StyleValue<float>) \
+    mc_styleProperty(FlexDirection, FlexDirections, false, FlexDirections::Column, StyleValue<FlexDirections>) \
+    mc_styleProperty(FlexWrap, WrappingType, false, WrappingType::None, StyleValue<WrappingType>) \
+    mc_styleProperty(Gap, Axes<Length>, false, (Axes<Length>{0}), DeclaredAxes<Length>) \
+    mc_styleProperty(Position, Edges<AutoValue<Length>>, false, (Edges<AutoValue<Length>>{0}), DeclaredEdges<AutoValue<Length>>) \
+    mc_styleProperty(JustifyContent, Justification, false, Justification::FlexStart, StyleValue<Justification>) \
+    mc_styleProperty(JustifyItems, Justification, false, Justification::Stretch, StyleValue<Justification>) \
+    mc_styleProperty(JustifySelf, AutoValue<Justification>, false, Auto, StyleValue<AutoValue<Justification>>) \
+    mc_styleProperty(LayoutDirection, LayoutDirections, true, LayoutDirections::LTR, StyleValue<LayoutDirections>)
     
 #define mc_propertyEdges \
     mc_stylePropertyEdge(padding, Length) \
-    mc_stylePropertyEdge(margin, AutoValue<Length>)
+    mc_stylePropertyEdge(margin, AutoValue<Length>) \
+    mc_stylePropertyEdge(border, Length)
+    

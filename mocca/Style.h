@@ -13,7 +13,7 @@ namespace mocca
 		Initial
 	};
 
-	enum class AlignContent : char
+	enum class Alignment : char
 	{
 		FlexStart,
 		Center,
@@ -22,16 +22,51 @@ namespace mocca
 		Baseline,
 		SpaceBetween,
 		SpaceAround,
-		SpaceEvenly
+		SpaceEvenly,
+		Start,
+		End
 	};
 
-	enum class Alignment : char
+	enum class DisplayType : char
+	{
+		Flex,
+		None,
+		Contents,
+		Grid
+	};
+
+	enum class FlexDirections : char
+	{
+		Column,
+		ColumnReverse,
+		Row,
+		RowReverse
+	};
+
+	enum class WrappingType : char
+	{
+		None,
+		Wrap,
+		WrapReverse
+	};
+
+	enum class Justification : char
 	{
 		FlexStart,
 		Center,
 		FlexEnd,
+		SpaceBetween,
+		SpaceAround,
+		SpaceEvenly,
 		Stretch,
-		Baseline
+		Start,
+		End
+	};
+
+	enum class LayoutDirections : char
+	{
+		LTR,
+		RTL
 	};
 
 	template <typename T> struct StyleValue
@@ -150,6 +185,12 @@ namespace mocca
 		T Bottom;
 	};
 
+	template <typename T> struct Axes
+	{
+		T Horizontal;
+		T Vertical;
+	};
+
 	template <typename T> struct DeclaredEdges
 	{
 		StyleValue<T> Left;
@@ -176,6 +217,32 @@ namespace mocca
 			);
 
 			return edges;
+		}
+	};
+
+	template <typename T> struct DeclaredAxes
+	{
+		StyleValue<T> Horizontal;
+		StyleValue<T> Vertical;
+
+		template <typename Prop>
+		auto Resolve(const Axes<T>& parentValue, const Prop& prop) const
+			-> Axes<T>
+		{
+			Axes<T> axes;
+
+			axes.Horizontal = Horizontal.Resolve(
+				parentValue.Horizontal,
+				prop.DefaultValue.Horizontal,
+				prop
+			);
+			axes.Vertical = Vertical.Resolve(
+				parentValue.Vertical,
+				prop.DefaultValue.Vertical,
+				prop
+			);
+
+			return axes;
 		}
 	};
 
@@ -209,6 +276,12 @@ namespace mocca
 	using SizingValue = std::variant<
 		Length,
 		styles::detail::AutoTag,
+		styles::detail::MaxContentTag,
+		styles::detail::FitContentTag,
+		styles::detail::StretchTag>;
+
+	using SizingValueNoAuto = std::variant<
+		Length,
 		styles::detail::MaxContentTag,
 		styles::detail::FitContentTag,
 		styles::detail::StretchTag>;

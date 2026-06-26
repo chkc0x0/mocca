@@ -27,12 +27,14 @@ auto buildExampleTree() -> Element
 	return box(
 		BoxDescriptor{
 			.Style =
-				{.Width = {px(200)},
-				 .Height = {px(500)},
-				 .Margin = margin(Auto),
-				 .AlignContent = StyleKeyword::Inherit,
-				 .AlignItems = Alignment::Stretch,
-				 .AlignSelf = {Auto}},
+				{
+					.Width = {px(200)},
+					.Height = {px(500)},
+					.Margin = margin(Auto),
+					.AlignContent = StyleKeyword::Inherit,
+					.AlignItems = Alignment::Stretch,
+					.AlignSelf = {Auto},
+				},
 			.Children = {
 				box(BoxDescriptor{
 					.Style = {.Width = {percent(50)}, .Height = {px(50)}},
@@ -76,6 +78,8 @@ auto main(int argc, const char** argv) -> int
 		 .Title = "Sandbox",
 		 .Root = buildExampleTree}
 	);
+
+	app.Tick(0);
 
 	while (app.IsRunning())
 	{

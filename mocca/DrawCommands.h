@@ -9,7 +9,7 @@ namespace mocca::cmds
 	{
 	public:
 		Rectangle Rect;
-		Color Color;
+		struct Color Color;
 	};
 
 	struct DrawTextCmd
@@ -17,7 +17,7 @@ namespace mocca::cmds
 	public:
 		Vector2 Position;
 		std::string Content;
-		Color Color;
+		struct Color Color;
 	};
 
 	using DrawCommand = std::variant<DrawRectCmd, DrawTextCmd>;

@@ -49,7 +49,7 @@ namespace mocca
 			}
 
 			it->get()->Update();
-			_context._currentSurface = nullptr;
+			// _context._currentSurface = nullptr;
 
 			++it;
 		}
