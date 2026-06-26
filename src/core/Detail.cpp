@@ -138,17 +138,13 @@ namespace mocca::detail
 
 		if (IsBox())
 		{
-			canvas.DrawRect(x, y, w, h, {.R = 200, .G = 200, .B = 200});
+			canvas.DrawRect(x, y, w, h, {200, 200, 200});
 		}
 
 		if (IsText())
 		{
-			canvas.DrawText(
-				x,
-				y,
-				std::get<TextElement>(Kind).Content,
-				{.R = 0, .G = 0, .B = 0}
-			);
+			canvas
+				.DrawText(x, y, std::get<TextElement>(Kind).Content, {0, 0, 0});
 		}
 
 		for (auto& children : Children)

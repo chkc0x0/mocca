@@ -369,9 +369,9 @@ namespace mocca::styles::detail::applying
 		}
 
 		YGNodeStyleSetBorder(ref, YGEdgeLeft, value.Left.Value);
-		YGNodeStyleSetBorder(ref, YGEdgeLeft, value.Top.Value);
-		YGNodeStyleSetBorder(ref, YGEdgeLeft, value.Right.Value);
-		YGNodeStyleSetBorder(ref, YGEdgeLeft, value.Bottom.Value);
+		YGNodeStyleSetBorder(ref, YGEdgeTop, value.Top.Value);
+		YGNodeStyleSetBorder(ref, YGEdgeRight, value.Right.Value);
+		YGNodeStyleSetBorder(ref, YGEdgeBottom, value.Bottom.Value);
 	}
 
 	void applyFlexBasis(YGNodeRef ref, SizingValue value)
