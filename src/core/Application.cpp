@@ -1,5 +1,7 @@
 #include "Application.h"
+#include "Detail.h"
 #include "Logger.h"
+#include <utility>
 
 namespace mocca
 {
@@ -7,8 +9,10 @@ namespace mocca
 	{
 		if (main != nullptr)
 		{
-			mc_error(ErrorCode::InvalidState,
-					 "an application instance already exists");
+			mc_error(
+				ErrorCode::InvalidState,
+				"an application instance already exists"
+			);
 			return;
 		}
 
@@ -20,7 +24,8 @@ namespace mocca
 			{
 				_context._store.InsertDirty(id);
 				_context._currentSurface->MarkDirty();
-			});
+			}
+		);
 	}
 
 	Application::~Application()
@@ -56,6 +61,40 @@ namespace mocca
 
 		_context._store.ClearDirty();
 		_context._store.FlushEffects();
+	}
+
+	void Application::On(
+		std::string_view event,
+		std::function<void(void*, void*)> cb,
+		void* userData
+	)
+	{
+		_events[detail::hashString(event)].push_back(
+			{.Callback = std::move(cb), .User = userData}
+		);
+	}
+
+	void Application::EmitEvent(std::string_view event, void* data)
+	{
+		if (!_events.contains(detail::hashString(event)))
+		{
+			return;
+		}
+
+		for (auto& cb : _events[detail::hashString(event)])
+		{
+			cb.Callback(data, cb.User);
+		}
+	}
+
+	void Application::RemoveCallbacks(std::string_view event)
+	{
+		if (!_events.contains(detail::hashString(event)))
+		{
+			return;
+		}
+
+		_events[detail::hashString(event)].clear();
 	}
 
 	constexpr auto ApplicationID::ValidateID(std::string_view id) -> bool

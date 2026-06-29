@@ -56,6 +56,14 @@ namespace mocca
 			return ptr;
 		}
 
+		void On(
+			std::string_view event,
+			std::function<void(void*, void*)> cb,
+			void* userData = nullptr
+		);
+		void EmitEvent(std::string_view event, void* data = nullptr);
+		void RemoveCallbacks(std::string_view event);
+
 		void Print();
 		auto IsRunning() -> bool
 		{
@@ -78,6 +86,16 @@ namespace mocca
 		// this is quite hacky and it'll probably break someday,
 		// assumes nothing holds a ref to surfaces for >1 frame
 		std::vector<std::unique_ptr<Surface>> _deadSurfaces;
+
+		struct EventCallback
+		{
+		public:
+			// void(void* data, void* user)
+			std::function<void(void*, void*)> Callback;
+			void* User;
+		};
+
+		std::unordered_map<uint64_t, std::vector<EventCallback>> _events;
 
 		Context _context;
 		friend auto getCtx() -> Context*;

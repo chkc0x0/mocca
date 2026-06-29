@@ -17,6 +17,17 @@ namespace mocca::detail
 		{ a == b } -> std::convertible_to<bool>;
 	};
 
+	constexpr auto hashString(std::string_view str) -> uint64_t
+	{
+		uint64_t hash = 14695981039346656037ULL;
+		for (char c : str)
+		{
+			hash ^= static_cast<uint8_t>(c);
+			hash *= 1099511628211ULL;
+		}
+		return hash;
+	}
+
 	struct Node
 	{
 		Node();
@@ -101,6 +112,7 @@ namespace mocca::detail
 		std::uint32_t Hook;
 		auto operator==(const HookKey&) const -> bool = default;
 	};
+
 	struct HookKeyHash
 	{
 		auto operator()(const HookKey& k) const -> std::size_t

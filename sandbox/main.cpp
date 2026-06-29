@@ -46,10 +46,13 @@ auto buildExampleTree() -> Element
 				}),
 				box({
 					.Style =
-						{.Width = {Auto},
-						 .Height = {px(100)},
-						 .Padding = padding(px(5)),
-						 .Margin = margin(px(5))},
+						{
+							.Width = {Auto},
+							.Height = {px(100)},
+							.Padding = padding(px(5)),
+							.Margin = margin(px(5)),
+							.AlignItems = Alignment::FlexStart,
+						},
 					.Children =
 						{
 							text({.Key = "a", .Content = "Item A"}),
@@ -70,9 +73,9 @@ void logCallback(const LogMessage& message, void* user)
 auto main(int argc, const char** argv) -> int
 {
 	auto app = Application("com.mocca.sandbox");
-	mocca::Logger::SetLogCallback(logCallback, 0);
+	mocca::Logger::SetLogCallback(logCallback);
 
-	auto* window = app.RegisterSurface<Surface>(
+	auto* window = app.RegisterSurface<RaylibWindow>(
 		{.Width = 800,
 		 .Height = 600,
 		 .Title = "Sandbox",
@@ -81,8 +84,10 @@ auto main(int argc, const char** argv) -> int
 
 	app.Tick(0);
 
-	mocca::Color color = mocca::Color::Oklch(0.55, 0.18, 240.0);
-	mc_info("{:08x}", color.ToRgba());
+	while (app.IsRunning())
+	{
+		app.Tick(0);
+	}
 
 	return 0;
 }

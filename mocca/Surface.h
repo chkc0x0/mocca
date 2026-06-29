@@ -54,6 +54,21 @@ namespace mocca
 			return _canvas.Commands();
 		}
 
+		[[nodiscard]] auto GetDescriptor() const -> SurfaceDesc
+		{
+			return _desc;
+		}
+
+		void UserHandle(void* handle)
+		{
+			_userHandle = handle;
+		}
+
+		auto UserHandle() -> void*
+		{
+			return _userHandle;
+		}
+
 		[[nodiscard]] auto IsDirty() const -> bool
 		{
 			return _dirty;
@@ -74,5 +89,6 @@ namespace mocca
 		std::unique_ptr<detail::Node> _root = nullptr;
 		bool _dirty = true;
 		Canvas _canvas;
+		void* _userHandle;
 	};
 }
