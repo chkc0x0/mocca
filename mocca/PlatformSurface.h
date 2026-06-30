@@ -11,7 +11,7 @@ namespace mocca
 		virtual ~PlatformSurface() = default;
 
 		virtual void CollectEvents(InputBatch& batch) = 0;
-		virtual bool ShouldClose() = 0;
+		virtual auto ShouldClose() -> bool = 0;
 		virtual void Submit(const std::vector<cmds::DrawCommand>& commands) = 0;
 	};
 }

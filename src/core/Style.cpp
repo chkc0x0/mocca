@@ -522,4 +522,9 @@ namespace mocca::styles::detail::applying
 	{
 		YGNodeStyleSetDirection(ref, (YGDirection)((int)value + 1));
 	}
+
+	void applyOverflow(YGNodeRef ref, OverflowType value)
+	{
+		YGNodeStyleSetOverflow(ref, (YGOverflow)((int)value));
+	}
 }

@@ -312,7 +312,6 @@ namespace mocca::detail
 			auto it = _slots.find(key);
 			if (it == _slots.end())
 			{
-				// single insert, keep the returned iterator (no double-lookup)
 				it = _slots.emplace(key, std::any(std::move(initial))).first;
 			}
 			return any_cast<T&>(it->second);

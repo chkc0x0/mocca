@@ -363,7 +363,9 @@ namespace mocca
 			if (s == 0.0)
 			{
 				int gray = static_cast<int>(std::round(l * 255.0));
-				uint8_t alpha = static_cast<uint8_t>(std::max(0.0, std::min(255.0, floor((a * 255.0) + 0.5))));
+				uint8_t alpha = static_cast<uint8_t>(
+					std::max(0.0, std::min(255.0, floor((a * 255.0) + 0.5)))
+				);
 				return Color{
 					static_cast<uint8_t>(gray),
 					static_cast<uint8_t>(gray),
@@ -424,7 +426,9 @@ namespace mocca
 			int g = static_cast<int>(std::round((g1 + m) * 255.0));
 			int b = static_cast<int>(std::round((b1 + m) * 255.0));
 
-			uint8_t alpha = static_cast<uint8_t>(std::max(0.0, std::min(255.0, floor((a * 255.0) + 0.5))));
+			uint8_t alpha = static_cast<uint8_t>(
+				std::max(0.0, std::min(255.0, floor((a * 255.0) + 0.5)))
+			);
 			return Color{
 				static_cast<uint8_t>(std::clamp(r, 0, 255)),
 				static_cast<uint8_t>(std::clamp(g, 0, 255)),
@@ -649,8 +653,29 @@ namespace mocca
 
 	struct Rectangle
 	{
-		Vector2 Position;
+		float X;
+		float Y;
 		float Width;
 		float Height;
+
+		[[nodiscard]] auto Intersect(const Rectangle& other) const -> Rectangle
+		{
+			float x1 = std::max(X, other.X);
+			float y1 = std::max(Y, other.Y);
+			float x2 = std::min(X + Width, other.X + other.Width);
+			float y2 = std::min(Y + Height, other.Y + other.Height);
+
+			if (x2 < x1 || y2 < y1)
+			{
+				return {.X = x1, .Y = y1, .Width = 0, .Height = 0};
+			}
+
+			return {.X = x1, .Y = y1, .Width = x2 - x1, .Height = y2 - y1};
+		}
+
+		[[nodiscard]] auto IsEmpty() const -> bool
+		{
+			return Width <= 0 || Height <= 0;
+		}
 	};
 }

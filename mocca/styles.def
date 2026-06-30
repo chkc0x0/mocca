@@ -32,7 +32,8 @@
     mc_styleProperty(JustifyContent, Justification, false, Justification::FlexStart, StyleValue<Justification>) \
     mc_styleProperty(JustifyItems, Justification, false, Justification::Stretch, StyleValue<Justification>) \
     mc_styleProperty(JustifySelf, AutoValue<Justification>, false, Auto, StyleValue<AutoValue<Justification>>) \
-    mc_styleProperty(LayoutDirection, LayoutDirections, true, LayoutDirections::LTR, StyleValue<LayoutDirections>)
+    mc_styleProperty(LayoutDirection, LayoutDirections, true, LayoutDirections::LTR, StyleValue<LayoutDirections>) \
+    mc_styleProperty(Overflow, OverflowType, true, OverflowType::Visible, StyleValue<OverflowType>)
 
 #define mc_renderProperties \
     mc_styleProperty(BackgroundColor, Color, false, (SizingValue{Auto}), StyleValue<Color>)

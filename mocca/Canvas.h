@@ -11,7 +11,7 @@ namespace mocca
 		void DrawRect(float x, float y, float w, float h, Color color)
 		{
 			_commands.emplace_back(cmds::DrawRectCmd{
-				.Rect = {.Position = {.X = x, .Y = y}, .Width = w, .Height = h},
+				.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
 				.Color = color});
 		}
 

@@ -69,6 +69,13 @@ namespace mocca
 		RTL
 	};
 
+	enum class OverflowType : char
+	{
+		Visible,
+		Hidden,
+		Scroll
+	};
+
 	template <typename T> struct StyleValue
 	{
 	public:

@@ -83,6 +83,8 @@ namespace mocca
 				surface->GetPlatform()->Submit(surface->GetDrawData());
 			}
 
+			_context._currentSurface = nullptr;
+
 			++it;
 		}
 

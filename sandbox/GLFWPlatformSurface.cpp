@@ -191,8 +191,8 @@ void GLFWPlatformSurface::Submit(
 					nvgBeginPath(_vg);
 					nvgRect(
 						_vg,
-						c.Rect.Position.X,
-						c.Rect.Position.Y,
+						c.Rect.X,
+						c.Rect.Y,
 						c.Rect.Width,
 						c.Rect.Height
 					);
