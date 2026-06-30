@@ -3,6 +3,7 @@
 #include "StyleHelpers.h"
 #include "sandbox/GLFWPlatformSurface.h"
 #include <iostream>
+#include "GLFW/glfw3.h"
 
 using namespace mocca;
 
@@ -76,6 +77,15 @@ auto main(int argc, const char** argv) -> int
 		{
 			auto* surface = (Surface*)data;
 			surface->SetPlatform<GLFWPlatformSurface>();
+			return true;
+		}
+	);
+
+	app.On(
+		ApplicationEvent::Poll,
+		[](auto* data, auto* user) -> auto
+		{
+			glfwPollEvents();
 			return true;
 		}
 	);

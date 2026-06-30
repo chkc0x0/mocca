@@ -1,7 +1,6 @@
 #include "GLFWPlatformSurface.h"
 #include "Logger.h"
 #include "Math.h"
-#include <cassert>
 
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
@@ -19,17 +18,27 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 	const mocca::SurfaceDesc& desc
 )
 {
-	if (glfwInitialized++ == 0)
+	(void)surface;
+
+	if (glfwInitialized == 0)
 	{
-		glfwInit();
+		if (glfwInit() == GLFW_FALSE)
+		{
+			mc_error(
+				mocca::ErrorCode::InvalidState,
+				"failed to initialize GLFW"
+			);
+			return;
+		}
 	}
+	++glfwInitialized;
+	_glfwRefHeld = true;
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-	_surface = surface;
 	_window = glfwCreateWindow(
 		desc.Width,
 		desc.Height,
@@ -37,13 +46,36 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 		nullptr,
 		nullptr
 	);
+	if (_window == nullptr)
+	{
+		mc_error(
+			mocca::ErrorCode::InvalidState,
+			"failed to create GLFW window"
+		);
+		return;
+	}
+
 	glfwMakeContextCurrent(_window);
 	glfwSwapInterval(1);
 
-	gladLoadGL((GLADloadfunc)glfwGetProcAddress);
+	if (gladLoadGL((GLADloadfunc)glfwGetProcAddress) == 0)
+	{
+		mc_error(
+			mocca::ErrorCode::InvalidState,
+			"failed to initialize OpenGL loader"
+		);
+		return;
+	}
 
 	_vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
-	assert(_vg != nullptr);
+	if (_vg == nullptr)
+	{
+		mc_error(
+			mocca::ErrorCode::InvalidState,
+			"failed to create NanoVG context"
+		);
+		return;
+	}
 
 	if (nvgCreateFont(_vg, "sans", "../sandbox/Inter.ttf") == -1)
 	{
@@ -67,24 +99,50 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 
 GLFWPlatformSurface::~GLFWPlatformSurface()
 {
-	nvgDeleteGL3(_vg);
-	glfwDestroyWindow(_window);
-	if (--glfwInitialized == 0)
+	if (_window != nullptr)
+	{
+		glfwMakeContextCurrent(_window);
+	}
+
+	if (_vg != nullptr)
+	{
+		nvgDeleteGL3(_vg);
+		_vg = nullptr;
+	}
+
+	if (_window != nullptr)
+	{
+		glfwMakeContextCurrent(nullptr);
+		glfwDestroyWindow(_window);
+		_window = nullptr;
+	}
+
+	if (_glfwRefHeld && --glfwInitialized == 0)
 	{
 		glfwTerminate();
 	}
 }
 
-void GLFWPlatformSurface::PollEvents(mocca::InputBatch& batch)
+void GLFWPlatformSurface::CollectEvents(mocca::InputBatch& batch)
 {
-	glfwPollEvents();
+	if (_window == nullptr || _vg == nullptr)
+	{
+		_pending.Surface.push_back({
+			.EventType = mocca::SurfaceEvent::Type::Close,
+		});
+	}
+
 	batch = std::move(_pending);
 	_pending.Clear();
-	_windowShouldClose = false;
 }
 
 auto GLFWPlatformSurface::ShouldClose() -> bool
 {
+	if (_window == nullptr)
+	{
+		return true;
+	}
+
 	return glfwWindowShouldClose(_window) != 0;
 }
 
@@ -92,6 +150,11 @@ void GLFWPlatformSurface::Submit(
 	const std::vector<mocca::cmds::DrawCommand>& commands
 )
 {
+	if (_window == nullptr || _vg == nullptr)
+	{
+		return;
+	}
+
 	glfwMakeContextCurrent(_window);
 
 	int w;
@@ -261,7 +324,7 @@ void GLFWPlatformSurface::OnWindowResize(
 	auto* self = static_cast<GLFWPlatformSurface*>(
 		glfwGetWindowUserPointer(window)
 	);
-	self->_size = {width, height};
+	self->_size = {.X=width, .Y=height};
 	self->_pending.Surface.push_back({
 		.EventType = mocca::SurfaceEvent::Type::Resize,
 		.Width = width,

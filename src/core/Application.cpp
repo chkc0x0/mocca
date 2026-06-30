@@ -38,33 +38,27 @@ namespace mocca
 	{
 		_deadSurfaces.clear();
 
+		EmitEvent(ApplicationEvent::Poll, nullptr);
+
 		for (auto it = _surfaces.begin(); it != _surfaces.end();)
 		{
 			auto* surface = it->get();
+
+			if (surface->IsPlatformBacked())
+			{
+				InputBatch batch;
+				surface->GetPlatform()->CollectEvents(batch);
+				surface->ProcessInput(batch);
+			}
+
 			if (surface->ShouldClose())
 			{
 				_deadSurfaces.push_back(std::move(*it));
-				_surfaces.erase(it);
+				it = _surfaces.erase(it);
 				continue;
 			}
 
 			_context._currentSurface = surface;
-
-			InputBatch batch;
-
-			if (surface->IsPlatformBacked())
-			{
-				surface->GetPlatform()->PollEvents(batch);
-				if (surface->GetPlatform()->ShouldClose() &&
-					EmitEvent(ApplicationEvent::SurfaceClosed, surface))
-				{
-					surface->RequestClose();
-					++it;
-					continue;
-				}
-			}
-
-			surface->ProcessInput(batch);
 
 			if (surface->IsDirty())
 			{
@@ -244,7 +238,7 @@ namespace mocca
 	{
 		mc_info("[Application id={}]", GetAppID().GetCompoundID());
 
-		for (auto& surface : _surfaces)
+		for (const auto& surface : _surfaces)
 		{
 			surface->Print(1);
 		}

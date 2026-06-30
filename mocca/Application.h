@@ -8,6 +8,10 @@ namespace mocca
 {
 	enum class ApplicationEvent : uint64_t
 	{
+		// app.poll (data = nullptr)
+		// emitted every tick before input collection
+		Poll = 0x2dc706262aa3f105,
+
 		// surface.created (data = Surface*)
 		// called before adding surface to surface list
 		SurfaceCreated = 0x1ef43f299f709040,

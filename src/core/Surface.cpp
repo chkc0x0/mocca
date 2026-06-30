@@ -1,5 +1,6 @@
 #include "Surface.h"
 #include "Application.h"
+#include "InputTypes.h"
 #include "Logger.h"
 #include "Style.h"
 #include "yoga/YGNode.h"
@@ -13,7 +14,7 @@ namespace mocca
 			// don't know how this could happen but wtv
 			return;
 		}
-		
+
 		Application::main->EmitEvent(ApplicationEvent::SurfaceDestroyed, this);
 	}
 
@@ -53,6 +54,15 @@ namespace mocca
 
 	void Surface::ProcessInput(const InputBatch& batch)
 	{
+		for (const auto& ev : batch.Surface)
+		{
+			if (ev.EventType == SurfaceEvent::Type::Close &&
+				Application::main
+					->EmitEvent(ApplicationEvent::SurfaceClosed, this))
+			{
+				RequestClose();
+			}
+		}
 		// TODO: hit-test + dispatch
 		(void)batch;
 	}

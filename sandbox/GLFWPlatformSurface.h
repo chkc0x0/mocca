@@ -22,7 +22,7 @@ public:
 	);
 	~GLFWPlatformSurface() override;
 
-	void PollEvents(mocca::InputBatch& batch) override;
+	void CollectEvents(mocca::InputBatch& batch) override;
 	auto ShouldClose() -> bool override;
 	void Submit(
 		const std::vector<mocca::cmds::DrawCommand>& commands
@@ -45,13 +45,8 @@ private:
 
 	GLFWwindow* _window = nullptr;
 	NVGcontext* _vg = nullptr;
-	mocca::IVec2 _size = {.X=0, .Y=0};
-	mocca::Surface* _surface;
+	mocca::IVec2 _size = {.X = 0, .Y = 0};
+	bool _glfwRefHeld = false;
 
 	mocca::InputBatch _pending;
-	double _lastX = 0;
-	double _lastY = 0;
-	bool _mouseDown[8] = {};
-	bool _keysDown[512] = {};
-	bool _windowShouldClose = false;
 };

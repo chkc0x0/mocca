@@ -10,7 +10,7 @@ namespace mocca
 	public:
 		virtual ~PlatformSurface() = default;
 
-		virtual void PollEvents(InputBatch& batch) = 0;
+		virtual void CollectEvents(InputBatch& batch) = 0;
 		virtual bool ShouldClose() = 0;
 		virtual void Submit(const std::vector<cmds::DrawCommand>& commands) = 0;
 	};
