@@ -3,10 +3,24 @@
 #include "Logger.h"
 #include "Surface.h"
 #include <string>
-#include <utility>
 
 namespace mocca
 {
+	enum class ApplicationEvent : uint64_t
+	{
+		// surface.created (data = Surface*)
+		// called before adding surface to surface list
+		SurfaceCreated = 0x1ef43f299f709040,
+
+		// surface.closed (data = Surface*) / cancellable
+		// called on RequestClose()
+		SurfaceClosed = 0xe932d1695758b080,
+
+		// surface.destroyed (data = Surface*)
+		// called on ~Surface
+		SurfaceDestroyed = 0xf9580567ec3be68b
+	};
+
 	struct ApplicationID
 	{
 	public:
@@ -47,24 +61,27 @@ namespace mocca
 
 		static void SetDefaultLogCallback();
 
-		template <typename T, typename... Args>
-		auto RegisterSurface(const SurfaceDesc& desc, Args&&... args) -> T*
-		{
-			auto surface = std::make_unique<T>(desc, args...);
-			auto ptr = surface.get();
-			_surfaces.push_back(std::move(surface));
-			return ptr;
-		}
+		auto RegisterSurface(const SurfaceDesc& desc) -> Surface*;
+
+		// return false in order to stop callback invocations
+		// and/or reject an event (e.g: surface.closed)
+		void On(
+			ApplicationEvent event,
+			std::function<bool(void*, void*)> cb,
+			void* userData = nullptr
+		);
 
 		void On(
 			std::string_view event,
-			std::function<void(void*, void*)> cb,
+			std::function<bool(void*, void*)> cb,
 			void* userData = nullptr
 		);
-		void EmitEvent(std::string_view event, void* data = nullptr);
+
+		auto EmitEvent(ApplicationEvent, void* data = nullptr) -> bool;
+		auto EmitEvent(std::string_view event, void* data = nullptr) -> bool;
 		void RemoveCallbacks(std::string_view event);
 
-		void Print();
+		void Print() const;
 		auto IsRunning() -> bool
 		{
 			return _surfaces.size() != 0;
@@ -91,7 +108,7 @@ namespace mocca
 		{
 		public:
 			// void(void* data, void* user)
-			std::function<void(void*, void*)> Callback;
+			std::function<bool(void*, void*)> Callback;
 			void* User;
 		};
 

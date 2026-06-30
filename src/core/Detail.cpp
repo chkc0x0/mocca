@@ -153,7 +153,7 @@ namespace mocca::detail
 		}
 	}
 
-	void Node::Print(int depth)
+	void Node::Print(int depth) const
 	{
 		std::string indent(static_cast<size_t>(depth * 2), ' ');
 		auto kind = NodeKind();

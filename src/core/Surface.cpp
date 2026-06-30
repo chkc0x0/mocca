@@ -1,10 +1,22 @@
 #include "Surface.h"
+#include "Application.h"
 #include "Logger.h"
 #include "Style.h"
 #include "yoga/YGNode.h"
 
 namespace mocca
 {
+	Surface::~Surface()
+	{
+		if (Application::main == nullptr)
+		{
+			// don't know how this could happen but wtv
+			return;
+		}
+		
+		Application::main->EmitEvent(ApplicationEvent::SurfaceDestroyed, this);
+	}
+
 	void Surface::Tick(double dt)
 	{
 		auto tree = Element::Render(_desc.Root, 0);
@@ -39,7 +51,13 @@ namespace mocca
 		_dirty = false;
 	}
 
-	void Surface::Print(int depth)
+	void Surface::ProcessInput(const InputBatch& batch)
+	{
+		// TODO: hit-test + dispatch
+		(void)batch;
+	}
+
+	void Surface::Print(int depth) const
 	{
 		std::string indent(static_cast<size_t>(depth * 2), ' ');
 

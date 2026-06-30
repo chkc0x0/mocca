@@ -2,6 +2,8 @@
 #include "Canvas.h"
 #include "Detail.h"
 #include "Element.h"
+#include "InputTypes.h"
+#include "PlatformSurface.h"
 #include <memory>
 
 namespace mocca
@@ -9,7 +11,8 @@ namespace mocca
 	enum class SurfaceFlags : char
 	{
 		None = 1 << 0,
-		External = 1 << 1
+		External = 1 << 1,
+		AutomaticSize = 1 << 2
 	};
 
 	struct SurfaceDesc
@@ -31,18 +34,11 @@ namespace mocca
 			_desc = desc;
 		}
 
-		virtual ~Surface() = default;
+		~Surface();
 
 		void Tick(double dt);
 		void Paint();
-		void Print(int depth = 0);
-
-		virtual void Update() {};
-
-		virtual auto IsRunning() -> bool
-		{
-			return true;
-		}
+		void Print(int depth = 0) const;
 
 		void MarkDirty()
 		{
@@ -59,14 +55,42 @@ namespace mocca
 			return _desc;
 		}
 
-		void UserHandle(void* handle)
+		template<typename T>
+		void SetPlatform()
 		{
-			_userHandle = handle;
+			_platform = std::make_unique<T>(this, GetDescriptor());
 		}
 
-		auto UserHandle() -> void*
+		[[nodiscard]] auto GetPlatform() const -> PlatformSurface*
 		{
-			return _userHandle;
+			return _platform.get();
+		}
+
+		[[nodiscard]] auto IsPlatformBacked() const -> bool
+		{
+			return _platform != nullptr;
+		}
+
+		[[nodiscard]] auto IsExternal() const -> bool
+		{
+			return (static_cast<int>(_desc.Flags) &
+				   static_cast<int>(SurfaceFlags::External)) != 0;
+		}
+
+		[[nodiscard]] auto IsAutomaticSize() const -> bool
+		{
+			return (static_cast<int>(_desc.Flags) &
+				   static_cast<int>(SurfaceFlags::AutomaticSize)) != 0;
+		}
+
+		void RequestClose()
+		{
+			_shouldClose = true;
+		}
+
+		[[nodiscard]] auto ShouldClose() const -> bool
+		{
+			return _shouldClose;
 		}
 
 		[[nodiscard]] auto IsDirty() const -> bool
@@ -79,16 +103,14 @@ namespace mocca
 			return _root.get();
 		}
 
-		[[nodiscard]] auto IsExternal() const -> bool
-		{
-			return _desc.Flags == SurfaceFlags::External;
-		}
+		void ProcessInput(const InputBatch& batch);
 
 	private:
 		SurfaceDesc _desc;
+		std::unique_ptr<PlatformSurface> _platform;
 		std::unique_ptr<detail::Node> _root = nullptr;
 		bool _dirty = true;
+		bool _shouldClose = false;
 		Canvas _canvas;
-		void* _userHandle;
 	};
 }

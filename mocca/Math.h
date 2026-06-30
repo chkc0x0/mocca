@@ -641,6 +641,12 @@ namespace mocca
 		float Y;
 	};
 
+	struct IVec2
+	{
+		int X;
+		int Y;
+	};
+
 	struct Rectangle
 	{
 		Vector2 Position;

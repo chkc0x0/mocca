@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Detail.h"
 #include "Logger.h"
+#include "PlatformSurface.h"
 #include <utility>
 
 namespace mocca
@@ -39,22 +40,42 @@ namespace mocca
 
 		for (auto it = _surfaces.begin(); it != _surfaces.end();)
 		{
-			if (!it->get()->IsRunning())
+			auto* surface = it->get();
+			if (surface->ShouldClose())
 			{
 				_deadSurfaces.push_back(std::move(*it));
 				_surfaces.erase(it);
 				continue;
 			}
 
-			_context._currentSurface = it->get();
-			if (it->get()->IsDirty())
+			_context._currentSurface = surface;
+
+			InputBatch batch;
+
+			if (surface->IsPlatformBacked())
 			{
-				it->get()->Tick(dt);
-				it->get()->Paint();
+				surface->GetPlatform()->PollEvents(batch);
+				if (surface->GetPlatform()->ShouldClose() &&
+					EmitEvent(ApplicationEvent::SurfaceClosed, surface))
+				{
+					surface->RequestClose();
+					++it;
+					continue;
+				}
 			}
 
-			it->get()->Update();
-			// _context._currentSurface = nullptr;
+			surface->ProcessInput(batch);
+
+			if (surface->IsDirty())
+			{
+				surface->Tick(dt);
+				surface->Paint();
+			}
+
+			if (surface->IsPlatformBacked())
+			{
+				surface->GetPlatform()->Submit(surface->GetDrawData());
+			}
 
 			++it;
 		}
@@ -65,7 +86,7 @@ namespace mocca
 
 	void Application::On(
 		std::string_view event,
-		std::function<void(void*, void*)> cb,
+		std::function<bool(void*, void*)> cb,
 		void* userData
 	)
 	{
@@ -74,17 +95,47 @@ namespace mocca
 		);
 	}
 
-	void Application::EmitEvent(std::string_view event, void* data)
+	void Application::On(
+		ApplicationEvent event,
+		std::function<bool(void*, void*)> cb,
+		void* userData
+	)
+	{
+		_events[(uint64_t)event].push_back(
+			{.Callback = std::move(cb), .User = userData}
+		);
+	}
+
+	auto Application::EmitEvent(std::string_view event, void* data) -> bool
 	{
 		if (!_events.contains(detail::hashString(event)))
 		{
-			return;
+			return true;
 		}
 
-		for (auto& cb : _events[detail::hashString(event)])
+		return std::ranges::all_of(
+			_events[detail::hashString(event)],
+			[data](const auto& cb) -> auto
+			{ return cb.Callback(data, cb.User); }
+		);
+
+		return true;
+	}
+
+	auto Application::EmitEvent(ApplicationEvent event, void* data) -> bool
+	{
+		if (!_events.contains((uint64_t)event))
 		{
-			cb.Callback(data, cb.User);
+			return true;
 		}
+
+		return std::ranges::all_of(
+			_events[(uint64_t)event],
+			[data](const auto& cb) -> auto
+			{ return cb.Callback(data, cb.User); }
+		);
+
+		return true;
 	}
 
 	void Application::RemoveCallbacks(std::string_view event)
@@ -95,6 +146,15 @@ namespace mocca
 		}
 
 		_events[detail::hashString(event)].clear();
+	}
+
+	auto Application::RegisterSurface(const SurfaceDesc& desc) -> Surface*
+	{
+		auto surface = std::make_unique<Surface>(desc);
+		auto* ptr = surface.get();
+		EmitEvent(ApplicationEvent::SurfaceCreated, ptr);
+		_surfaces.push_back(std::move(surface));
+		return ptr;
 	}
 
 	constexpr auto ApplicationID::ValidateID(std::string_view id) -> bool
@@ -180,7 +240,7 @@ namespace mocca
 			   std::string(Name);
 	}
 
-	void Application::Print()
+	void Application::Print() const
 	{
 		mc_info("[Application id={}]", GetAppID().GetCompoundID());
 

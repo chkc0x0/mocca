@@ -102,7 +102,7 @@ namespace mocca::detail
 			const Element* newElement
 		) -> std::unique_ptr<Node>;
 
-		void Print(int depth = 0);
+		void Print(int depth = 0) const;
 		void Paint(Canvas& canvas);
 	};
 

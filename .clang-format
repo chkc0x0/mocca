@@ -8,7 +8,7 @@ QualifierAlignment: Left
 ReferenceAlignment: Left
 ReflowComments: false
 ColumnLimit: 80
-SortIncludes: CaseSensitive
+SortIncludes: false
 IndentPPDirectives: AfterHash
 AlignOperands: Align
 BreakBeforeBraces: Allman

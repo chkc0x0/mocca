@@ -1,21 +1,16 @@
 #include "Application.h"
 #include "Element.h"
 #include "StyleHelpers.h"
-#include "sandbox/RaylibWindow.h"
+#include "sandbox/GLFWPlatformSurface.h"
 #include <iostream>
 
 using namespace mocca;
-
-std::function<void(int)> setter;
 
 auto Counter(int start) -> Element
 {
 	auto [count, setCount] = useState(start);
 
-	setter = setCount;
-
-	useEffect([]() -> void { // do something
-	});
+	useEffect([]() -> void {});
 
 	return text(std::format("Counter: {}", count));
 }
@@ -75,12 +70,29 @@ auto main(int argc, const char** argv) -> int
 	auto app = Application("com.mocca.sandbox");
 	mocca::Logger::SetLogCallback(logCallback);
 
-	auto* window = app.RegisterSurface<RaylibWindow>(
-		{.Width = 800,
-		 .Height = 600,
-		 .Title = "Sandbox",
-		 .Root = buildExampleTree}
+	app.On(
+		ApplicationEvent::SurfaceCreated,
+		[](auto* data, auto* user) -> auto
+		{
+			auto* surface = (Surface*)data;
+			surface->SetPlatform<GLFWPlatformSurface>();
+			return true;
+		}
 	);
+
+	app.RegisterSurface({
+		.Width = 800,
+		.Height = 600,
+		.Title = "Sandbox",
+		.Root = buildExampleTree,
+	});
+
+	app.RegisterSurface({
+		.Width = 800,
+		.Height = 600,
+		.Title = "Sandbox2",
+		.Root = buildExampleTree,
+	});
 
 	app.Tick(0);
 
