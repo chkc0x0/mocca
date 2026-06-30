@@ -9,6 +9,7 @@ namespace mocca::detail
 {
 	Node::Node()
 	{
+		// TODO: Only Box and Text nodes need a Yoga node, this should be skipped for Component nodes
 		YogaNode = YGNodeNew();
 		YGNodeSetContext(YogaNode, this);
 	}
@@ -54,8 +55,24 @@ namespace mocca::detail
 			{
 				continue;
 			}
-			child->BuildYogaTree();
-			YGNodeInsertChild(YogaNode, child->YogaNode, index++);
+
+			if (child->IsComponent())
+			{
+				for (auto& grandchild : child->Children)
+				{
+					if (!grandchild)
+					{
+						continue;
+					}
+					grandchild->BuildYogaTree();
+					YGNodeInsertChild(YogaNode, grandchild->YogaNode, index++);
+				}
+			}
+			else
+			{
+				child->BuildYogaTree();
+				YGNodeInsertChild(YogaNode, child->YogaNode, index++);
+			}
 		}
 	}
 
@@ -159,7 +176,10 @@ namespace mocca::detail
 		std::string indent(static_cast<size_t>(depth * 2), ' ');
 		auto kind = NodeKind();
 
-		std::cout << indent << "<" << kind << " id=\"" << Id << "\"";
+		std::cout << indent << "<" << kind << " id=\"" << Id << "\""
+				  << " x=" << GetX() << " y=" << GetY()
+				  << " w=" << YGNodeLayoutGetWidth(YogaNode)
+				  << " h=" << YGNodeLayoutGetHeight(YogaNode);
 
 		if (Key != mc_keyNone)
 		{

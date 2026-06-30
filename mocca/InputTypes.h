@@ -103,7 +103,7 @@ namespace mocca
 		enum class Type : char
 		{
 			Character,
-			IMEStart,
+			IMEStart, // handle these in ime-supporting backends like sdl or wayland
 			IMEUpdate,
 			IMEEnd
 		};

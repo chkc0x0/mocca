@@ -5,7 +5,7 @@ sources = [
     'src/core/Logger.cpp',
     'src/core/Detail.cpp',
     'src/core/Surface.cpp',
-    'src/core/Style.cpp'
+    'src/core/Style.cpp',
 ]
 
 cmake = import('cmake')
@@ -13,7 +13,7 @@ cmake = import('cmake')
 cmake_options = cmake.subproject_options()
 cmake_options.add_cmake_defines({'WITH_PIC': true})
 
-glfw_dep = dependency('glfw3')
+glfw_dep = cmake.subproject('glfw', options: cmake_options).dependency('glfw')
 yoga_dep = cmake.subproject('yoga', options: cmake_options).dependency('yogacore')
 nanovg_dep = subproject('nanovg').get_variable('nanovg_dep')
 
@@ -38,7 +38,8 @@ mocca_dep = declare_dependency(
 
 sandbox_inc = include_directories('sandbox', 'sandbox/glad/include')
 
-executable('sandbox',
+executable(
+    'sandbox',
     dependencies: [mocca_dep, glfw_dep, nanovg_dep],
     sources: [
         'sandbox/main.cpp',

@@ -96,11 +96,11 @@ namespace mocca
 
 		for (auto ev : batch.Pointer)
 		{
-			detail::dispatchPointerEvent(
+			auto* target = detail::dispatchPointerEvent(
 				_root.get(),
 				_capturedNode,
 				ev,
-				[this](detail::Node* n, PointerEvent& e) -> void
+				[](detail::Node* n, PointerEvent& e) -> void
 				{
 					if (e.StopPropagation)
 					{
@@ -109,7 +109,6 @@ namespace mocca
 					switch (e.EventType)
 					{
 					case PointerEvent::Type::Down:
-						FocusNode(n->Id);
 						if (n->Events.OnPointerDown)
 						{
 							n->Events.OnPointerDown(e);
@@ -132,6 +131,11 @@ namespace mocca
 					}
 				}
 			);
+
+			if (ev.EventType == PointerEvent::Type::Down && target != nullptr)
+			{
+				FocusNode(target->Id);
+			}
 		}
 
 		for (auto ev : batch.Keyboard)
@@ -210,7 +214,12 @@ namespace mocca
 	{
 		std::string indent(static_cast<size_t>(depth * 2), ' ');
 
-		mc_info("{}[Surface]", indent);
+		mc_info(
+			"{}[Surface w={} h={}]",
+			indent,
+			GetDescriptor().Width,
+			GetDescriptor().Height
+		);
 		_root->Print(depth + 1);
 	}
 }

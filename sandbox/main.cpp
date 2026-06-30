@@ -9,21 +9,94 @@ using namespace mocca;
 
 auto Counter(int start) -> Element
 {
+	using namespace mocca::styles;
+
 	auto [count, setCount] = useState(start);
 
-	return text({
-		.Content = std::format(
-			"Counter: {}, Kidding, it's {}",
-			count + 1,
-			start
-		),
-	});
+	return box(
+		BoxDescriptor{
+			.Style =
+				{
+					.Width = {percent(50)},
+					.Height = {percent(100)},
+					.AlignItems = Alignment::Center,
+					.JustifyContent = Justification::Center,
+				},
+			.Events = {
+				.OnPointerDown = [setCount](auto& ev) -> auto
+				{ setCount([](auto prev) -> auto { return prev + 1; }); },
+				.OnKeyDown = [](auto& ev) -> auto
+				{ mc_info("key {}", (int)ev.Code); },
+				.OnTextInput = [](auto& ev) -> auto
+				{
+					mc_info(
+						"codepoint {} {}",
+						(uint32_t)ev.Codepoint,
+						(char)ev.Codepoint
+					);
+				},
+			},
+			.Children = {
+				text({
+					.Content = std::format("Counter: {}", count),
+				}),
+			},
+		}
+	);
+}
+
+auto TextField() -> Element
+{
+	using namespace mocca::styles;
+	auto [textContent, setText] = useState(std::u32string{});
+
+	return box(
+		BoxDescriptor{
+			.Style =
+				{
+					.Width = {percent(50)},
+					.Height = {percent(100)},
+					.Padding = padding(px(4)),
+					.AlignItems = Alignment::FlexStart,
+					.JustifyContent = Justification::Center,
+				},
+			.Events = {
+				.OnKeyDown = [setText](auto& ev) -> auto
+				{
+					if (ev.Code == KeyCode::Backspace)
+					{
+						setText(
+							[](std::u32string prev) -> auto
+							{
+								if (!prev.empty())
+								{
+									prev.pop_back();
+								}
+								return prev;
+							}
+						);
+					}
+				},
+				.OnTextInput = [setText](auto& ev) -> auto
+				{
+					setText(
+						[ev](std::u32string prev) -> auto
+						{
+							prev.push_back(ev.Codepoint);
+							return prev;
+						}
+					);
+				},
+			},
+			.Children = {
+				text({.Content = mocca::detail::toUtf8(textContent)}),
+			},
+		}
+	);
 }
 
 auto buildExampleTree() -> Element
 {
-	auto [count, setCount] = useState(0);
-
 	using namespace mocca::styles;
 
 	return box(
@@ -32,27 +105,22 @@ auto buildExampleTree() -> Element
 				{
 					.Width = {px(200)},
 					.Height = {px(500)},
-					.Margin = margin(Auto),
 					.AlignContent = StyleKeyword::Inherit,
 					.AlignItems = Alignment::Stretch,
 					.AlignSelf = {Auto},
 				},
 			.Children = {
 				box(BoxDescriptor{
-					.Style = {.Width = {percent(50)}, .Height = {px(50)}},
-					.Events =
+					.Style =
 						{
-							.OnPointerDown = [setCount](auto& ev) -> auto
-							{
-								setCount(
-									[](auto prev) -> auto { return prev + 1; }
-								);
-							},
+							.Width = {percent(100)},
+							.Height = {px(50)},
+							.FlexDirection = FlexDirections::Row,
 						},
 					.Children =
 						{
-							text("Hello"),
-							component(Counter, count),
+							component(Counter, 1),
+							component(TextField),
 						}
 				}),
 				box({
@@ -120,7 +188,6 @@ auto main(int argc, const char** argv) -> int
 	});
 
 	app.Tick(0);
-
 	app.Print();
 
 	while (app.IsRunning())

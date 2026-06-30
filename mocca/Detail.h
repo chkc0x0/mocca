@@ -31,6 +31,42 @@ namespace mocca::detail
 		return hash;
 	}
 
+	inline auto toUtf8(const std::u32string& input) -> std::string
+	{
+		std::string result;
+		for (char32_t cp : input)
+		{
+			if (cp < 0x80)
+			{
+				result.push_back(static_cast<char>(cp));
+			}
+			else if (cp < 0x800)
+			{
+				result.push_back(static_cast<char>(0xC0 | (cp >> 6)));
+				result.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+			}
+			else if (cp < 0x10000)
+			{
+				result.push_back(static_cast<char>(0xE0 | (cp >> 12)));
+				result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+				result.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+			}
+			else
+			{
+				result.push_back(static_cast<char>(0xF0 | (cp >> 18)));
+				result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+				result.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+				result.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+			}
+		}
+		return result;
+	}
+
+	inline auto toUtf8(char32_t cp) -> std::string
+	{
+		return toUtf8(std::u32string{cp});
+	}
+
 	struct Node
 	{
 		Node();
@@ -115,12 +151,12 @@ namespace mocca::detail
 	};
 
 	template <typename Fn>
-	void dispatchPointerEvent(
+	auto dispatchPointerEvent(
 		Node* root,
 		NodeId capturedNode,
 		PointerEvent& ev,
 		Fn callback
-	)
+	) -> Node*
 	{
 		Node* target = nullptr;
 		if (capturedNode != 0)
@@ -133,7 +169,7 @@ namespace mocca::detail
 		}
 		if (target == nullptr)
 		{
-			return;
+			return nullptr;
 		}
 		std::vector<Node*> path;
 		for (Node* n = target; n != nullptr; n = n->Parent)
@@ -142,11 +178,14 @@ namespace mocca::detail
 		}
 		for (Node* n : path)
 		{
-			if (ev.StopPropagation) {
+			if (ev.StopPropagation)
+			{
 				break;
-}
+			}
 			callback(n, ev);
 		}
+
+		return target;
 	}
 
 	template <typename Fn>
@@ -169,9 +208,10 @@ namespace mocca::detail
 		}
 		for (Node* n : path)
 		{
-			if (ev.StopPropagation) {
+			if (ev.StopPropagation)
+			{
 				break;
-}
+			}
 			callback(n, ev);
 		}
 	}
@@ -200,9 +240,10 @@ namespace mocca::detail
 		}
 		for (Node* n : path)
 		{
-			if (ev.StopPropagation) {
+			if (ev.StopPropagation)
+			{
 				break;
-}
+			}
 			callback(n, ev);
 		}
 	}
