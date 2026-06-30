@@ -20,5 +20,15 @@ namespace mocca::cmds
 		struct Color Color;
 	};
 
-	using DrawCommand = std::variant<DrawRectCmd, DrawTextCmd>;
+	struct PushClipCmd
+	{
+		Rectangle Rect;
+	};
+
+	struct PopClipCmd
+	{
+	};
+
+	using DrawCommand =
+		std::variant<DrawRectCmd, DrawTextCmd, PushClipCmd, PopClipCmd>;
 }

@@ -156,18 +156,36 @@ namespace mocca::detail
 
 		if (IsBox())
 		{
-			canvas.DrawRect(x, y, w, h, {200, 200, 200});
-		}
+			bool clips = Style.Overflow == OverflowType::Hidden ||
+						 Style.Overflow == OverflowType::Scroll;
 
-		if (IsText())
+			if (clips)
+			{
+				canvas.PushClip(x, y, w, h);
+			}
+			canvas.DrawRect(x, y, w, h, {200, 200, 200});
+
+			for (auto& child : Children)
+			{
+				child->Paint(canvas);
+			}
+
+			if (clips)
+			{
+				canvas.PopClip();
+			}
+		}
+		else if (IsText())
 		{
 			canvas
 				.DrawText(x, y, std::get<TextElement>(Kind).Content, {0, 0, 0});
 		}
-
-		for (auto& children : Children)
+		else
 		{
-			children->Paint(canvas);
+			for (auto& children : Children)
+			{
+				children->Paint(canvas);
+			}
 		}
 	}
 

@@ -95,6 +95,7 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 	glfwSetWindowSizeCallback(_window, OnWindowResize);
 	glfwSetWindowCloseCallback(_window, OnWindowClose);
 	glfwSetWindowFocusCallback(_window, OnWindowFocus);
+	glfwSetScrollCallback(_window, OnScroll);
 }
 
 GLFWPlatformSurface::~GLFWPlatformSurface()
@@ -279,6 +280,27 @@ void GLFWPlatformSurface::OnMouseButton(
 			.Button = button,
 		});
 	}
+}
+
+void GLFWPlatformSurface::OnScroll(
+	GLFWwindow* window,
+	double xoffset,
+	double yoffset
+)
+{
+	auto* self = static_cast<GLFWPlatformSurface*>(
+		glfwGetWindowUserPointer(window)
+	);
+	double x;
+	double y;
+	glfwGetCursorPos(window, &x, &y);
+	self->_pending.Pointer.push_back({
+		.EventType = mocca::PointerEvent::Type::Scroll,
+		.X = static_cast<float>(x),
+		.Y = static_cast<float>(y),
+		.ScrollX = static_cast<float>(xoffset),
+		.ScrollY = static_cast<float>(yoffset),
+	});
 }
 
 void GLFWPlatformSurface::OnKey(

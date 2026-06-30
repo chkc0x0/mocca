@@ -24,13 +24,12 @@ public:
 
 	void CollectEvents(mocca::InputBatch& batch) override;
 	auto ShouldClose() -> bool override;
-	void Submit(
-		const std::vector<mocca::cmds::DrawCommand>& commands
-	) override;
+	void Submit(const std::vector<mocca::cmds::DrawCommand>& commands) override;
 
 	[[nodiscard]] auto GetSize() const -> mocca::IVec2;
 
 	static void OnMouseMove(GLFWwindow* window, double x, double y);
+	static void OnScroll(GLFWwindow* window, double xoffset, double yoffset);
 	static void
 	OnMouseButton(GLFWwindow* window, int button, int action, int mods);
 	static void

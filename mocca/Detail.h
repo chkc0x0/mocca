@@ -81,6 +81,8 @@ namespace mocca::detail
 		DeclaredStyle Declared;
 		ComputedStyle Style;
 
+		Vector2 ScrollOffset;
+
 		std::vector<std::unique_ptr<Node>> Children;
 
 		std::variant<std::monostate, TextElement, ComponentElement> Kind;
