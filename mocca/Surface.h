@@ -55,8 +55,7 @@ namespace mocca
 			return _desc;
 		}
 
-		template<typename T>
-		void SetPlatform()
+		template <typename T> void SetPlatform()
 		{
 			_platform = std::make_unique<T>(this, GetDescriptor());
 		}
@@ -74,13 +73,13 @@ namespace mocca
 		[[nodiscard]] auto IsExternal() const -> bool
 		{
 			return (static_cast<int>(_desc.Flags) &
-				   static_cast<int>(SurfaceFlags::External)) != 0;
+					static_cast<int>(SurfaceFlags::External)) != 0;
 		}
 
 		[[nodiscard]] auto IsAutomaticSize() const -> bool
 		{
 			return (static_cast<int>(_desc.Flags) &
-				   static_cast<int>(SurfaceFlags::AutomaticSize)) != 0;
+					static_cast<int>(SurfaceFlags::AutomaticSize)) != 0;
 		}
 
 		void RequestClose()
@@ -103,14 +102,36 @@ namespace mocca
 			return _root.get();
 		}
 
+		[[nodiscard]] auto ContainsNode(detail::NodeId id) const -> bool;
+
 		void ProcessInput(const InputBatch& batch);
+
+		void FocusNode(detail::NodeId id);
+		void ClearFocus();
+		[[nodiscard]] auto GetFocusedNode() const -> detail::NodeId
+		{
+			return _focusedNode;
+		}
+
+		void CapturePointer(detail::NodeId id);
+		void ReleasePointer();
+		[[nodiscard]] auto GetCapturedNode() const -> detail::NodeId
+		{
+			return _capturedNode;
+		}
 
 	private:
 		SurfaceDesc _desc;
 		std::unique_ptr<PlatformSurface> _platform;
+		detail::NodeId _rootId;
 		std::unique_ptr<detail::Node> _root = nullptr;
 		bool _dirty = true;
 		bool _shouldClose = false;
 		Canvas _canvas;
+
+		detail::NodeId _focusedNode = 0;
+		detail::NodeId _capturedNode = 0;
+
+		friend class Application;
 	};
 }

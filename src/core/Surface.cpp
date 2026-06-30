@@ -20,7 +20,7 @@ namespace mocca
 
 	void Surface::Tick(double dt)
 	{
-		auto tree = Element::Render(_desc.Root, 0);
+		auto tree = Element::Render(_desc.Root, _rootId);
 		_root = detail::Node::Reconcile(std::move(_root), &tree);
 
 		if (!_root)
@@ -28,14 +28,27 @@ namespace mocca
 			return;
 		}
 
+		_rootId = _root->Id;
+
+		if (_focusedNode != 0 &&
+			detail::Node::FindNodeById(_root.get(), _focusedNode) == nullptr)
+		{
+			_focusedNode = 0;
+		}
+		if (_capturedNode != 0 &&
+			detail::Node::FindNodeById(_root.get(), _capturedNode) == nullptr)
+		{
+			_capturedNode = 0;
+		}
+
 		_root->ComputeStyle(styles::DefaultStyle);
 
 		_root->BuildYogaTree();
 		YGNodeCalculateLayout(
 			_root->YogaNode,
-			_desc.Width,
-			_desc.Height,
-			YGDirectionLTR
+			(float)_desc.Width,
+			(float)_desc.Height,
+			(YGDirection)((int)_root->Style.LayoutDirection + 1)
 		);
 	}
 
@@ -52,8 +65,18 @@ namespace mocca
 		_dirty = false;
 	}
 
+	auto Surface::ContainsNode(detail::NodeId id) const -> bool
+	{
+		return detail::Node::FindNodeById(_root.get(), id) != nullptr;
+	}
+
 	void Surface::ProcessInput(const InputBatch& batch)
 	{
+		if (!_root)
+		{
+			return;
+		}
+
 		for (const auto& ev : batch.Surface)
 		{
 			if (ev.EventType == SurfaceEvent::Type::Close &&
@@ -61,10 +84,126 @@ namespace mocca
 					->EmitEvent(ApplicationEvent::SurfaceClosed, this))
 			{
 				RequestClose();
+				return;
+			}
+			if (ev.EventType == SurfaceEvent::Type::Resize)
+			{
+				_desc.Width = ev.Width;
+				_desc.Height = ev.Height;
+				MarkDirty();
 			}
 		}
-		// TODO: hit-test + dispatch
-		(void)batch;
+
+		for (auto ev : batch.Pointer)
+		{
+			detail::dispatchPointerEvent(
+				_root.get(),
+				_capturedNode,
+				ev,
+				[this](detail::Node* n, PointerEvent& e) -> void
+				{
+					if (e.StopPropagation)
+					{
+						return;
+					}
+					switch (e.EventType)
+					{
+					case PointerEvent::Type::Down:
+						FocusNode(n->Id);
+						if (n->Events.OnPointerDown)
+						{
+							n->Events.OnPointerDown(e);
+						}
+						break;
+					case PointerEvent::Type::Up:
+						if (n->Events.OnPointerUp)
+						{
+							n->Events.OnPointerUp(e);
+						}
+						break;
+					case PointerEvent::Type::Move:
+						if (n->Events.OnPointerMove)
+						{
+							n->Events.OnPointerMove(e);
+						}
+						break;
+					default:
+						break;
+					}
+				}
+			);
+		}
+
+		for (auto ev : batch.Keyboard)
+		{
+			detail::dispatchKeyEvent(
+				_root.get(),
+				_focusedNode,
+				ev,
+				[](detail::Node* n, KeyEvent& e) -> void
+				{
+					if (e.StopPropagation)
+					{
+						return;
+					}
+					switch (e.EventType)
+					{
+					case KeyEvent::Type::Down:
+						if (n->Events.OnKeyDown)
+						{
+							n->Events.OnKeyDown(e);
+						}
+						break;
+					case KeyEvent::Type::Up:
+						if (n->Events.OnKeyUp)
+						{
+							n->Events.OnKeyUp(e);
+						}
+						break;
+					}
+				}
+			);
+		}
+
+		for (auto ev : batch.Text)
+		{
+			detail::dispatchTextEvent(
+				_root.get(),
+				_focusedNode,
+				ev,
+				[](detail::Node* n, TextEvent& e) -> void
+				{
+					if (e.StopPropagation)
+					{
+						return;
+					}
+					if (n->Events.OnTextInput)
+					{
+						n->Events.OnTextInput(e);
+					}
+				}
+			);
+		}
+	}
+
+	void Surface::FocusNode(detail::NodeId id)
+	{
+		_focusedNode = id;
+	}
+
+	void Surface::ClearFocus()
+	{
+		_focusedNode = 0;
+	}
+
+	void Surface::CapturePointer(detail::NodeId id)
+	{
+		_capturedNode = id;
+	}
+
+	void Surface::ReleasePointer()
+	{
+		_capturedNode = 0;
 	}
 
 	void Surface::Print(int depth) const

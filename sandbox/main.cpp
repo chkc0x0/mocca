@@ -11,13 +11,19 @@ auto Counter(int start) -> Element
 {
 	auto [count, setCount] = useState(start);
 
-	useEffect([]() -> void {});
-
-	return text(std::format("Counter: {}", count));
+	return text({
+		.Content = std::format(
+			"Counter: {}, Kidding, it's {}",
+			count + 1,
+			start
+		),
+	});
 }
 
 auto buildExampleTree() -> Element
 {
+	auto [count, setCount] = useState(0);
+
 	using namespace mocca::styles;
 
 	return box(
@@ -34,10 +40,19 @@ auto buildExampleTree() -> Element
 			.Children = {
 				box(BoxDescriptor{
 					.Style = {.Width = {percent(50)}, .Height = {px(50)}},
+					.Events =
+						{
+							.OnPointerDown = [setCount](auto& ev) -> auto
+							{
+								setCount(
+									[](auto prev) -> auto { return prev + 1; }
+								);
+							},
+						},
 					.Children =
 						{
 							text("Hello"),
-							component(Counter, 5),
+							component(Counter, count),
 						}
 				}),
 				box({
@@ -105,6 +120,8 @@ auto main(int argc, const char** argv) -> int
 	});
 
 	app.Tick(0);
+
+	app.Print();
 
 	while (app.IsRunning())
 	{

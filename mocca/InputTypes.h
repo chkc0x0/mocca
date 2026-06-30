@@ -80,6 +80,7 @@ namespace mocca
 		int Button;
 		float ScrollX;
 		float ScrollY;
+		bool StopPropagation = false;
 	};
 
 	struct KeyEvent
@@ -93,6 +94,7 @@ namespace mocca
 
 		Type EventType;
 		KeyCode Code;
+		bool StopPropagation = false;
 	};
 
 	struct TextEvent
@@ -109,6 +111,7 @@ namespace mocca
 		Type EventType;
 		char32_t Codepoint;
 		std::string IMEComposition;
+		bool StopPropagation = false;
 	};
 
 	struct SurfaceEvent

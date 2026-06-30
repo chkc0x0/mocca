@@ -47,6 +47,7 @@ private:
 	NVGcontext* _vg = nullptr;
 	mocca::IVec2 _size = {.X = 0, .Y = 0};
 	bool _glfwRefHeld = false;
+	mocca::Surface* _surface;
 
 	mocca::InputBatch _pending;
 };

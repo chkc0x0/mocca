@@ -3,11 +3,10 @@
 #include "Style.h"
 #include <cstddef>
 #include <iostream>
+#include <ranges>
 
 namespace mocca::detail
 {
-	static NodeId nextNodeId = 0;
-
 	Node::Node()
 	{
 		YogaNode = YGNodeNew();
@@ -30,7 +29,7 @@ namespace mocca::detail
 		auto* self = static_cast<Node*>(YGNodeGetContext(ref));
 		if ((self == nullptr) || !self->IsText())
 		{
-			return YGSize{0, 0};
+			return YGSize{.width = 0, .height = 0};
 		}
 
 		const std::string& content = std::get<TextElement>(self->Kind).Content;
@@ -113,6 +112,8 @@ namespace mocca::detail
 			},
 			element.Node
 		);
+
+		node->Events = element.Events;
 
 		return node;
 	}
@@ -306,6 +307,8 @@ namespace mocca::detail
 			YGNodeMarkDirty(oldNode->YogaNode);
 		}
 
+		oldNode->Events = newElement->Events;
+
 		auto childElements = CollectChildElements(newElement, oldNode->Id);
 		oldNode->Children = ReconcileChildren(
 			std::move(oldNode->Children),
@@ -356,4 +359,60 @@ namespace mocca
 #undef mcStyleProperty
 			return computed;
 	}
+
+	namespace detail
+	{
+
+		auto Node::FindNodeById(Node* root, NodeId id) -> Node*
+		{
+			if (root == nullptr)
+			{
+				return nullptr;
+			}
+			if (root->Id == id)
+			{
+				return root;
+			}
+			for (const auto& child : root->Children)
+			{
+				auto* found = FindNodeById(child.get(), id);
+				if (found != nullptr)
+				{
+					return found;
+				}
+			}
+			return nullptr;
+		}
+
+		auto Node::HitTest(Node* root, float x, float y) -> Node*
+		{
+			if (root == nullptr)
+			{
+				return nullptr;
+			}
+
+			for (auto& it : std::views::reverse(root->Children))
+			{
+				auto* hit = HitTest(it.get(), x, y);
+				if (hit != nullptr)
+				{
+					return hit;
+				}
+			}
+
+			float nx = root->GetX();
+			float ny = root->GetY();
+			float nw = YGNodeLayoutGetWidth(root->YogaNode);
+			float nh = YGNodeLayoutGetHeight(root->YogaNode);
+
+			if (x >= nx && x < nx + nw && y >= ny && y < ny + nh)
+			{
+				return root;
+			}
+
+			return nullptr;
+		}
+
+	}
+
 }

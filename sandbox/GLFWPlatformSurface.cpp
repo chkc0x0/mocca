@@ -18,7 +18,7 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 	const mocca::SurfaceDesc& desc
 )
 {
-	(void)surface;
+	_surface = surface;
 
 	if (glfwInitialized == 0)
 	{
@@ -162,7 +162,14 @@ void GLFWPlatformSurface::Submit(
 	glfwGetWindowSize(_window, &w, &h);
 
 	glViewport(0, 0, w, h);
-	glClearColor(0.1F, 0.1F, 0.1F, 1.0F);
+	if (_surface->GetDescriptor().Title == "Sandbox2")
+	{
+		glClearColor(0.2F, 0.1F, 0.1F, 1.0F);
+	}
+	else
+	{
+		glClearColor(0.1F, 0.1F, 0.1F, 1.0F);
+	}
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	nvgBeginFrame(_vg, (float)w, (float)h, 1.0F);
@@ -324,7 +331,7 @@ void GLFWPlatformSurface::OnWindowResize(
 	auto* self = static_cast<GLFWPlatformSurface*>(
 		glfwGetWindowUserPointer(window)
 	);
-	self->_size = {.X=width, .Y=height};
+	self->_size = {.X = width, .Y = height};
 	self->_pending.Surface.push_back({
 		.EventType = mocca::SurfaceEvent::Type::Resize,
 		.Width = width,

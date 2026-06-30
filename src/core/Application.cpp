@@ -21,10 +21,22 @@ namespace mocca
 		main = this;
 
 		_context._store.SetMarkDirty(
-			[this](detail::NodeId id)
+			[this](detail::NodeId id) -> void
 			{
 				_context._store.InsertDirty(id);
-				_context._currentSurface->MarkDirty();
+				for (auto& surface : _surfaces)
+				{
+					if (surface->ContainsNode(id))
+					{
+						surface->MarkDirty();
+						return;
+					}
+				}
+
+				if (_context._currentSurface)
+				{
+					_context._currentSurface->MarkDirty();
+				}
 			}
 		);
 	}
@@ -145,6 +157,7 @@ namespace mocca
 	auto Application::RegisterSurface(const SurfaceDesc& desc) -> Surface*
 	{
 		auto surface = std::make_unique<Surface>(desc);
+		surface->_rootId = detail::nextNodeId++;
 		auto* ptr = surface.get();
 		EmitEvent(ApplicationEvent::SurfaceCreated, ptr);
 		_surfaces.push_back(std::move(surface));

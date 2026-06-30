@@ -1,4 +1,5 @@
 #pragma once
+#include "InputTypes.h"
 #include "Style.h"
 #include <any>
 #include <cstdint>
@@ -64,6 +65,20 @@ namespace mocca
 	using CleanupFn = std::function<void()>;
 	using EffectFn = std::function<CleanupFn()>;
 
+	using PointerCallback = std::function<void(PointerEvent&)>;
+	using KeyCallback = std::function<void(KeyEvent&)>;
+	using TextCallback = std::function<void(TextEvent&)>;
+
+	struct EventHandlers
+	{
+		PointerCallback OnPointerDown;
+		PointerCallback OnPointerUp;
+		PointerCallback OnPointerMove;
+		KeyCallback OnKeyDown;
+		KeyCallback OnKeyUp;
+		TextCallback OnTextInput;
+	};
+
 	struct BoxElement
 	{
 		std::vector<Element> Children;
@@ -85,6 +100,7 @@ namespace mocca
 		std::variant<BoxElement, TextElement, ComponentElement> Node;
 		ElementKey Key = mc_keyNone;
 		DeclaredStyle Style;
+		EventHandlers Events;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -112,6 +128,7 @@ namespace mocca
 	public:
 		ElementKey Key = mc_keyNone;
 		DeclaredStyle Style;
+		EventHandlers Events;
 		std::vector<Element> Children;
 	};
 
@@ -120,6 +137,7 @@ namespace mocca
 	public:
 		ElementKey Key = mc_keyNone;
 		DeclaredStyle Style;
+		EventHandlers Events;
 		std::string Content;
 	};
 
@@ -136,7 +154,8 @@ namespace mocca
 		return Element{
 			.Node = BoxElement{.Children = std::move(desc.Children)},
 			.Key = desc.Key,
-			.Style = desc.Style
+			.Style = desc.Style,
+			.Events = std::move(desc.Events)
 		};
 	}
 
@@ -154,7 +173,8 @@ namespace mocca
 		return Element{
 			.Node = TextElement{.Content = std::move(desc.Content)},
 			.Key = desc.Key,
-			.Style = desc.Style
+			.Style = desc.Style,
+			.Events = std::move(desc.Events)
 		};
 	}
 

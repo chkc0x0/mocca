@@ -1,6 +1,7 @@
 #pragma once
 #include "Canvas.h"
 #include "Element.h"
+#include "InputTypes.h"
 #include "yoga/Yoga.h"
 #include <cstdint>
 #include <memory>
@@ -11,6 +12,8 @@
 namespace mocca::detail
 {
 	using NodeId = std::uint64_t;
+
+	inline NodeId nextNodeId = 0;
 
 	template <typename T>
 	concept EqualityComparable = requires(const T& a, const T& b) {
@@ -104,7 +107,105 @@ namespace mocca::detail
 
 		void Print(int depth = 0) const;
 		void Paint(Canvas& canvas);
+
+		static auto HitTest(Node* root, float x, float y) -> Node*;
+		static auto FindNodeById(Node* root, NodeId id) -> Node*;
+
+		EventHandlers Events;
 	};
+
+	template <typename Fn>
+	void dispatchPointerEvent(
+		Node* root,
+		NodeId capturedNode,
+		PointerEvent& ev,
+		Fn callback
+	)
+	{
+		Node* target = nullptr;
+		if (capturedNode != 0)
+		{
+			target = Node::FindNodeById(root, capturedNode);
+		}
+		if (target == nullptr)
+		{
+			target = Node::HitTest(root, ev.X, ev.Y);
+		}
+		if (target == nullptr)
+		{
+			return;
+		}
+		std::vector<Node*> path;
+		for (Node* n = target; n != nullptr; n = n->Parent)
+		{
+			path.push_back(n);
+		}
+		for (Node* n : path)
+		{
+			if (ev.StopPropagation) {
+				break;
+}
+			callback(n, ev);
+		}
+	}
+
+	template <typename Fn>
+	void
+	dispatchKeyEvent(Node* root, NodeId focusedNode, KeyEvent& ev, Fn callback)
+	{
+		Node* target = nullptr;
+		if (focusedNode != 0)
+		{
+			target = Node::FindNodeById(root, focusedNode);
+		}
+		if (target == nullptr)
+		{
+			return;
+		}
+		std::vector<Node*> path;
+		for (Node* n = target; n != nullptr; n = n->Parent)
+		{
+			path.push_back(n);
+		}
+		for (Node* n : path)
+		{
+			if (ev.StopPropagation) {
+				break;
+}
+			callback(n, ev);
+		}
+	}
+
+	template <typename Fn>
+	void dispatchTextEvent(
+		Node* root,
+		NodeId focusedNode,
+		TextEvent& ev,
+		Fn callback
+	)
+	{
+		Node* target = nullptr;
+		if (focusedNode != 0)
+		{
+			target = Node::FindNodeById(root, focusedNode);
+		}
+		if (target == nullptr)
+		{
+			return;
+		}
+		std::vector<Node*> path;
+		for (Node* n = target; n != nullptr; n = n->Parent)
+		{
+			path.push_back(n);
+		}
+		for (Node* n : path)
+		{
+			if (ev.StopPropagation) {
+				break;
+}
+			callback(n, ev);
+		}
+	}
 
 	struct HookKey
 	{

@@ -4,6 +4,8 @@
 
 namespace mocca
 {
+	template <typename T> struct StateSetter;
+
 	struct Context
 	{
 	public:
@@ -32,19 +34,43 @@ namespace mocca
 		friend class Application;
 
 		template <typename T>
-		friend auto useState(T initial)
-			-> std::pair<T&, std::function<void(T)>>;
+		friend auto useState(T initial) -> std::pair<T&, StateSetter<T>>;
+
+		template <typename T> friend struct StateSetter;
 
 		template <typename Fn>
-		friend void useEffect(
-			Fn effect, const std::vector<detail::EffectDependency>& deps);
+		friend void
+		useEffect(Fn effect, const std::vector<detail::EffectDependency>& deps);
 		template <typename Fn> friend void useEffect(Fn effect);
 	};
 
 	auto getCtx() -> Context*;
 
+	template <typename T> struct StateSetter
+	{
+	private:
+		Context* _ctx;
+		detail::NodeId _id;
+		std::uint32_t _hook;
+
+	public:
+		StateSetter(Context* ctx, detail::NodeId id, std::uint32_t hook)
+			: _ctx(ctx), _id(id), _hook(hook) {};
+
+		void operator()(T v) const
+		{
+			_ctx->_store.Set<T>(_id, _hook, std::move(v));
+		}
+
+		void operator()(std::function<T(const T&)> fn) const
+		{
+			T& current = _ctx->_store.GetOrCreate<T>(_id, _hook, T{});
+			_ctx->_store.Set<T>(_id, _hook, fn(current));
+		}
+	};
+
 	template <typename T>
-	auto useState(T initial) -> std::pair<T&, std::function<void(T)>>
+	auto useState(T initial) -> std::pair<T&, StateSetter<T>>
 	{
 		Context* ctx = getCtx();
 		detail::NodeId id = ctx->_componentId;
@@ -52,10 +78,7 @@ namespace mocca
 
 		T& value = ctx->_store.GetOrCreate<T>(id, hook, std::move(initial));
 
-		auto setter = [ctx, id, hook](T v) -> auto
-		{ ctx->_store.Set<T>(id, hook, std::move(v)); };
-
-		return {value, std::move(setter)};
+		return {value, StateSetter<T>{ctx, id, hook}};
 	}
 
 	template <typename Fn> void useEffect(Fn effect)
@@ -83,14 +106,16 @@ namespace mocca
 				{
 					s.Cleanup = effect();
 				}
-			});
+			}
+		);
 	}
 
 	template <typename... Args>
 	auto deps(Args&&... args) -> std::vector<detail::EffectDependency>
 	{
 		return std::vector<detail::EffectDependency>{
-			detail::EffectDependency::Make(std::forward<Args>(args))...};
+			detail::EffectDependency::Make(std::forward<Args>(args))...
+		};
 	}
 
 	template <typename Fn>
@@ -123,7 +148,8 @@ namespace mocca
 					{
 						s.Cleanup = effect();
 					}
-				});
+				}
+			);
 		}
 	}
 }
