@@ -29,6 +29,15 @@ namespace mocca::cmds
 	{
 	};
 
+	struct PushTransformCmd
+	{
+		Vector2 Offset;
+	};
+
+	struct PopTransformCmd
+	{
+	};
+
 	using DrawCommand =
-		std::variant<DrawRectCmd, DrawTextCmd, PushClipCmd, PopClipCmd>;
+		std::variant<DrawRectCmd, DrawTextCmd, PushClipCmd, PopClipCmd, PushTransformCmd, PopTransformCmd>;
 }

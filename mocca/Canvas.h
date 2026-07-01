@@ -31,7 +31,8 @@ namespace mocca
 
 		void PushClip(float x, float y, float w, float h)
 		{
-			Rectangle rect{.X = x, .Y = y, .Width = w, .Height = h};
+			Vector2 currentOffset = _transformStack.empty() ? Vector2{0, 0} : _transformStack.back();
+			Rectangle rect{.X = currentOffset.X + x, .Y = currentOffset.Y + y, .Width = w, .Height = h};
 			if (!_clipStack.empty())
 			{
 				rect = _clipStack.back().Intersect(rect);
@@ -49,6 +50,23 @@ namespace mocca
 			_commands.emplace_back(cmds::PopClipCmd{});
 		}
 
+		void PushTransform(float dx, float dy)
+		{
+			Vector2 currentOffset = _transformStack.empty() ? Vector2{.X=0, .Y=0} : _transformStack.back();
+			Vector2 newOffset = {.X=currentOffset.X + dx, .Y=currentOffset.Y + dy};
+			_transformStack.push_back(newOffset);
+			_commands.emplace_back(cmds::PushTransformCmd{newOffset});
+		}
+
+		void PopTransform()
+		{
+			if (!_transformStack.empty())
+			{
+				_transformStack.pop_back();
+			}
+			_commands.emplace_back(cmds::PopTransformCmd{});
+		}
+
 		[[nodiscard]] auto Commands() const
 			-> const std::vector<cmds::DrawCommand>&
 		{
@@ -59,10 +77,12 @@ namespace mocca
 		{
 			_commands.clear();
 			_clipStack.clear();
+			_transformStack.clear();
 		}
 
 	private:
 		std::vector<cmds::DrawCommand> _commands;
 		std::vector<Rectangle> _clipStack;
+		std::vector<Vector2> _transformStack;
 	};
 }

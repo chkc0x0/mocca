@@ -174,7 +174,9 @@ void GLFWPlatformSurface::Submit(
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	nvgBeginFrame(_vg, (float)w, (float)h, 1.0F);
+	nvgResetScissor(_vg);
 	nvgFontFace(_vg, "sans");
+	nvgFontSize(_vg, 16);
 
 	float ascender;
 	float descender;
@@ -207,6 +209,8 @@ void GLFWPlatformSurface::Submit(
 				}
 				else if constexpr (std::is_same_v<T, mocca::cmds::DrawTextCmd>)
 				{
+					nvgFontFace(_vg, "sans");
+					nvgFontSize(_vg, 16);
 					nvgFillColor(
 						_vg,
 						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, 255)
@@ -219,6 +223,31 @@ void GLFWPlatformSurface::Submit(
 						c.Content.c_str(),
 						nullptr
 					);
+				}
+				else if constexpr (std::is_same_v<T, mocca::cmds::PushClipCmd>)
+				{
+					nvgSave(_vg);
+					nvgScissor(
+						_vg,
+						c.Rect.X,
+						c.Rect.Y,
+						c.Rect.Width,
+						c.Rect.Height
+					);
+				}
+				else if constexpr (std::is_same_v<T, mocca::cmds::PopClipCmd>)
+				{
+					nvgRestore(_vg);
+				}
+				else if constexpr (std::is_same_v<T, mocca::cmds::PushTransformCmd>)
+				{
+					nvgSave(_vg);
+					nvgResetTransform(_vg);
+					nvgTranslate(_vg, c.Offset.X, c.Offset.Y);
+				}
+				else if constexpr (std::is_same_v<T, mocca::cmds::PopTransformCmd>)
+				{
+					nvgRestore(_vg);
 				}
 			},
 			cmd

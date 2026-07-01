@@ -158,16 +158,28 @@ namespace mocca::detail
 		{
 			bool clips = Style.Overflow == OverflowType::Hidden ||
 						 Style.Overflow == OverflowType::Scroll;
+			bool scrolls = Style.Overflow == OverflowType::Scroll;
 
 			if (clips)
 			{
 				canvas.PushClip(x, y, w, h);
 			}
+
 			canvas.DrawRect(x, y, w, h, {200, 200, 200});
+
+			if (scrolls)
+			{
+				canvas.PushTransform(-ScrollOffset.X, -ScrollOffset.Y);
+			}
 
 			for (auto& child : Children)
 			{
 				child->Paint(canvas);
+			}
+
+			if (scrolls)
+			{
+				canvas.PopTransform();
 			}
 
 			if (clips)
@@ -422,16 +434,24 @@ namespace mocca
 			return nullptr;
 		}
 
-		auto Node::HitTest(Node* root, float x, float y) -> Node*
+		auto hitTestImpl(Node* root, float x, float y, float accScrollX, float accScrollY) -> Node*
 		{
 			if (root == nullptr)
 			{
 				return nullptr;
 			}
 
+			float childAccX = accScrollX;
+			float childAccY = accScrollY;
+			if (root->IsBox() && root->Style.Overflow == OverflowType::Scroll)
+			{
+				childAccX += root->ScrollOffset.X;
+				childAccY += root->ScrollOffset.Y;
+			}
+
 			for (auto& it : std::views::reverse(root->Children))
 			{
-				auto* hit = HitTest(it.get(), x, y);
+				auto* hit = hitTestImpl(it.get(), x, y, childAccX, childAccY);
 				if (hit != nullptr)
 				{
 					return hit;
@@ -443,11 +463,31 @@ namespace mocca
 			float nw = YGNodeLayoutGetWidth(root->YogaNode);
 			float nh = YGNodeLayoutGetHeight(root->YogaNode);
 
-			if (x >= nx && x < nx + nw && y >= ny && y < ny + nh)
+			float testX = x + accScrollX;
+			float testY = y + accScrollY;
+
+			if (testX >= nx && testX < nx + nw && testY >= ny && testY < ny + nh)
 			{
 				return root;
 			}
 
+			return nullptr;
+		}
+
+		auto Node::HitTest(Node* root, float x, float y) -> Node*
+		{
+			return hitTestImpl(root, x, y, 0, 0);
+		}
+
+		auto findScrollableAncestor(Node* node) -> Node*
+		{
+			for (Node* n = node; n != nullptr; n = n->Parent)
+			{
+				if (n->IsBox() && n->Style.Overflow == OverflowType::Scroll)
+				{
+					return n;
+				}
+			}
 			return nullptr;
 		}
 

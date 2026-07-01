@@ -1,4 +1,5 @@
 #include "Surface.h"
+#include <algorithm>
 #include "Application.h"
 #include "InputTypes.h"
 #include "Logger.h"
@@ -96,6 +97,30 @@ namespace mocca
 
 		for (auto ev : batch.Pointer)
 		{
+			if (ev.EventType == PointerEvent::Type::Scroll)
+			{
+				auto* scrollTarget =
+					detail::Node::HitTest(_root.get(), ev.X, ev.Y);
+				if (scrollTarget != nullptr)
+				{
+					auto* scrollable = detail::findScrollableAncestor(
+						scrollTarget
+					);
+					if (scrollable != nullptr)
+					{
+						scrollable->ScrollOffset.X += ev.ScrollX;
+						scrollable->ScrollOffset.Y -= ev.ScrollY;
+
+						// TODO clamp to content bounds once we track content size
+						scrollable->ScrollOffset.X = std::max<float>(scrollable->ScrollOffset.X, 0);
+						scrollable->ScrollOffset.Y = std::max<float>(scrollable->ScrollOffset.Y, 0);
+
+						MarkDirty();
+					}
+				}
+				continue;
+			}
+
 			auto* target = detail::dispatchPointerEvent(
 				_root.get(),
 				_capturedNode,

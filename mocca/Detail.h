@@ -81,7 +81,7 @@ namespace mocca::detail
 		DeclaredStyle Declared;
 		ComputedStyle Style;
 
-		Vector2 ScrollOffset;
+		Vector2 ScrollOffset{0, 0};
 
 		std::vector<std::unique_ptr<Node>> Children;
 
@@ -151,6 +151,8 @@ namespace mocca::detail
 
 		EventHandlers Events;
 	};
+
+	auto findScrollableAncestor(Node* node) -> Node*;
 
 	template <typename Fn>
 	auto dispatchPointerEvent(

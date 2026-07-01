@@ -23,7 +23,7 @@
     mc_styleProperty(Display, DisplayType, false, DisplayType::Flex, StyleValue<DisplayType>) \
     mc_styleProperty(FlexBasis, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
     mc_styleProperty(FlexGrow, float, false, 0.0F, StyleValue<float>) \
-    mc_styleProperty(FlexShrink, float, false, 1.0F, StyleValue<float>) \
+    mc_styleProperty(FlexShrink, float, false, 0.0F, StyleValue<float>) \
     mc_styleProperty(Flex, float, false, std::numeric_limits<double>::quiet_NaN(), StyleValue<float>) \
     mc_styleProperty(FlexDirection, FlexDirections, false, FlexDirections::Column, StyleValue<FlexDirections>) \
     mc_styleProperty(FlexWrap, WrappingType, false, WrappingType::None, StyleValue<WrappingType>) \
