@@ -201,7 +201,7 @@ void GLFWPlatformSurface::Submit(
 					);
 					nvgFillColor(
 						_vg,
-						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, 255)
+						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
 					);
 					nvgFill(_vg);
 					nvgStrokeColor(_vg, nvgRGB(255, 0, 0));
@@ -213,7 +213,7 @@ void GLFWPlatformSurface::Submit(
 					nvgFontSize(_vg, 16);
 					nvgFillColor(
 						_vg,
-						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, 255)
+						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
 					);
 					nvgFontSize(_vg, 16);
 					nvgText(

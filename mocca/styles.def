@@ -36,7 +36,8 @@
     mc_styleProperty(Overflow, OverflowType, true, OverflowType::Visible, StyleValue<OverflowType>)
 
 #define mc_renderProperties \
-    mc_styleProperty(BackgroundColor, Color, false, (SizingValue{Auto}), StyleValue<Color>)
+    mc_styleProperty(BackgroundColor, Color, false, mocca::colors::Transparent, StyleValue<Color>) \
+    mc_styleProperty(TextColor, Color, false, mocca::colors::AlmostBlack, StyleValue<Color>)
     
 #define mc_propertyEdges \
     mc_stylePropertyEdge(padding, Length) \

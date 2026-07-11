@@ -45,7 +45,10 @@ namespace mocca::detail
 
 	void Node::BuildYogaTree()
 	{
+		// TODO we should place these in a applyStyles function or something
 		ApplyLayoutStyles();
+		ApplyRenderStyles();
+
 		YGNodeRemoveAllChildren(YogaNode);
 
 		uint32_t index = 0;
@@ -79,8 +82,16 @@ namespace mocca::detail
 	void Node::ApplyLayoutStyles() const
 	{
 #define mc_styleProperty(name, ...)                                            \
-	styles::detail::applying::apply##name(YogaNode, Style.name);
+	styles::detail::applying::layout::apply##name(YogaNode, Style.name);
 		mc_layoutProperties
+#undef mc_styleProperty
+	}
+
+	void Node::ApplyRenderStyles()
+	{
+#define mc_styleProperty(name, ...)                                            \
+	styles::detail::applying::render::apply##name(this, Style.name);
+		mc_renderProperties
 #undef mc_styleProperty
 	}
 
@@ -165,7 +176,7 @@ namespace mocca::detail
 				canvas.PushClip(x, y, w, h);
 			}
 
-			canvas.DrawRect(x, y, w, h, {200, 200, 200});
+			canvas.DrawRect(x, y, w, h, Style.BackgroundColor);
 
 			if (scrolls)
 			{
@@ -190,7 +201,7 @@ namespace mocca::detail
 		else if (IsText())
 		{
 			canvas
-				.DrawText(x, y, std::get<TextElement>(Kind).Content, {0, 0, 0});
+				.DrawText(x, y, std::get<TextElement>(Kind).Content, Style.TextColor);
 		}
 		else
 		{
@@ -409,7 +420,7 @@ namespace mocca
 		parent.name,                                                           \
 		styles::detail::properties::name##Property                             \
 	);
-		mc_layoutProperties
+		mc_layoutProperties mc_renderProperties
 #undef mcStyleProperty
 			return computed;
 	}

@@ -1,11 +1,17 @@
 #pragma once
 #include "Logger.h"
+#include "Math.h"
 #include "styles.def"
 #include "yoga/YGConfig.h"
 #include <variant>
 
 namespace mocca
 {
+	namespace detail
+	{
+		struct Node;
+	}
+
 	enum class StyleKeyword : char
 	{
 		Unset,
@@ -299,7 +305,7 @@ namespace mocca
 #undef mc_styleProperty
 #define mc_styleProperty(name, type, inherits, initial, declType, ...)         \
 	declType name;
-		mc_layoutProperties
+		mc_layoutProperties mc_renderProperties
 #undef mc_styleProperty
 	};
 
@@ -307,7 +313,7 @@ namespace mocca
 	{
 	public:
 #define mc_styleProperty(name, type, ...) type name;
-		mc_layoutProperties
+		mc_layoutProperties mc_renderProperties
 #undef mc_styleProperty
 
 			static auto
@@ -319,7 +325,7 @@ namespace mocca
 	{
 		inline static ComputedStyle DefaultStyle = {
 #define mc_styleProperty(name, type, inherits, initial, ...) .name = (initial),
-			mc_layoutProperties
+			mc_layoutProperties mc_renderProperties
 #undef mc_styleProperty
 		};
 
@@ -341,15 +347,23 @@ namespace mocca
 		.Inherits = (inherits),                                                \
 		.DefaultValue = (initial)                                              \
 	};
-			mc_layoutProperties
+			mc_layoutProperties mc_renderProperties
 #undef mc_styleProperty
 		}
 
-		namespace detail::applying
+		namespace detail::applying::layout
 		{
 #define mc_styleProperty(name, type, inherits, initial, ...)                   \
 	void apply##name(YGNodeRef ref, type value);
 			mc_layoutProperties
+#undef mc_styleProperty
+		}
+
+		namespace detail::applying::render
+		{
+#define mc_styleProperty(name, type, inherits, initial, ...)                   \
+	void apply##name(mocca::detail::Node* ref, type value);
+			mc_renderProperties
 #undef mc_styleProperty
 		}
 	}

@@ -312,7 +312,7 @@ namespace mocca
 			{
 				h += 360.0;
 			}
-			return {l, c, h};
+			return {.L=l, .C=c, .H=h};
 		}
 	}
 
@@ -328,12 +328,8 @@ namespace mocca
 		constexpr Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
 			: R(r), G(g), B(b), A(a) {};
 
-		// Reading uint32_t as hex color.
-		// Convention: values that fit in 24 bits are RRGGBB (alpha=255).
-		// Values > 0xFFFFFF are RRGGBBAA.
-		// NOTE: This is ambiguous for RGBA values where R=0x00
-		// (e.g. 0x00FF0080 looks like a 24-bit value).
-		// Users should use the R,G,B,A constructor for those.
+		// this will assume a=255 if value is < 0xffffff
+		// use other ctor for that
 		constexpr Color(uint32_t hex)
 		{
 			if (hex <= 0xFFFFFF)
@@ -636,7 +632,10 @@ namespace mocca
 
 	namespace colors
 	{
-		inline constexpr Color Red = 0xFFFFFFFF;
+		inline constexpr Color Red = {255, 0, 0, 255};
+		inline constexpr Color Transparent = {0, 0, 0, 0};
+		inline constexpr Color AlmostBlack = {10, 10, 10, 255};
+		inline constexpr Color Black = {0, 0, 0, 255};
 	}
 
 	struct Vector2

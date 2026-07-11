@@ -1,9 +1,10 @@
 #include "Style.h"
+#include "Detail.h"
 #include "Logger.h"
 #include "yoga/YGConfig.h"
 #include "yoga/YGNodeStyle.h"
 
-namespace mocca::styles::detail::applying
+namespace mocca::styles::detail::applying::layout
 {
 	template <typename PxSetter, typename PctSetter>
 	void applyLength(const Length& len, PxSetter setPx, PctSetter setPct)
@@ -526,5 +527,18 @@ namespace mocca::styles::detail::applying
 	void applyOverflow(YGNodeRef ref, OverflowType value)
 	{
 		YGNodeStyleSetOverflow(ref, (YGOverflow)((int)value));
+	}
+}
+
+namespace mocca::styles::detail::applying::render
+{
+	void applyBackgroundColor(mocca::detail::Node* ref, Color value)
+	{
+		ref->Style.BackgroundColor = value;
+	}
+
+	void applyTextColor(mocca::detail::Node* ref, Color value)
+	{
+		ref->Style.TextColor = value;
 	}
 }

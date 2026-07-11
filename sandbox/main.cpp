@@ -180,6 +180,7 @@ auto buildTodoApp() -> Element
 					.Height = {px(500)},
 					.Padding = padding(px(8)),
 					.AlignItems = Alignment::Stretch,
+					.BackgroundColor = Color::Oklch(0.7, 0.1036, 171),
 				},
 			.Children = {
 				component(TodoInput, TodoInputProps{.OnSubmit = addTodo}),
