@@ -89,6 +89,7 @@ namespace mocca
 		enum class Type : char
 		{
 			Down,
+			Repeat,
 			Up
 		};
 

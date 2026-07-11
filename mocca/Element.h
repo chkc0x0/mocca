@@ -7,6 +7,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <ranges>
 
 #define mc_keyNone 0
 
@@ -76,6 +77,7 @@ namespace mocca
 		PointerCallback OnPointerMove;
 		KeyCallback OnKeyDown;
 		KeyCallback OnKeyUp;
+		KeyCallback OnKeyRepeat;
 		TextCallback OnTextInput;
 	};
 
@@ -219,6 +221,44 @@ namespace mocca
 			.Key = desc.Key,
 			.Style = desc.Style
 		};
+	}
+
+	template <std::ranges::range R, typename Fn>
+	auto mapElements(R&& items, Fn fn) -> std::vector<Element>
+	{
+		auto transformed = items | std::ranges::views::transform(fn);
+		return std::vector<Element>(transformed.begin(), transformed.end());
+	}
+
+	template <typename Fn>
+	auto mapElements(int count, Fn fn) -> std::vector<Element>
+	{
+		std::vector<Element> result;
+
+		for (int i = 0; i < count; ++i)
+		{
+			result.push_back(fn(i));
+		}
+
+		return result;
+	}
+
+	template <std::ranges::range R, typename Fn>
+	auto mapElementsIndexed(R&& items, Fn fn) -> std::vector<Element>
+	{
+		std::vector<Element> result;
+		if constexpr (std::ranges::sized_range<R>)
+		{
+			result.reserve(std::ranges::size(items));
+		}
+
+		size_t i = 0;
+		for (auto&& item : items)
+		{
+			result.push_back(fn(item, i++));
+		}
+
+		return result;
 	}
 }
 

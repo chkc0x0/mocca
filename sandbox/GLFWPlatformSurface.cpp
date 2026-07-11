@@ -353,6 +353,13 @@ void GLFWPlatformSurface::OnKey(
 			.Code = ToKeyCode(key),
 		});
 	}
+	if (action == GLFW_REPEAT)
+	{
+		self->_pending.Keyboard.push_back({
+			.EventType = mocca::KeyEvent::Type::Repeat,
+			.Code = ToKeyCode(key),
+		});
+	}
 	else if (action == GLFW_RELEASE)
 	{
 		self->_pending.Keyboard.push_back({

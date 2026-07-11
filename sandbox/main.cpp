@@ -7,65 +7,66 @@
 
 using namespace mocca;
 
-auto Counter(int start) -> Element
+struct Todo
+{
+	int Id;
+	std::u32string Text;
+	bool Done;
+};
+
+struct TodoInputProps
+{
+	std::function<void(const std::u32string&)> OnSubmit;
+};
+
+auto TodoInput(const TodoInputProps& props) -> Element
 {
 	using namespace mocca::styles;
-
-	auto [count, setCount] = useState(start);
+	auto [draft, setDraft] = useState(std::u32string{});
 
 	return box(
 		BoxDescriptor{
 			.Style =
 				{
-					.Width = {percent(50)},
-					.Height = {percent(100)},
-					.AlignItems = Alignment::Center,
-					.JustifyContent = Justification::Center,
-				},
-			.Events = {
-				.OnPointerDown = [setCount](auto& ev) -> auto
-				{ setCount([](auto prev) -> auto { return prev + 1; }); },
-				.OnKeyDown = [](auto& ev) -> auto
-				{ mc_info("key {}", (int)ev.Code); },
-				.OnTextInput = [](auto& ev) -> auto
-				{
-					mc_info(
-						"codepoint {} {}",
-						(uint32_t)ev.Codepoint,
-						(char)ev.Codepoint
-					);
-				},
-			},
-			.Children = {
-				text({
-					.Content = std::format("Counter: {}", count),
-				}),
-			},
-		}
-	);
-}
-
-auto TextField() -> Element
-{
-	using namespace mocca::styles;
-	auto [textContent, setText] = useState(std::u32string{});
-
-	return box(
-		BoxDescriptor{
-			.Style =
-				{
-					.Width = {percent(50)},
-					.Height = {percent(100)},
+					.Width = {percent(100)},
+					.Height = {px(40)},
 					.Padding = padding(px(4)),
 					.AlignItems = Alignment::FlexStart,
 					.JustifyContent = Justification::Center,
 				},
 			.Events = {
-				.OnKeyDown = [setText](auto& ev) -> auto
+				.OnKeyDown = [setDraft, draft, props](auto& ev) -> auto
 				{
 					if (ev.Code == KeyCode::Backspace)
 					{
-						setText(
+						setDraft(
+							[](std::u32string prev) -> auto
+							{
+								if (!prev.empty())
+								{
+									prev.pop_back();
+								}
+								return prev;
+							}
+						);
+					}
+					else if (ev.Code == KeyCode::Enter)
+					{
+						if (!draft.empty())
+						{
+							props.OnSubmit(draft);
+							setDraft(
+								[](const std::u32string&) -> auto
+								{ return std::u32string{}; }
+							);
+						}
+					}
+				},
+				.OnKeyRepeat = [setDraft](auto& ev) -> auto
+				{
+					if (ev.Code == KeyCode::Backspace)
+					{
+						setDraft(
 							[](std::u32string prev) -> auto
 							{
 								if (!prev.empty())
@@ -77,9 +78,9 @@ auto TextField() -> Element
 						);
 					}
 				},
-				.OnTextInput = [setText](auto& ev) -> auto
+				.OnTextInput = [setDraft](auto& ev) -> auto
 				{
-					setText(
+					setDraft(
 						[ev](std::u32string prev) -> auto
 						{
 							prev.push_back(ev.Codepoint);
@@ -89,68 +90,123 @@ auto TextField() -> Element
 				},
 			},
 			.Children = {
-				text({.Content = mocca::detail::toUtf8(textContent)}),
+				text({
+					.Content =
+						draft.empty()
+							? std::string("Type a todo and press Enter...")
+							: mocca::detail::toUtf8(draft),
+				}),
 			},
 		}
 	);
 }
 
-auto buildExampleTree() -> Element
+struct TodoItemProps
+{
+	Todo Item;
+	std::function<void(int)> OnToggle;
+};
+
+auto TodoItem(const TodoItemProps& props) -> Element
 {
 	using namespace mocca::styles;
+
+	std::string prefix = props.Item.Done ? "[x] " : "[ ] ";
+	std::string label = prefix + mocca::detail::toUtf8(props.Item.Text);
 
 	return box(
 		BoxDescriptor{
 			.Style =
 				{
-					.Width = {px(200)},
-					.Height = {px(500)},
-					.AlignContent = StyleKeyword::Inherit,
-					.AlignItems = Alignment::Stretch,
-					.AlignSelf = {Auto},
+					.Width = {percent(100)},
+					.Height = {px(20)},
+					.AlignItems = Alignment::FlexStart,
+					.JustifyContent = Justification::Center,
+				},
+			.Events =
+				{
+					.OnPointerDown = [props](auto& ev) -> auto
+					{ props.OnToggle(props.Item.Id); },
 				},
 			.Children = {
-				box(BoxDescriptor{
-					.Style =
-						{
-							.Width = {percent(100)},
-							.Height = {px(50)},
-							.FlexDirection = FlexDirections::Row,
-						},
-					.Children =
-						{
-							component(Counter, 1),
-							component(TextField),
-						}
-				}),
+				text({.Content = label}),
+			},
+		}
+	);
+}
+
+auto buildTodoApp() -> Element
+{
+	using namespace mocca::styles;
+
+	auto [todos, setTodos] = useState(std::vector<Todo>{});
+	auto [nextId, setNextId] = useState(0);
+
+	auto addTodo =
+		[setTodos, setNextId, nextId](const std::u32string& text) -> void
+	{
+		setTodos(
+			[text, nextId](std::vector<Todo> prev) -> auto
+			{
+				prev.push_back({.Id = nextId, .Text = text, .Done = false});
+				return prev;
+			}
+		);
+		setNextId([](int prev) -> auto { return prev + 1; });
+	};
+
+	auto toggleTodo = [setTodos](int id) -> void
+	{
+		setTodos(
+			[id](std::vector<Todo> prev) -> auto
+			{
+				for (auto& t : prev)
+				{
+					if (t.Id == id)
+					{
+						t.Done = !t.Done;
+					}
+				}
+				return prev;
+			}
+		);
+	};
+
+	return box(
+		BoxDescriptor{
+			.Style =
+				{
+					.Width = {px(300)},
+					.Height = {px(500)},
+					.Padding = padding(px(8)),
+					.AlignItems = Alignment::Stretch,
+				},
+			.Children = {
+				component(TodoInput, TodoInputProps{.OnSubmit = addTodo}),
 				box({
 					.Style =
 						{
-							.Width = {Auto},
-							.Height = {px(100)},
-							.Padding = padding(px(5)),
+							.Width = {percent(100)},
+							.Height = {px(400)},
 							.Margin = margin(px(5)),
 							.AlignItems = Alignment::FlexStart,
 							.Overflow = {OverflowType::Scroll},
 						},
-					.Children =
+					.Children = mapElements(
+						todos,
+						[toggleTodo](const Todo& item) -> Element
 						{
-							text({.Key = "a", .Content = "Item A"}),
-							text({.Key = "b", .Content = "Item B"}),
-							text({.Key = "c", .Content = "Item C"}),
-							text({.Key = "d", .Content = "Item D"}),
-							text({.Key = "e", .Content = "Item E"}),
-							text({.Key = "f", .Content = "Item F"}),
-							text({.Key = "g", .Content = "Item G"}),
-							text({.Key = "h", .Content = "Item H"}),
-							text({.Key = "i", .Content = "Item I"}),
-							text({.Key = "j", .Content = "Item J"}),
-							text({.Key = "k", .Content = "Item K"}),
-							text({.Key = "l", .Content = "Item L"}),
-							text({.Key = "m", .Content = "Item M"}),
-						},
+							return component(
+								TodoItem,
+								TodoItemProps{
+									.Item = item,
+									.OnToggle = toggleTodo,
+								},
+								{.Key = item.Id}
+							);
+						}
+					),
 				}),
-				box({.Style = {.Width = {px(50)}, .Height = {px(50)}}}),
 			},
 		}
 	);
@@ -189,14 +245,14 @@ auto main(int argc, const char** argv) -> int
 		.Width = 800,
 		.Height = 600,
 		.Title = "Sandbox",
-		.Root = buildExampleTree,
+		.Root = buildTodoApp,
 	});
 
 	app.RegisterSurface({
 		.Width = 800,
 		.Height = 600,
 		.Title = "Sandbox2",
-		.Root = buildExampleTree,
+		.Root = buildTodoApp,
 	});
 
 	app.Tick(0);

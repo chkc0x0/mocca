@@ -206,10 +206,14 @@ namespace mocca::detail
 		std::string indent(static_cast<size_t>(depth * 2), ' ');
 		auto kind = NodeKind();
 
-		std::cout << indent << "<" << kind << " id=\"" << Id << "\""
-				  << " x=" << GetX() << " y=" << GetY()
-				  << " w=" << YGNodeLayoutGetWidth(YogaNode)
-				  << " h=" << YGNodeLayoutGetHeight(YogaNode);
+		std::cout << indent << "<" << kind << " id=\"" << Id << "\"";
+
+		if (!std::holds_alternative<ComponentElement>(Kind))
+		{
+			std::cout << " x=" << GetX() << " y=" << GetY()
+					  << " w=" << YGNodeLayoutGetWidth(YogaNode)
+					  << " h=" << YGNodeLayoutGetHeight(YogaNode);
+		}
 
 		if (Key != mc_keyNone)
 		{
@@ -434,7 +438,13 @@ namespace mocca
 			return nullptr;
 		}
 
-		auto hitTestImpl(Node* root, float x, float y, float accScrollX, float accScrollY) -> Node*
+		auto hitTestImpl(
+			Node* root,
+			float x,
+			float y,
+			float accScrollX,
+			float accScrollY
+		) -> Node*
 		{
 			if (root == nullptr)
 			{
@@ -466,7 +476,8 @@ namespace mocca
 			float testX = x + accScrollX;
 			float testY = y + accScrollY;
 
-			if (testX >= nx && testX < nx + nw && testY >= ny && testY < ny + nh)
+			if (testX >= nx && testX < nx + nw && testY >= ny &&
+				testY < ny + nh)
 			{
 				return root;
 			}

@@ -71,6 +71,7 @@ namespace mocca
 		return detail::Node::FindNodeById(_root.get(), id) != nullptr;
 	}
 
+	// TODO refactor this thing
 	void Surface::ProcessInput(const InputBatch& batch)
 	{
 		if (!_root)
@@ -108,8 +109,8 @@ namespace mocca
 					);
 					if (scrollable != nullptr)
 					{
-						scrollable->ScrollOffset.X += ev.ScrollX;
-						scrollable->ScrollOffset.Y -= ev.ScrollY;
+						scrollable->ScrollOffset.X += ev.ScrollX * 16;
+						scrollable->ScrollOffset.Y -= ev.ScrollY * 16;
 
 						// TODO clamp to content bounds once we track content size
 						scrollable->ScrollOffset.X = std::max<float>(scrollable->ScrollOffset.X, 0);
@@ -187,6 +188,12 @@ namespace mocca
 						if (n->Events.OnKeyUp)
 						{
 							n->Events.OnKeyUp(e);
+						}
+						break;
+					case KeyEvent::Type::Repeat:
+						if (n->Events.OnKeyRepeat)
+						{
+							n->Events.OnKeyRepeat(e);
 						}
 						break;
 					}
