@@ -242,7 +242,6 @@ void GLFWPlatformSurface::Submit(
 				else if constexpr (std::is_same_v<T, mocca::cmds::PushTransformCmd>)
 				{
 					nvgSave(_vg);
-					nvgResetTransform(_vg);
 					nvgTranslate(_vg, c.Offset.X, c.Offset.Y);
 				}
 				else if constexpr (std::is_same_v<T, mocca::cmds::PopTransformCmd>)

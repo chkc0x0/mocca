@@ -191,7 +191,10 @@ auto buildTodoApp() -> Element
 							.Height = {px(400)},
 							.Margin = margin(px(5)),
 							.AlignItems = Alignment::FlexStart,
-							.Overflow = {OverflowType::Scroll},
+							.Overflow =
+								{
+									OverflowType::Scroll,
+								},
 						},
 					.Children = mapElements(
 						todos,

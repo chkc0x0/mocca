@@ -55,7 +55,7 @@ namespace mocca
 			Vector2 currentOffset = _transformStack.empty() ? Vector2{.X=0, .Y=0} : _transformStack.back();
 			Vector2 newOffset = {.X=currentOffset.X + dx, .Y=currentOffset.Y + dy};
 			_transformStack.push_back(newOffset);
-			_commands.emplace_back(cmds::PushTransformCmd{newOffset});
+			_commands.emplace_back(cmds::PushTransformCmd{Vector2{.X=dx, .Y=dy}});
 		}
 
 		void PopTransform()

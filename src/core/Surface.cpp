@@ -112,9 +112,33 @@ namespace mocca
 						scrollable->ScrollOffset.X += ev.ScrollX * 16;
 						scrollable->ScrollOffset.Y -= ev.ScrollY * 16;
 
-						// TODO clamp to content bounds once we track content size
-						scrollable->ScrollOffset.X = std::max<float>(scrollable->ScrollOffset.X, 0);
-						scrollable->ScrollOffset.Y = std::max<float>(scrollable->ScrollOffset.Y, 0);
+						float cw = YGNodeLayoutGetWidth(scrollable->YogaNode);
+						float ch = YGNodeLayoutGetHeight(scrollable->YogaNode);
+
+						float cmaxX = 0.0F;
+						float cmaxY = 0.0F;
+						uint32_t nc = YGNodeGetChildCount(scrollable->YogaNode);
+						for (uint32_t ci = 0; ci < nc; ci++)
+						{
+							auto* yc = YGNodeGetChild(scrollable->YogaNode, ci);
+							cmaxX = std::max<float>(
+								cmaxX,
+								YGNodeLayoutGetLeft(yc) +
+									YGNodeLayoutGetWidth(yc)
+							);
+							cmaxY = std::max<float>(
+								cmaxY,
+								YGNodeLayoutGetTop(yc) +
+									YGNodeLayoutGetHeight(yc)
+							);
+						}
+						float maxSx = std::max<float>(0.0F, cmaxX - cw);
+						float maxSy = std::max<float>(0.0F, cmaxY - ch);
+
+						scrollable->ScrollOffset.X =
+							std::clamp(scrollable->ScrollOffset.X, 0.0F, maxSx);
+						scrollable->ScrollOffset.Y =
+							std::clamp(scrollable->ScrollOffset.Y, 0.0F, maxSy);
 
 						MarkDirty();
 					}
