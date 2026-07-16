@@ -1,5 +1,4 @@
 #include "Style.h"
-#include "Detail.h"
 #include "Logger.h"
 #include "yoga/YGConfig.h"
 #include "yoga/YGNodeStyle.h"

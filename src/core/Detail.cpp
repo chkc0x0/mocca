@@ -382,7 +382,7 @@ namespace mocca::detail
 			oldNode->Key != newElement->Key
 		)
 		{
-			// TODO(zombie): later
+			// TODO zombie later on
 			getCtx()->_store.RemoveComponent(oldNode->Id);
 			oldNode = BuildNodeTree(*newElement);
 		}
