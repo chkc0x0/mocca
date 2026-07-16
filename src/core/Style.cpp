@@ -529,16 +529,3 @@ namespace mocca::styles::detail::applying::layout
 		YGNodeStyleSetOverflow(ref, (YGOverflow)((int)value));
 	}
 }
-
-namespace mocca::styles::detail::applying::render
-{
-	void applyBackgroundColor(mocca::detail::Node* ref, Color value)
-	{
-		ref->Style.BackgroundColor = value;
-	}
-
-	void applyTextColor(mocca::detail::Node* ref, Color value)
-	{
-		ref->Style.TextColor = value;
-	}
-}

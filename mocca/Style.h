@@ -358,13 +358,5 @@ namespace mocca
 			mc_layoutProperties
 #undef mc_styleProperty
 		}
-
-		namespace detail::applying::render
-		{
-#define mc_styleProperty(name, type, inherits, initial, ...)                   \
-	void apply##name(mocca::detail::Node* ref, type value);
-			mc_renderProperties
-#undef mc_styleProperty
-		}
 	}
 }

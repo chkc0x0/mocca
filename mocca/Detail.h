@@ -69,7 +69,7 @@ namespace mocca::detail
 
 	struct Node
 	{
-		Node();
+		Node() = default;
 		~Node();
 
 		NodeId Id;
@@ -122,7 +122,6 @@ namespace mocca::detail
 			-> std::unique_ptr<Node>;
 		void BuildYogaTree();
 		void ApplyLayoutStyles() const;
-		void ApplyRenderStyles();
 		void ComputeStyle(const ComputedStyle& parentComputed);
 
 		[[nodiscard]] auto GetX() const -> float;

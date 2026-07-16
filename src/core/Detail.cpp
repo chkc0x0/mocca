@@ -7,16 +7,12 @@
 
 namespace mocca::detail
 {
-	Node::Node()
-	{
-		// TODO: Only Box and Text nodes need a Yoga node, this should be skipped for Component nodes
-		YogaNode = YGNodeNew();
-		YGNodeSetContext(YogaNode, this);
-	}
-
 	Node::~Node()
 	{
-		YGNodeFree(YogaNode);
+		if (YogaNode != nullptr)
+		{
+			YGNodeFree(YogaNode);
+		}
 	}
 
 	auto measureFunc(
@@ -45,9 +41,12 @@ namespace mocca::detail
 
 	void Node::BuildYogaTree()
 	{
-		// TODO we should place these in a applyStyles function or something
+		if (YogaNode == nullptr)
+		{
+			return;
+		}
+
 		ApplyLayoutStyles();
-		ApplyRenderStyles();
 
 		YGNodeRemoveAllChildren(YogaNode);
 
@@ -84,14 +83,6 @@ namespace mocca::detail
 #define mc_styleProperty(name, ...)                                            \
 	styles::detail::applying::layout::apply##name(YogaNode, Style.name);
 		mc_layoutProperties
-#undef mc_styleProperty
-	}
-
-	void Node::ApplyRenderStyles()
-	{
-#define mc_styleProperty(name, ...)                                            \
-	styles::detail::applying::render::apply##name(this, Style.name);
-		mc_renderProperties
 #undef mc_styleProperty
 	}
 
@@ -143,23 +134,54 @@ namespace mocca::detail
 
 		node->Events = element.Events;
 
+		if (!node->IsComponent())
+		{
+			node->YogaNode = YGNodeNew();
+			YGNodeSetContext(node->YogaNode, node.get());
+		}
+
 		return node;
 	}
 
 	auto Node::GetX() const -> float
 	{
-		return YGNodeLayoutGetLeft(YogaNode) +
-			   (Parent == nullptr ? 0 : Parent->GetX());
+		float pos = 0.0F;
+		if (YogaNode != nullptr)
+		{
+			pos = YGNodeLayoutGetLeft(YogaNode);
+		}
+		if (Parent != nullptr)
+		{
+			pos += Parent->GetX();
+		}
+		return pos;
 	}
 
 	auto Node::GetY() const -> float
 	{
-		return YGNodeLayoutGetTop(YogaNode) +
-			   (Parent == nullptr ? 0 : Parent->GetY());
+		float pos = 0.0F;
+		if (YogaNode != nullptr)
+		{
+			pos = YGNodeLayoutGetTop(YogaNode);
+		}
+		if (Parent != nullptr)
+		{
+			pos += Parent->GetY();
+		}
+		return pos;
 	}
 
 	void Node::Paint(Canvas& canvas)
 	{
+		if (IsComponent())
+		{
+			for (auto& child : Children)
+			{
+				child->Paint(canvas);
+			}
+			return;
+		}
+
 		float x = GetX();
 		float y = GetY();
 		float w = YGNodeLayoutGetWidth(YogaNode);
@@ -477,6 +499,11 @@ namespace mocca
 				{
 					return hit;
 				}
+			}
+
+			if (root->IsComponent())
+			{
+				return nullptr;
 			}
 
 			float nx = root->GetX();
