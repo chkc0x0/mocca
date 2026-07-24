@@ -1,6 +1,6 @@
-[submodule "subprojects/nanovg"]
-	path = subprojects/nanovg
-	url = https://github.com/memononen/nanovg
+[submodule "subprojects/kurva"]
+	path = subprojects/kurva
+	url = https://github.com/chkc0x0/kurva
 [submodule "subprojects/yoga"]
 	path = subprojects/yoga
 	url = https://github.com/react/yoga
