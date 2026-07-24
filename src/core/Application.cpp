@@ -48,30 +48,51 @@ namespace mocca
 
 	void Application::Tick(double dt)
 	{
-		_deadSurfaces.clear();
-
 		EmitEvent(ApplicationEvent::Poll, nullptr);
 
 		for (auto it = _surfaces.begin(); it != _surfaces.end();)
 		{
 			auto* surface = it->get();
 
-			if (surface->IsPlatformBacked())
+			if (surface->GetState() == SurfaceState::Dead)
+			{
+				++it;
+				continue;
+			}
+
+			if (surface->GetState() == SurfaceState::Alive &&
+				surface->IsPlatformBacked())
 			{
 				InputBatch batch;
 				surface->GetPlatform()->CollectEvents(batch);
 				surface->ProcessInput(batch);
 			}
 
-			if (surface->ShouldClose())
+			if (surface->GetState() == SurfaceState::Zombie)
 			{
-				_deadSurfaces.push_back(std::move(*it));
-				it = _surfaces.erase(it);
+				if (surface->_zombieTimer > 0)
+				{
+					surface->_zombieTimer--;
+				}
+
+				if (surface->_zombieTimer == 0)
+				{
+					surface->_state = SurfaceState::Dead;
+					++it;
+					continue;
+				}
+
+				_context._currentSurface = surface;
+				if (surface->IsDirty())
+				{
+					surface->Tick(dt);
+				}
+				_context._currentSurface = nullptr;
+				++it;
 				continue;
 			}
 
 			_context._currentSurface = surface;
-
 			if (surface->IsDirty())
 			{
 				surface->Tick(dt);
@@ -84,9 +105,21 @@ namespace mocca
 			}
 
 			_context._currentSurface = nullptr;
-
 			++it;
 		}
+
+		std::erase_if(
+			_surfaces,
+			[this](const auto& s) -> auto
+			{
+				if (s->GetState() == SurfaceState::Dead)
+				{
+					std::erase(_platformSurfaces, s.get());
+					return true;
+				}
+				return false;
+			}
+		);
 
 		_context._store.ClearDirty();
 		_context._store.FlushEffects();
@@ -162,6 +195,12 @@ namespace mocca
 		surface->_rootId = detail::nextNodeId++;
 		auto* ptr = surface.get();
 		EmitEvent(ApplicationEvent::SurfaceCreated, ptr);
+
+		if (ptr->IsPlatformBacked())
+		{
+			_platformSurfaces.push_back(ptr);
+		}
+
 		_surfaces.push_back(std::move(surface));
 		return ptr;
 	}

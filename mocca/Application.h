@@ -102,11 +102,7 @@ namespace mocca
 		} _logger;
 
 		std::vector<std::unique_ptr<Surface>> _surfaces;
-
-		// dead surfaces live +1 frame so code after tick doesnt uaf.
-		// this is quite hacky and it'll probably break someday,
-		// assumes nothing holds a ref to surfaces for >1 frame
-		std::vector<std::unique_ptr<Surface>> _deadSurfaces;
+		std::vector<Surface*> _platformSurfaces;
 
 		struct EventCallback
 		{

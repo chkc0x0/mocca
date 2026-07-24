@@ -15,6 +15,13 @@ namespace mocca
 		AutomaticSize = 1 << 2
 	};
 
+	enum class SurfaceState : char
+	{
+		Alive,
+		Zombie,
+		Dead
+	};
+
 	struct SurfaceDesc
 	{
 		int Width;
@@ -82,14 +89,28 @@ namespace mocca
 					static_cast<int>(SurfaceFlags::AutomaticSize)) != 0;
 		}
 
-		void RequestClose()
+		[[nodiscard]] auto GetState() const -> SurfaceState
 		{
-			_shouldClose = true;
+			return _state;
 		}
 
-		[[nodiscard]] auto ShouldClose() const -> bool
+		void RequestClose()
 		{
-			return _shouldClose;
+			if (_state == SurfaceState::Alive)
+			{
+				_state = SurfaceState::Zombie;
+				_zombieTimer = _zombieTimeout;
+			}
+		}
+
+		void ForceDestroy()
+		{
+			_state = SurfaceState::Dead;
+		}
+
+		void SetZombieTimeout(int frames)
+		{
+			_zombieTimeout = frames;
 		}
 
 		[[nodiscard]] auto IsDirty() const -> bool
@@ -126,7 +147,9 @@ namespace mocca
 		detail::NodeId _rootId;
 		std::unique_ptr<detail::Node> _root = nullptr;
 		bool _dirty = true;
-		bool _shouldClose = false;
+		SurfaceState _state = SurfaceState::Alive;
+		int _zombieTimer = 0;
+		int _zombieTimeout = 0;
 		Canvas _canvas;
 
 		detail::NodeId _focusedNode = 0;
