@@ -146,11 +146,14 @@ namespace mocca
 		std::unique_ptr<PlatformSurface> _platform;
 		detail::NodeId _rootId;
 		std::unique_ptr<detail::Node> _root = nullptr;
-		bool _dirty = true;
 		SurfaceState _state = SurfaceState::Alive;
 		int _zombieTimer = 0;
 		int _zombieTimeout = 0;
+		bool _dirty = true;
 		Canvas _canvas;
+
+		Surface* _parent{nullptr};
+		std::vector<std::unique_ptr<Surface>> _children;
 
 		detail::NodeId _focusedNode = 0;
 		detail::NodeId _capturedNode = 0;
