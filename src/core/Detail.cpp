@@ -17,7 +17,7 @@ namespace mocca::detail
 
 	auto measureFunc(
 		const YGNode* ref,
-		float with,
+		float width,
 		YGMeasureMode widthMode,
 		float height,
 		YGMeasureMode heightMode
@@ -34,9 +34,12 @@ namespace mocca::detail
 		// TODO: read font size from computed style once styling exists. Hardcoded now.
 		constexpr int fontSize = 16;
 
-		auto width = static_cast<float>(content.size() * 8);
+		auto textWidth = static_cast<float>(content.size() * 8);
 
-		return YGSize{.width = width, .height = static_cast<float>(fontSize)};
+		return YGSize{
+			.width = textWidth,
+			.height = static_cast<float>(fontSize)
+		};
 	}
 
 	void Node::BuildYogaTree()
@@ -443,7 +446,7 @@ namespace mocca
 		styles::detail::properties::name##Property                             \
 	);
 		mc_layoutProperties mc_renderProperties
-#undef mcStyleProperty
+#undef mc_styleProperty
 			return computed;
 	}
 

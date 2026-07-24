@@ -11,7 +11,7 @@ namespace mocca
 	public:
 	private:
 		detail::HookStore _store;
-		Surface* _currentSurface;
+		Surface* _currentSurface{nullptr};
 
 		detail::NodeId _componentId;
 		uint32_t _hookIndex;

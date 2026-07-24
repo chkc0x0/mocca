@@ -8,7 +8,7 @@
 #define NANOVG_GL3_IMPLEMENTATION 1
 #include "nanovg_gl.h"
 
-inline static int glfwInitialized = 0;
+static int glfwInitialized = 0;
 
 GLFWPlatformSurface::GLFWPlatformSurface(
 	mocca::Surface* surface,

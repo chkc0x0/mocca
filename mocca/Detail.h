@@ -54,8 +54,8 @@ namespace mocca::detail
 			else
 			{
 				result.push_back(static_cast<char>(0xF0 | (cp >> 18)));
-				result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
 				result.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+				result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
 				result.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
 			}
 		}

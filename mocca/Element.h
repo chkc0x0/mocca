@@ -234,6 +234,7 @@ namespace mocca
 	auto mapElements(int count, Fn fn) -> std::vector<Element>
 	{
 		std::vector<Element> result;
+		result.reserve(count);
 
 		for (int i = 0; i < count; ++i)
 		{

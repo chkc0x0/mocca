@@ -23,18 +23,21 @@ auto TodoInput(const TodoInputProps& props) -> Element
 {
 	using namespace mocca::styles;
 	auto [draft, setDraft] = useState(std::u32string{});
+	auto [hovered, setHovered] = useState(false);
 
 	return box(
 		BoxDescriptor{
 			.Style =
-				{
-					.Width = {percent(100)},
-					.Height = {px(40)},
-					.Padding = padding(px(4)),
-					.AlignItems = Alignment::FlexStart,
-					.JustifyContent = Justification::Center,
-				},
+				{.Width = {percent(100)},
+				 .Height = {px(40)},
+				 .Padding = padding(px(4)),
+				 .AlignItems = Alignment::FlexStart,
+				 .JustifyContent = Justification::Center,
+				 .BackgroundColor = hovered ? colors::Red
+											: colors::Transparent},
 			.Events = {
+				.OnPointerDown = [setHovered](auto& ev) -> auto
+				{ setHovered([](auto prev) { return !prev; }); },
 				.OnKeyDown = [setDraft, draft, props](auto& ev) -> auto
 				{
 					if (ev.Code == KeyCode::Backspace)

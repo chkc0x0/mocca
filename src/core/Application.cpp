@@ -43,7 +43,10 @@ namespace mocca
 
 	Application::~Application()
 	{
-		main = nullptr;
+		if (main == this)
+		{
+			main = nullptr;
+		}
 	}
 
 	void Application::Tick(double dt)
@@ -81,15 +84,6 @@ namespace mocca
 					++it;
 					continue;
 				}
-
-				_context._currentSurface = surface;
-				if (surface->IsDirty())
-				{
-					surface->Tick(dt);
-				}
-				_context._currentSurface = nullptr;
-				++it;
-				continue;
 			}
 
 			_context._currentSurface = surface;
@@ -149,13 +143,14 @@ namespace mocca
 
 	auto Application::EmitEvent(std::string_view event, void* data) -> bool
 	{
-		if (!_events.contains(detail::hashString(event)))
+		auto hash = detail::hashString(event);
+		if (!_events.contains(hash))
 		{
 			return true;
 		}
 
 		return std::ranges::all_of(
-			_events[detail::hashString(event)],
+			_events[hash],
 			[data](const auto& cb) -> auto
 			{ return cb.Callback(data, cb.User); }
 		);
@@ -175,8 +170,6 @@ namespace mocca
 			[data](const auto& cb) -> auto
 			{ return cb.Callback(data, cb.User); }
 		);
-
-		return true;
 	}
 
 	void Application::RemoveCallbacks(std::string_view event)
@@ -194,7 +187,10 @@ namespace mocca
 		auto surface = std::make_unique<Surface>(desc);
 		surface->_rootId = detail::nextNodeId++;
 		auto* ptr = surface.get();
-		EmitEvent(ApplicationEvent::SurfaceCreated, ptr);
+		if (!EmitEvent(ApplicationEvent::SurfaceCreated, ptr))
+		{
+			return nullptr;
+		}
 
 		if (ptr->IsPlatformBacked())
 		{

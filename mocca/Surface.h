@@ -10,9 +10,9 @@ namespace mocca
 {
 	enum class SurfaceFlags : char
 	{
-		None = 1 << 0,
-		External = 1 << 1,
-		AutomaticSize = 1 << 2
+		None = 0,
+		External = 1 << 0,
+		AutomaticSize = 1 << 1
 	};
 
 	enum class SurfaceState : char
@@ -52,7 +52,7 @@ namespace mocca
 			_dirty = true;
 		}
 
-		auto GetDrawData() -> std::vector<cmds::DrawCommand>
+		[[nodiscard]] auto GetDrawData() const -> const std::vector<cmds::DrawCommand>&
 		{
 			return _canvas.Commands();
 		}
