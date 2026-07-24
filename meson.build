@@ -15,7 +15,7 @@ cmake_options.add_cmake_defines({'WITH_PIC': true})
 
 glfw_dep = cmake.subproject('glfw', options: cmake_options).dependency('glfw')
 yoga_dep = cmake.subproject('yoga', options: cmake_options).dependency('yogacore')
-nanovg_dep = subproject('nanovg').get_variable('nanovg_dep')
+kurva_dep = subproject('kurva').get_variable('nanovg_dep')
 
 dependencies = [glfw_dep, yoga_dep]
 
@@ -36,14 +36,12 @@ mocca_dep = declare_dependency(
     include_directories: include_directories('mocca'),
 )
 
-sandbox_inc = include_directories('sandbox', 'sandbox/glad/include')
-
 executable(
     'sandbox',
-    dependencies: [mocca_dep, glfw_dep, nanovg_dep],
+    dependencies: [mocca_dep, glfw_dep, kurva_dep, dependency('glew')],
     sources: [
         'sandbox/main.cpp',
         'sandbox/GLFWPlatformSurface.cpp',
     ],
-    include_directories: sandbox_inc,
+    include_directories: include_directories('sandbox'),
 )

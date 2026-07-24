@@ -1,13 +1,10 @@
 #include "GLFWPlatformSurface.h"
 #include "Logger.h"
 #include "Math.h"
-
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "nanovg.h"
-
-#define GLAD_GL_IMPLEMENTATION
-#include "sandbox/glad/include/glad/gl.h"
+#include "GL/glew.h"
 #define NANOVG_GL3_IMPLEMENTATION 1
 #include "nanovg_gl.h"
 
@@ -58,7 +55,7 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 	glfwMakeContextCurrent(_window);
 	glfwSwapInterval(1);
 
-	if (gladLoadGL((GLADloadfunc)glfwGetProcAddress) == 0)
+	if (glewInit() != GLEW_OK)
 	{
 		mc_error(
 			mocca::ErrorCode::InvalidState,
@@ -235,18 +232,19 @@ void GLFWPlatformSurface::Submit(
 						c.Rect.Height
 					);
 				}
-				else if constexpr (std::is_same_v<T, mocca::cmds::PopClipCmd>)
+				else if constexpr (
+					std::is_same_v<T, mocca::cmds::PopClipCmd> ||
+					std::is_same_v<T, mocca::cmds::PopTransformCmd>
+				)
 				{
 					nvgRestore(_vg);
 				}
-				else if constexpr (std::is_same_v<T, mocca::cmds::PushTransformCmd>)
+				else if constexpr (
+					std::is_same_v<T, mocca::cmds::PushTransformCmd>
+				)
 				{
 					nvgSave(_vg);
 					nvgTranslate(_vg, c.Offset.X, c.Offset.Y);
-				}
-				else if constexpr (std::is_same_v<T, mocca::cmds::PopTransformCmd>)
-				{
-					nvgRestore(_vg);
 				}
 			},
 			cmd
