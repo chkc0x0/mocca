@@ -55,4 +55,26 @@ namespace mocca
 			}
 		);
 	}
+
+	void Logger::LogImpl(
+		LogLevel severity,
+		std::string_view message,
+		std::string_view file,
+		std::string_view function,
+		int line,
+		ErrorCode code,
+		std::format_args args
+	)
+	{
+		auto msg = std::vformat(message, args);
+		LogMessage logMessage{
+			.Severity = severity,
+			.Message = msg,
+			.File = file,
+			.Function = function,
+			.Line = line,
+			.Code = code
+		};
+		Log(logMessage);
+	}
 }

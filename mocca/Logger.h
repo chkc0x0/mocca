@@ -56,7 +56,7 @@ namespace mocca
 		template <typename... Args>
 		static void Log(
 			LogLevel severity,
-			std::string_view message,
+			std::format_string<Args...> message,
 			std::string_view file,
 			std::string_view function,
 			int line,
@@ -69,23 +69,31 @@ namespace mocca
 				return;
 			}
 
-			auto msg = std::vformat(message, std::make_format_args(args...));
-			LogMessage logMessage{
-				.Severity = severity,
-				.Message = msg,
-				.File = file,
-				.Function = function,
-				.Line = line,
-				.Code = code
-			};
-
-			Log(logMessage);
+			LogImpl(
+				severity,
+				message.get(),
+				file,
+				function,
+				line,
+				code,
+				std::make_format_args(args...)
+			);
 		}
 
 	private:
 		static inline LogCallback callback{nullptr};
 		static inline void* logUserData{nullptr};
 		static inline ErrorCode lastError{ErrorCode::None};
+
+		static void LogImpl(
+			LogLevel severity,
+			std::string_view message,
+			std::string_view file,
+			std::string_view function,
+			int line,
+			ErrorCode code,
+			std::format_args args
+		);
 	};
 }
 
@@ -139,10 +147,11 @@ namespace mocca
 			mc_log(                                                            \
 				mocca::LogLevel::Error,                                        \
 				mocca::ErrorCode::AssertFailed,                                \
-				std::format("assertion \"{}\" failed: {}", #expr, message),    \
+				"assertion \"{}\" failed: " message,                           \
 				__FILE__,                                                      \
 				__FUNCTION__,                                                  \
 				__LINE__,                                                      \
+				#expr,                                                         \
 				##__VA_ARGS__                                                  \
 			);                                                                 \
 		}                                                                      \
