@@ -32,6 +32,7 @@ namespace mocca
 		friend struct detail::Node;
 		friend struct Element;
 		friend class Application;
+		friend class Surface;
 
 		template <typename T>
 		friend auto useState(T initial) -> std::pair<T&, StateSetter<T>>;

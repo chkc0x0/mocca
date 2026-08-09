@@ -8,6 +8,8 @@
 
 namespace mocca
 {
+	class Surface;
+
 	enum class SurfaceFlags : char
 	{
 		None = 0,
@@ -30,6 +32,7 @@ namespace mocca
 		int Y = -1;
 		std::string Title;
 		SurfaceFlags Flags = SurfaceFlags::None;
+		Surface* Parent = nullptr;
 		ComponentFn Root;
 	};
 
@@ -43,6 +46,7 @@ namespace mocca
 
 		~Surface();
 
+		void Update(double dt);
 		void Tick(double dt);
 		void Paint();
 		void Print(int depth = 0) const;
@@ -50,9 +54,14 @@ namespace mocca
 		void MarkDirty()
 		{
 			_dirty = true;
+			if (_desc.Parent != nullptr && !IsPlatformBacked())
+			{
+				_desc.Parent->MarkDirty();
+			}
 		}
 
-		[[nodiscard]] auto GetDrawData() const -> const std::vector<cmds::DrawCommand>&
+		[[nodiscard]] auto GetDrawData() const
+			-> const std::vector<cmds::DrawCommand>&
 		{
 			return _canvas.Commands();
 		}
@@ -94,12 +103,22 @@ namespace mocca
 			return _state;
 		}
 
+		[[nodiscard]] auto GetParent() const -> Surface*
+		{
+			return _desc.Parent;
+		}
+
 		void RequestClose()
 		{
 			if (_state == SurfaceState::Alive)
 			{
 				_state = SurfaceState::Zombie;
 				_zombieTimer = _zombieTimeout;
+
+				for (auto& c : _children)
+				{
+					c->RequestClose();
+				}
 			}
 		}
 
@@ -123,7 +142,7 @@ namespace mocca
 			return _root.get();
 		}
 
-		[[nodiscard]] auto ContainsNode(detail::NodeId id) const -> bool;
+		[[nodiscard]] auto FindSurfaceContaining(detail::NodeId id) -> Surface*;
 
 		void ProcessInput(const InputBatch& batch);
 
@@ -152,7 +171,6 @@ namespace mocca
 		bool _dirty = true;
 		Canvas _canvas;
 
-		Surface* _parent{nullptr};
 		std::vector<std::unique_ptr<Surface>> _children;
 
 		detail::NodeId _focusedNode = 0;

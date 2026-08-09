@@ -31,8 +31,15 @@ namespace mocca
 
 		void PushClip(float x, float y, float w, float h)
 		{
-			Vector2 currentOffset = _transformStack.empty() ? Vector2{0, 0} : _transformStack.back();
-			Rectangle rect{.X = currentOffset.X + x, .Y = currentOffset.Y + y, .Width = w, .Height = h};
+			Vector2 currentOffset = _transformStack.empty()
+										? Vector2{0, 0}
+										: _transformStack.back();
+			Rectangle rect{
+				.X = currentOffset.X + x,
+				.Y = currentOffset.Y + y,
+				.Width = w,
+				.Height = h
+			};
 			if (!_clipStack.empty())
 			{
 				rect = _clipStack.back().Intersect(rect);
@@ -52,10 +59,17 @@ namespace mocca
 
 		void PushTransform(float dx, float dy)
 		{
-			Vector2 currentOffset = _transformStack.empty() ? Vector2{.X=0, .Y=0} : _transformStack.back();
-			Vector2 newOffset = {.X=currentOffset.X + dx, .Y=currentOffset.Y + dy};
+			Vector2 currentOffset = _transformStack.empty()
+										? Vector2{.X = 0, .Y = 0}
+										: _transformStack.back();
+			Vector2 newOffset = {
+				.X = currentOffset.X + dx,
+				.Y = currentOffset.Y + dy
+			};
 			_transformStack.push_back(newOffset);
-			_commands.emplace_back(cmds::PushTransformCmd{Vector2{.X=dx, .Y=dy}});
+			_commands.emplace_back(
+				cmds::PushTransformCmd{Vector2{.X = dx, .Y = dy}}
+			);
 		}
 
 		void PopTransform()
@@ -78,6 +92,15 @@ namespace mocca
 			_commands.clear();
 			_clipStack.clear();
 			_transformStack.clear();
+		}
+
+		void Append(const Canvas& other)
+		{
+			_commands.insert(
+				_commands.end(),
+				other._commands.begin(),
+				other._commands.end()
+			);
 		}
 
 	private:

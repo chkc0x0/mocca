@@ -115,6 +115,7 @@ namespace mocca
 		std::unordered_map<uint64_t, std::vector<EventCallback>> _events;
 
 		Context _context;
+		friend class Surface;
 		friend auto getCtx() -> Context*;
 	};
 }

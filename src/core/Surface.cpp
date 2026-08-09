@@ -17,9 +17,14 @@ namespace mocca
 		}
 
 		Application::main->EmitEvent(ApplicationEvent::SurfaceDestroyed, this);
+
+		if (IsPlatformBacked())
+		{
+			std::erase(Application::main->_platformSurfaces, this);
+		}
 	}
 
-	void Surface::Tick(double dt)
+	void Surface::Update(double dt)
 	{
 		auto tree = Element::Render(_desc.Root, _rootId);
 		_root = detail::Node::Reconcile(std::move(_root), &tree);
@@ -53,6 +58,69 @@ namespace mocca
 		);
 	}
 
+	void Surface::Tick(double dt)
+	{
+		if (GetState() == SurfaceState::Dead)
+		{
+			return;
+		}
+
+		if (GetState() == SurfaceState::Alive && IsPlatformBacked())
+		{
+			auto* ctx = getCtx();
+			ctx->_currentSurface = this;
+
+			InputBatch batch;
+			GetPlatform()->CollectEvents(batch);
+			ProcessInput(batch);
+
+			ctx->_currentSurface = nullptr;
+		}
+
+		if (GetState() == SurfaceState::Zombie)
+		{
+			if (_zombieTimer > 0)
+			{
+				_zombieTimer--;
+			}
+
+			if (_zombieTimer == 0)
+			{
+				_state = SurfaceState::Dead;
+				return;
+			}
+		}
+
+		if (IsDirty())
+		{
+			auto* ctx = getCtx();
+			ctx->_currentSurface = this;
+			Update(dt);
+			ctx->_currentSurface = nullptr;
+		}
+
+		for (auto& c : _children)
+		{
+			c->Tick(dt);
+		}
+
+		if (IsDirty())
+		{
+			Paint();
+		}
+
+		if (IsPlatformBacked())
+		{
+			GetPlatform()->Submit(GetDrawData());
+		}
+
+		std::erase_if(
+			_children,
+			[](const auto& c) -> auto
+			{ return c->GetState() == SurfaceState::Dead; }
+		);
+	}
+
 	void Surface::Paint()
 	{
 		if (!_root || !_dirty)
@@ -63,12 +131,37 @@ namespace mocca
 		_canvas.Clear();
 		_root->Paint(_canvas);
 
+		for (auto& c : _children)
+		{
+			if (c->IsPlatformBacked())
+			{
+				continue;
+			}
+
+			_canvas.PushTransform((float)c->_desc.X, (float)c->_desc.Y);
+			_canvas.Append(c->_canvas);
+			_canvas.PopTransform();
+		}
+
 		_dirty = false;
 	}
 
-	auto Surface::ContainsNode(detail::NodeId id) const -> bool
+	auto Surface::FindSurfaceContaining(detail::NodeId id) -> Surface*
 	{
-		return detail::Node::FindNodeById(_root.get(), id) != nullptr;
+		if (detail::Node::FindNodeById(_root.get(), id) != nullptr)
+		{
+			return this;
+		}
+
+		for (auto& c : _children)
+		{
+			if (auto* found = c->FindSurfaceContaining(id))
+			{
+				return found;
+			}
+		}
+
+		return nullptr;
 	}
 
 	// TODO refactor this thing

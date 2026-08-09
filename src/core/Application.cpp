@@ -1,7 +1,6 @@
 #include "Application.h"
 #include "Detail.h"
 #include "Logger.h"
-#include "PlatformSurface.h"
 #include <utility>
 
 namespace mocca
@@ -24,18 +23,22 @@ namespace mocca
 			[this](detail::NodeId id) -> void
 			{
 				_context._store.InsertDirty(id);
+				Surface* owner = nullptr;
+
 				for (auto& surface : _surfaces)
 				{
-					if (surface->ContainsNode(id))
+					owner = surface->FindSurfaceContaining(id);
+					if (owner != nullptr)
 					{
 						surface->MarkDirty();
 						return;
 					}
 				}
 
-				if (_context._currentSurface)
+				if (owner == nullptr)
 				{
-					_context._currentSurface->MarkDirty();
+					owner = _context._currentSurface;
+					owner->MarkDirty();
 				}
 			}
 		);
@@ -53,66 +56,15 @@ namespace mocca
 	{
 		EmitEvent(ApplicationEvent::Poll, nullptr);
 
-		for (auto it = _surfaces.begin(); it != _surfaces.end();)
+		for (auto& surface : _surfaces)
 		{
-			auto* surface = it->get();
-
-			if (surface->GetState() == SurfaceState::Dead)
-			{
-				++it;
-				continue;
-			}
-
-			if (surface->GetState() == SurfaceState::Alive &&
-				surface->IsPlatformBacked())
-			{
-				InputBatch batch;
-				surface->GetPlatform()->CollectEvents(batch);
-				surface->ProcessInput(batch);
-			}
-
-			if (surface->GetState() == SurfaceState::Zombie)
-			{
-				if (surface->_zombieTimer > 0)
-				{
-					surface->_zombieTimer--;
-				}
-
-				if (surface->_zombieTimer == 0)
-				{
-					surface->_state = SurfaceState::Dead;
-					++it;
-					continue;
-				}
-			}
-
-			_context._currentSurface = surface;
-			if (surface->IsDirty())
-			{
-				surface->Tick(dt);
-				surface->Paint();
-			}
-
-			if (surface->IsPlatformBacked())
-			{
-				surface->GetPlatform()->Submit(surface->GetDrawData());
-			}
-
-			_context._currentSurface = nullptr;
-			++it;
+			surface->Tick(dt);
 		}
 
 		std::erase_if(
 			_surfaces,
-			[this](const auto& s) -> auto
-			{
-				if (s->GetState() == SurfaceState::Dead)
-				{
-					std::erase(_platformSurfaces, s.get());
-					return true;
-				}
-				return false;
-			}
+			[](const auto& s) -> auto
+			{ return s->GetState() == SurfaceState::Dead; }
 		);
 
 		_context._store.ClearDirty();
@@ -197,7 +149,15 @@ namespace mocca
 			_platformSurfaces.push_back(ptr);
 		}
 
-		_surfaces.push_back(std::move(surface));
+		if (desc.Parent != nullptr)
+		{
+			ptr->_desc.Parent = desc.Parent;
+			desc.Parent->_children.push_back(std::move(surface));
+		}
+		else
+		{
+			_surfaces.push_back(std::move(surface));
+		}
 		return ptr;
 	}
 

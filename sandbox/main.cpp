@@ -234,7 +234,10 @@ auto main(int argc, const char** argv) -> int
 		[](auto* data, auto* user) -> auto
 		{
 			auto* surface = (Surface*)data;
-			surface->SetPlatform<GLFWPlatformSurface>();
+			if (surface->GetParent() == nullptr)
+			{
+				surface->SetPlatform<GLFWPlatformSurface>();
+			}
 			return true;
 		}
 	);
@@ -255,10 +258,20 @@ auto main(int argc, const char** argv) -> int
 		.Root = buildTodoApp,
 	});
 
-	app.RegisterSurface({
+	auto* surface = app.RegisterSurface({
 		.Width = 800,
 		.Height = 600,
 		.Title = "Sandbox2",
+		.Root = buildTodoApp,
+	});
+
+	app.RegisterSurface({
+		.Width = 400,
+		.Height = 300,
+		.X = 100,
+		.Y = 100,
+		.Title = "Sandbox3",
+		.Parent = surface,
 		.Root = buildTodoApp,
 	});
 
