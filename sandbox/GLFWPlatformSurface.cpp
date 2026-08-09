@@ -35,6 +35,7 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+	glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
 
 	_window = glfwCreateWindow(
 		desc.Width,
@@ -55,14 +56,7 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 	glfwMakeContextCurrent(_window);
 	glfwSwapInterval(1);
 
-	if (glewInit() != GLEW_OK)
-	{
-		mc_error(
-			mocca::ErrorCode::InvalidState,
-			"failed to initialize OpenGL loader"
-		);
-		return;
-	}
+	glewInit();
 
 	_vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 	if (_vg == nullptr)
