@@ -128,8 +128,8 @@ namespace mocca
 		};
 
 		Type EventType;
-		int Width;
-		int Height;
+		float Data1;
+		float Data2;
 	};
 
 	struct InputBatch

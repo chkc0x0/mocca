@@ -383,8 +383,8 @@ void GLFWPlatformSurface::OnWindowResize(
 	self->_size = {.X = width, .Y = height};
 	self->_pending.Surface.push_back({
 		.EventType = mocca::SurfaceEvent::Type::Resize,
-		.Width = width,
-		.Height = height,
+		.Data1 = (float)width,
+		.Data2 = (float)height,
 	});
 }
 

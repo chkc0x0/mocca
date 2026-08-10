@@ -26,10 +26,10 @@ namespace mocca
 
 	struct SurfaceDesc
 	{
-		int Width;
-		int Height;
-		int X = -1;
-		int Y = -1;
+		float Width;
+		float Height;
+		float X = -1;
+		float Y = -1;
 		std::string Title;
 		SurfaceFlags Flags = SurfaceFlags::None;
 		Surface* Parent = nullptr;
@@ -108,20 +108,7 @@ namespace mocca
 			return _desc.Parent;
 		}
 
-		void RequestClose()
-		{
-			if (_state == SurfaceState::Alive)
-			{
-				_state = SurfaceState::Zombie;
-				_zombieTimer = _zombieTimeout;
-
-				for (auto& c : _children)
-				{
-					c->RequestClose();
-				}
-			}
-		}
-
+		void RequestClose();
 		void ForceDestroy()
 		{
 			_state = SurfaceState::Dead;
@@ -160,21 +147,45 @@ namespace mocca
 			return _capturedNode;
 		}
 
+		// this surface (or a subsurface) is capturing
+		[[nodiscard]] auto IsCapturing() const -> bool
+		{
+			return _capturedNode != 0 || _captureSurface != nullptr;
+		}
+
+		void OnOutsidePress(
+			const std::function<bool(Surface&, const PointerEvent&)>& cb
+		)
+		{
+			_onOutsidePress = cb;
+		}
+
+	protected:
+		void RoutePointer(PointerEvent ev);
+		void RouteKey(KeyEvent& ev);
+		void RouteText(TextEvent& ev);
+		auto NotifyOutsidePress(const PointerEvent& ev) -> bool;
+
 	private:
 		SurfaceDesc _desc;
 		std::unique_ptr<PlatformSurface> _platform;
 		detail::NodeId _rootId;
 		std::unique_ptr<detail::Node> _root = nullptr;
 		SurfaceState _state = SurfaceState::Alive;
-		int _zombieTimer = 0;
-		int _zombieTimeout = 0;
 		bool _dirty = true;
+		uint16_t _zombieTimeout = 0;
 		Canvas _canvas;
 
 		std::vector<std::unique_ptr<Surface>> _children;
 
 		detail::NodeId _focusedNode = 0;
 		detail::NodeId _capturedNode = 0;
+
+		// DAMN YOU STD FUNCTION!!!!
+		std::function<bool(Surface&, const PointerEvent&)> _onOutsidePress;
+
+		Surface* _focusSurface = nullptr;
+		Surface* _captureSurface = nullptr;
 
 		friend class Application;
 	};

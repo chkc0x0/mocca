@@ -30,7 +30,7 @@ namespace mocca
 					owner = surface->FindSurfaceContaining(id);
 					if (owner != nullptr)
 					{
-						surface->MarkDirty();
+						owner->MarkDirty();
 						return;
 					}
 				}
@@ -38,6 +38,10 @@ namespace mocca
 				if (owner == nullptr)
 				{
 					owner = _context._currentSurface;
+				}
+
+				if (owner != nullptr)
+				{
 					owner->MarkDirty();
 				}
 			}
