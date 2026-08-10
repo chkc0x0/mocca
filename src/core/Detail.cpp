@@ -1,5 +1,6 @@
 #include "Detail.h"
 #include "Context.h"
+#include "Application.h"
 #include "Style.h"
 #include <cstddef>
 #include <iostream>
@@ -225,8 +226,12 @@ namespace mocca::detail
 		}
 		else if (IsText())
 		{
-			canvas
-				.DrawText(x, y, std::get<TextElement>(Kind).Content, Style.TextColor);
+			canvas.DrawText(
+				x,
+				y,
+				std::get<TextElement>(Kind).Content,
+				Style.TextColor
+			);
 		}
 		else
 		{
@@ -448,6 +453,23 @@ namespace mocca
 		mc_layoutProperties mc_renderProperties
 #undef mc_styleProperty
 			return computed;
+	}
+
+	auto Context::CreateSurface(const SurfaceDesc& desc) -> Surface*
+	{
+		if (_currentSurface == nullptr)
+		{
+			mc_error(
+				ErrorCode::InvalidState,
+				"CreateSurface called outside of a surface tick"
+			);
+
+			return nullptr;
+		}
+
+        SurfaceDesc d = desc;
+		d.Parent = _currentSurface;
+		return Application::main->RegisterSurface(d);
 	}
 
 	namespace detail

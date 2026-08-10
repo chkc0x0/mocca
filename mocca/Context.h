@@ -9,6 +9,8 @@ namespace mocca
 	struct Context
 	{
 	public:
+		auto CreateSurface(const SurfaceDesc& desc) -> Surface*;
+
 	private:
 		detail::HookStore _store;
 		Surface* _currentSurface{nullptr};

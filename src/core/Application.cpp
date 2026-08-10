@@ -157,6 +157,7 @@ namespace mocca
 		{
 			ptr->_desc.Parent = desc.Parent;
 			desc.Parent->_children.push_back(std::move(surface));
+			desc.Parent->MarkDirty();
 		}
 		else
 		{

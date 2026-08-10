@@ -162,9 +162,16 @@ namespace mocca
 				continue;
 			}
 
+			_canvas.PushClip(
+				c->_desc.X,
+				c->_desc.Y,
+				c->_desc.Width,
+				c->_desc.Height
+			);
 			_canvas.PushTransform(c->_desc.X, c->_desc.Y);
 			_canvas.Append(c->_canvas);
 			_canvas.PopTransform();
+			_canvas.PopClip();
 		}
 
 		_dirty = false;

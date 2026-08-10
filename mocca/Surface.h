@@ -73,6 +73,12 @@ namespace mocca
 
 		template <typename T> void SetPlatform()
 		{
+			// i cannot simplify this further alright?
+			mc_assert(
+				_desc.Parent == nullptr || IsExternal(),
+				"cant set a platform for a composite surface"
+			);
+			mc_assert(_platform == nullptr, "this surface already has a platform");
 			_platform = std::make_unique<T>(this, GetDescriptor());
 		}
 
