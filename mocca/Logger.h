@@ -19,6 +19,7 @@ namespace mocca
 		AssertFailed = 1,
 		InvalidState = 2,
 		InvalidArgument = 3,
+		UserSide = 4,
 		Unknown = 255
 	};
 

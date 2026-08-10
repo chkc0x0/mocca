@@ -297,6 +297,11 @@ namespace mocca::detail
 		{
 			return Equals(other);
 		}
+
+		auto operator==(const EffectDependency& other) const -> bool
+		{
+			return Equals(other.Value);
+		}
 	};
 
 	struct EffectSlot
@@ -306,18 +311,54 @@ namespace mocca::detail
 		bool HasRun = false;
 	};
 
+	struct MemoSlot
+	{
+		std::any Value;
+		std::vector<EffectDependency> LastDeps;
+		bool HasRun = false;
+	};
+
 	class HookStore
 	{
 	public:
 		template <typename T>
 		auto GetOrCreate(NodeId id, std::uint32_t hook, T initial) -> T&
 		{
+			if (!Has(id, hook))
+			{
+				return Create<T>(id, hook, initial);
+			}
+
+			return Get<T>(id, hook);
+		}
+
+		template <typename T> auto Get(NodeId id, std::uint32_t hook) -> T&
+		{
 			HookKey key{.Id = id, .Hook = hook};
 			auto it = _slots.find(key);
 			if (it == _slots.end())
 			{
-				it = _slots.emplace(key, std::any(std::move(initial))).first;
+				mc_error(
+					ErrorCode::InvalidState,
+					"hook does not exist; this *will* crash"
+				);
 			}
+			return any_cast<T&>(it->second);
+		}
+
+		template <typename T>
+		auto Create(NodeId id, std::uint32_t hook, T initial) -> T&
+		{
+			HookKey key{.Id = id, .Hook = hook};
+			auto it = _slots.find(key);
+			if (it != _slots.end())
+			{
+				mc_error(
+					ErrorCode::InvalidState,
+					"hook already exists; Create called twice"
+				);
+			}
+			it = _slots.emplace(key, std::any(std::move(initial))).first;
 			return any_cast<T&>(it->second);
 		}
 
@@ -334,6 +375,12 @@ namespace mocca::detail
 			}
 		}
 
+		auto Has(NodeId id, std::uint32_t hook) -> bool
+		{
+			HookKey key{.Id = id, .Hook = hook};
+			return _slots.contains(key);
+		}
+
 		auto GetEffectSlot(NodeId id, std::uint32_t hook) -> EffectSlot&
 		{
 			HookKey key{.Id = id, .Hook = hook};
@@ -345,13 +392,42 @@ namespace mocca::detail
 			return std::any_cast<EffectSlot&>(it->second);
 		}
 
+		auto GetMemoSlot(NodeId id, std::uint32_t hook) -> MemoSlot&
+		{
+			HookKey key{.Id = id, .Hook = hook};
+			auto it = _slots.find(key);
+			if (it == _slots.end())
+			{
+				it = _slots.emplace(key, std::any(MemoSlot{})).first;
+			}
+			return std::any_cast<MemoSlot&>(it->second);
+		}
+
 		void FlushEffects()
 		{
 			auto q = std::move(_effectQueue);
 			_effectQueue.clear();
 			for (auto& run : q)
 			{
-				run();
+				try
+				{
+					run();
+				}
+				catch (const std::exception& e)
+				{
+					mc_error(
+						ErrorCode::UserSide,
+						"effect threw an exception: {}",
+						e.what()
+					);
+				}
+				catch (...)
+				{
+					mc_error(
+						ErrorCode::UserSide,
+						"effect threw a non-std exception"
+					);
+				}
 			}
 		}
 
@@ -363,9 +439,29 @@ namespace mocca::detail
 				{
 					if (auto* eff = std::any_cast<EffectSlot>(&it->second))
 					{
-						if (eff->Cleanup)
+						auto old = std::move(eff->Cleanup);
+						eff->Cleanup = nullptr;
+						if (old)
 						{
-							eff->Cleanup();
+							try
+							{
+								old();
+							}
+							catch (const std::exception& e)
+							{
+								mc_error(
+									ErrorCode::UserSide,
+									"cleanup threw during removal: {}",
+									e.what()
+								);
+							}
+							catch (...)
+							{
+								mc_error(
+									ErrorCode::UserSide,
+									"cleanup threw a non-std exception during removal"
+								);
+							}
 						}
 					}
 					it = _slots.erase(it);
