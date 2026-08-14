@@ -81,7 +81,7 @@ namespace mocca::detail
 		DeclaredStyle Declared;
 		ComputedStyle Style;
 
-		Vector2 ScrollOffset{0, 0};
+		Vector2 ScrollOffset{.X=0, .Y=0};
 
 		std::vector<std::unique_ptr<Node>> Children;
 
@@ -148,6 +148,7 @@ namespace mocca::detail
 
 		static auto HitTest(Node* root, float x, float y) -> Node*;
 		static auto FindNodeById(Node* root, NodeId id) -> Node*;
+		static void AddComponentToYoga(YGNodeRef parent, Node& node);
 
 		EventHandlers Events;
 	};
@@ -336,13 +337,7 @@ namespace mocca::detail
 		{
 			HookKey key{.Id = id, .Hook = hook};
 			auto it = _slots.find(key);
-			if (it == _slots.end())
-			{
-				mc_error(
-					ErrorCode::InvalidState,
-					"hook does not exist; this *will* crash"
-				);
-			}
+			mc_assert(it != _slots.end(), "expected hook to exist");
 			return any_cast<T&>(it->second);
 		}
 
@@ -355,7 +350,8 @@ namespace mocca::detail
 			{
 				mc_error(
 					ErrorCode::InvalidState,
-					"hook already exists; Create called twice"
+					"hook already exists; Create called twice. this will "
+					"overwrite data"
 				);
 			}
 			it = _slots.emplace(key, std::any(std::move(initial))).first;
@@ -372,6 +368,10 @@ namespace mocca::detail
 				{
 					_markDirty(id);
 				}
+			}
+			else
+			{
+				mc_error(ErrorCode::InvalidArgument, "non existent hook slot");
 			}
 		}
 
@@ -459,7 +459,8 @@ namespace mocca::detail
 							{
 								mc_error(
 									ErrorCode::UserSide,
-									"cleanup threw a non-std exception during removal"
+									"cleanup threw a non-std exception during "
+									"removal"
 								);
 							}
 						}

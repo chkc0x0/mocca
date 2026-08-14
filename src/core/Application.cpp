@@ -261,11 +261,10 @@ namespace mocca
 
 	auto getCtx() -> Context*
 	{
-		if (Application::main == nullptr)
-		{
-			mc_error(ErrorCode::InvalidState, "no application instance exists");
-			return nullptr;
-		}
+		mc_assert(
+			Application::main != nullptr,
+			"expected to have an application instance running"
+		);
 		return &Application::main->_context;
 	}
 }

@@ -7,11 +7,30 @@ namespace mocca
 	{
 		if (callback == nullptr)
 		{
+			if (message.Severity == LogLevel::Error)
+			{
+				std::println(
+					stderr,
+					"err ({:.{}}:{}): {}\nif you see this, it means an error "
+					"occurred but you havent set up a log callback for mocca",
+					message.File.data(),
+					(int)message.File.size(),
+					message.Line,
+					std::string(message.Message)
+				);
+				goto fail;
+			}
 			return;
 		}
 
 		callback(message, logUserData);
 		lastError = message.Code;
+
+	fail:
+		if (message.Code == ErrorCode::AssertFailed)
+		{
+			abort();
+		}
 	}
 
 	void Application::SetDefaultLogCallback()

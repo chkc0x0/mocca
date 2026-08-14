@@ -43,6 +43,26 @@ namespace mocca::detail
 		};
 	}
 
+	void Node::AddComponentToYoga(YGNodeRef parent, Node& node)
+	{
+		for (auto& grandchild : node.Children)
+		{
+			if (grandchild->IsComponent())
+			{
+				AddComponentToYoga(parent, *grandchild);
+			}
+			else
+			{
+				grandchild->BuildYogaTree();
+				YGNodeInsertChild(
+					parent,
+					grandchild->YogaNode,
+					YGNodeGetChildCount(parent)
+				);
+			}
+		}
+	}
+
 	void Node::BuildYogaTree()
 	{
 		if (YogaNode == nullptr)
@@ -54,7 +74,6 @@ namespace mocca::detail
 
 		YGNodeRemoveAllChildren(YogaNode);
 
-		uint32_t index = 0;
 		for (auto& child : Children)
 		{
 			if (!child)
@@ -64,20 +83,16 @@ namespace mocca::detail
 
 			if (child->IsComponent())
 			{
-				for (auto& grandchild : child->Children)
-				{
-					if (!grandchild)
-					{
-						continue;
-					}
-					grandchild->BuildYogaTree();
-					YGNodeInsertChild(YogaNode, grandchild->YogaNode, index++);
-				}
+				AddComponentToYoga(YogaNode, *child);
 			}
 			else
 			{
 				child->BuildYogaTree();
-				YGNodeInsertChild(YogaNode, child->YogaNode, index++);
+				YGNodeInsertChild(
+					YogaNode,
+					child->YogaNode,
+					YGNodeGetChildCount(YogaNode)
+				);
 			}
 		}
 	}
@@ -457,17 +472,12 @@ namespace mocca
 
 	auto Context::CreateSurface(const SurfaceDesc& desc) -> Surface*
 	{
-		if (_currentSurface == nullptr)
-		{
-			mc_error(
-				ErrorCode::InvalidState,
-				"CreateSurface called outside of a surface tick"
-			);
+		mc_assert(
+			_currentSurface != nullptr,
+			"CreateSurface cant be called outside component render"
+		);
 
-			return nullptr;
-		}
-
-        SurfaceDesc d = desc;
+		SurfaceDesc d = desc;
 		d.Parent = _currentSurface;
 		return Application::main->RegisterSurface(d);
 	}
