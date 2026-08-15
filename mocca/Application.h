@@ -31,6 +31,8 @@ namespace mocca
 		ApplicationID(const std::string& id);
 		ApplicationID() : _id("<not set>") {};
 
+		ApplicationID(const ApplicationID&) = delete;
+
 		static constexpr auto ValidateID(std::string_view id) -> bool;
 		[[nodiscard]] auto GetCompoundID() const -> std::string;
 
@@ -53,12 +55,12 @@ namespace mocca
 		void Tick(double dt);
 		void DumpTree();
 
-		static auto GetAppID() -> ApplicationID
+		static auto GetAppID() -> const ApplicationID&
 		{
-			if (main == nullptr)
-			{
-				return {};
-			}
+			mc_assert(
+				main != nullptr,
+				"expected to have an Application instance running"
+			);
 
 			return main->_id;
 		}

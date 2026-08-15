@@ -141,7 +141,6 @@ namespace mocca
 	auto Application::RegisterSurface(const SurfaceDesc& desc) -> Surface*
 	{
 		auto surface = std::make_unique<Surface>(desc);
-		surface->_rootId = detail::nextNodeId++;
 		auto* ptr = surface.get();
 		if (!EmitEvent(ApplicationEvent::SurfaceCreated, ptr))
 		{
@@ -187,7 +186,7 @@ namespace mocca
 				segments++;
 				segmentLen = 0;
 			}
-			else if ((std::isalnum(c) != 0) || c == '_' || c == '-')
+			else if ((std::isalnum((unsigned char)c) != 0) || c == '_' || c == '-')
 			{
 				segmentLen++;
 			}

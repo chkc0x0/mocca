@@ -52,7 +52,7 @@ namespace mocca
 		constexpr auto fmod(double numer, double denom) -> double
 		{
 			auto quot = static_cast<long long>(numer / denom);
-			return numer - (quot * denom);
+			return numer - ((double)quot * denom);
 		}
 
 		constexpr auto reduceAngle(double angle) -> double

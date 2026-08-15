@@ -29,7 +29,19 @@ namespace mocca
 	fail:
 		if (message.Code == ErrorCode::AssertFailed)
 		{
+#ifdef DEBUG
+#	if defined(_MSC_VER)
+			__debugbreak();
+#	elif defined(__clang__)
+			__builtin_debugtrap();
+#	elif defined(__GNUC__)
+			std::raise(SIGTRAP);
+#	else
+			((void)0);
+#	endif
+#else
 			abort();
+#endif
 		}
 	}
 

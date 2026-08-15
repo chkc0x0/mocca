@@ -175,11 +175,11 @@ namespace mocca
 	private:
 		SurfaceDesc _desc;
 		std::unique_ptr<PlatformSurface> _platform;
-		detail::NodeId _rootId;
+		detail::NodeId _rootId = 0;
 		std::unique_ptr<detail::Node> _root = nullptr;
 		SurfaceState _state = SurfaceState::Alive;
 		bool _dirty = true;
-		uint16_t _zombieTimeout = 0;
+		int _zombieTimeout = 0;
 		Canvas _canvas;
 
 		std::vector<std::unique_ptr<Surface>> _children;

@@ -65,11 +65,6 @@ namespace mocca
 			Args&&... args
 		)
 		{
-			if (callback == nullptr)
-			{
-				return;
-			}
-
 			LogImpl(
 				severity,
 				message.get(),

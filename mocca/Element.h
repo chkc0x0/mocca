@@ -231,7 +231,7 @@ namespace mocca
 	}
 
 	template <typename Fn>
-	auto mapElements(int count, Fn fn) -> std::vector<Element>
+	auto mapElements(size_t count, Fn fn) -> std::vector<Element>
 	{
 		std::vector<Element> result;
 		result.reserve(count);

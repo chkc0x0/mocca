@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <ranges>
 #include "Application.h"
+#include "Detail.h"
 #include "InputTypes.h"
 #include "Logger.h"
 #include "Style.h"
@@ -27,6 +28,10 @@ namespace mocca
 
 	void Surface::Update(double dt)
 	{
+		if (_root == nullptr)
+		{
+			_rootId = detail::nextNodeId;
+		}
 		auto tree = Element::Render(_desc.Root, _rootId);
 		_root = detail::Node::Reconcile(std::move(_root), &tree);
 
