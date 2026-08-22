@@ -12,7 +12,7 @@ namespace mocca
 		// emitted every tick before input collection
 		Poll = 0x2dc706262aa3f105,
 
-		// surface.created (data = Surface*)
+		// surface.created (data = Surface*) / cancellable
 		// called before adding surface to surface list
 		SurfaceCreated = 0x1ef43f299f709040,
 
@@ -30,8 +30,6 @@ namespace mocca
 	public:
 		ApplicationID(const std::string& id);
 		ApplicationID() : _id("<not set>") {};
-
-		ApplicationID(const ApplicationID&) = delete;
 
 		static constexpr auto ValidateID(std::string_view id) -> bool;
 		[[nodiscard]] auto GetCompoundID() const -> std::string;
@@ -105,16 +103,34 @@ namespace mocca
 
 		std::vector<std::unique_ptr<Surface>> _surfaces;
 		std::vector<Surface*> _platformSurfaces;
+		std::vector<std::pair<Surface*, std::unique_ptr<Surface>>>
+			_pendingSurfaces;
 
-		struct EventCallback
+		bool _inTick = false;
+
+		struct
 		{
-		public:
-			// void(void* data, void* user)
-			std::function<bool(void*, void*)> Callback;
-			void* User;
-		};
+			struct EventCallback
+			{
+			public:
+				// void(void* data, void* user)
+				std::function<bool(void*, void*)> Callback;
+				void* User;
+			};
 
-		std::unordered_map<uint64_t, std::vector<EventCallback>> _events;
+			std::unordered_map<uint64_t, std::vector<EventCallback>> Events;
+
+			struct PendingEventOp
+			{
+				uint64_t Hash;
+				bool Clear;
+				EventCallback Cb;
+			};
+
+			std::vector<PendingEventOp> PendingEvents;
+			int EmitDepth = 0;
+		} _events;
+		void _drainPendingEvents();
 
 		Context _context;
 		friend class Surface;

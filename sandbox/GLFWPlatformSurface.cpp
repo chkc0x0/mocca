@@ -56,6 +56,10 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 	glfwMakeContextCurrent(_window);
 	glfwSwapInterval(1);
 
+	float scaleX = 1.0F;
+	float scaleY = 1.0F;
+	glfwGetWindowContentScale(_window, &scaleX, &scaleY);
+	_scale = scaleX;
 	glewInit();
 
 	_vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
@@ -164,7 +168,7 @@ void GLFWPlatformSurface::Submit(
 	}
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	nvgBeginFrame(_vg, (float)w, (float)h, 1.0F);
+	nvgBeginFrame(_vg, (float)w, (float)h, _scale);
 	nvgResetScissor(_vg);
 	nvgFontFace(_vg, "sans");
 	nvgFontSize(_vg, 16);

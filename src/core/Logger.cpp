@@ -1,4 +1,5 @@
 #include "Application.h"
+#include <csignal>
 #include <print>
 
 namespace mocca

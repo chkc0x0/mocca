@@ -45,8 +45,9 @@ private:
 	GLFWwindow* _window = nullptr;
 	NVGcontext* _vg = nullptr;
 	mocca::IVec2 _size = {.X = 0, .Y = 0};
+	float _scale = 1.0F;
 	bool _glfwRefHeld = false;
-	mocca::Surface* _surface;
+	mocca::Surface* _surface = nullptr;
 
 	mocca::InputBatch _pending;
 };

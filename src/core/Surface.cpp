@@ -12,15 +12,7 @@ namespace mocca
 {
 	Surface::~Surface()
 	{
-		if (Application::main == nullptr)
-		{
-			// don't know how this could happen but wtv
-			return;
-		}
-
-		Application::main->EmitEvent(ApplicationEvent::SurfaceDestroyed, this);
-
-		if (IsPlatformBacked())
+		if (Application::main != nullptr && IsPlatformBacked())
 		{
 			std::erase(Application::main->_platformSurfaces, this);
 		}
@@ -77,6 +69,34 @@ namespace mocca
 			return;
 		}
 
+		std::erase_if(
+			_children,
+			[this](const auto& c) -> auto
+			{
+				if (c->GetState() != SurfaceState::Dead)
+				{
+					return false;
+				}
+
+				if (_focusSurface == c.get())
+				{
+					_focusSurface = nullptr;
+				}
+
+				if (_captureSurface == c.get())
+				{
+					_captureSurface = nullptr;
+				}
+
+				Application::main->EmitEvent(
+					ApplicationEvent::SurfaceDestroyed,
+					&*c
+				);
+
+				return true;
+			}
+		);
+
 		if (GetState() == SurfaceState::Alive && IsPlatformBacked())
 		{
 			auto* ctx = getCtx();
@@ -111,9 +131,9 @@ namespace mocca
 			ctx->_currentSurface = nullptr;
 		}
 
-		for (auto& c : _children)
+		for (auto& i : _children)
 		{
-			c->Tick(dt);
+			i->Tick(dt);
 		}
 
 		if (IsDirty())
@@ -125,29 +145,6 @@ namespace mocca
 		{
 			GetPlatform()->Submit(GetDrawData());
 		}
-
-		std::erase_if(
-			_children,
-			[this](const auto& c) -> auto
-			{
-				if (c->GetState() != SurfaceState::Dead)
-				{
-					return false;
-				}
-
-				if (_focusSurface == c.get())
-				{
-					_focusSurface = nullptr;
-				}
-
-				if (_captureSurface == c.get())
-				{
-					_captureSurface = nullptr;
-				}
-
-				return true;
-			}
-		);
 	}
 
 	void Surface::Paint()
@@ -255,8 +252,10 @@ namespace mocca
 			return;
 		}
 
-		for (auto& c : std::views::reverse(_children))
+		for (size_t i = _children.size(); i > 0; --i)
 		{
+			auto& c = _children[i - 1];
+
 			if (c->GetState() != SurfaceState::Alive || c->IsPlatformBacked())
 			{
 				continue;
@@ -499,7 +498,10 @@ namespace mocca
 			GetDescriptor().Width,
 			GetDescriptor().Height
 		);
-		_root->Print(depth + 1);
+		if (_root)
+		{
+			_root->Print(depth + 1);
+		}
 	}
 
 	void Surface::RequestClose()

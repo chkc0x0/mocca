@@ -36,6 +36,15 @@ namespace mocca::detail
 		std::string result;
 		for (char32_t cp : input)
 		{
+			if (cp >= 0xD800 && cp <= 0xDFFF)
+			{
+				continue;
+			}
+			if (cp > 0x10FFFF)
+			{
+				continue;
+			}
+
 			if (cp < 0x80)
 			{
 				result.push_back(static_cast<char>(cp));

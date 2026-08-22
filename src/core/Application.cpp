@@ -7,15 +7,10 @@ namespace mocca
 {
 	Application::Application(const std::string& appId)
 	{
-		if (main != nullptr)
-		{
-			mc_error(
-				ErrorCode::InvalidState,
-				"an application instance already exists"
-			);
-			return;
-		}
-
+		mc_assert(
+			main == nullptr,
+			"an application instance must not already exist"
+		);
 		_id = ApplicationID(appId);
 		main = this;
 
@@ -58,6 +53,22 @@ namespace mocca
 
 	void Application::Tick(double dt)
 	{
+		_inTick = true;
+
+		std::erase_if(
+			_surfaces,
+			[this](const auto& s) -> auto
+			{
+				if (s->GetState() == SurfaceState::Dead)
+				{
+					EmitEvent(ApplicationEvent::SurfaceDestroyed, &*s);
+					return true;
+				}
+
+				return false;
+			}
+		);
+
 		EmitEvent(ApplicationEvent::Poll, nullptr);
 
 		for (auto& surface : _surfaces)
@@ -65,14 +76,32 @@ namespace mocca
 			surface->Tick(dt);
 		}
 
-		std::erase_if(
-			_surfaces,
-			[](const auto& s) -> auto
-			{ return s->GetState() == SurfaceState::Dead; }
-		);
+		_inTick = false;
 
 		_context._store.ClearDirty();
 		_context._store.FlushEffects();
+
+		std::erase_if(
+			_pendingSurfaces,
+			[this](std::pair<Surface*, std::unique_ptr<Surface>>& pair) -> auto
+			{
+				if (pair.second->IsPlatformBacked())
+				{
+					_platformSurfaces.push_back(pair.second.get());
+				}
+
+				if (pair.first != nullptr)
+				{
+					pair.first->_children.push_back(std::move(pair.second));
+					pair.first->MarkDirty();
+				}
+				else
+				{
+					_surfaces.push_back(std::move(pair.second));
+				}
+				return true;
+			}
+		);
 	}
 
 	void Application::On(
@@ -81,7 +110,16 @@ namespace mocca
 		void* userData
 	)
 	{
-		_events[detail::hashString(event)].push_back(
+		auto hash = detail::hashString(event);
+		if (_events.EmitDepth > 0)
+		{
+			_events.PendingEvents.push_back(
+				{.Hash = hash, .Clear = false, .Cb = {std::move(cb), userData}}
+			);
+			return;
+		}
+
+		_events.Events[hash].push_back(
 			{.Callback = std::move(cb), .User = userData}
 		);
 	}
@@ -92,50 +130,103 @@ namespace mocca
 		void* userData
 	)
 	{
-		_events[(uint64_t)event].push_back(
+		auto hash = (uint64_t)event;
+		if (_events.EmitDepth > 0)
+		{
+			_events.PendingEvents.push_back(
+				{.Hash = hash,
+				 .Clear = false,
+				 .Cb = {
+					 .Callback = std::move(cb),
+					 .User = userData,
+				 }}
+			);
+			return;
+		}
+
+		_events.Events[hash].push_back(
 			{.Callback = std::move(cb), .User = userData}
 		);
 	}
 
 	auto Application::EmitEvent(std::string_view event, void* data) -> bool
 	{
-		auto hash = detail::hashString(event);
-		if (!_events.contains(hash))
+		auto it = _events.Events.find(detail::hashString(event));
+		if (it == _events.Events.end())
 		{
 			return true;
 		}
 
-		return std::ranges::all_of(
-			_events[hash],
+		_events.EmitDepth++;
+		auto result = std::ranges::all_of(
+			it->second,
 			[data](const auto& cb) -> auto
 			{ return cb.Callback(data, cb.User); }
 		);
+		_events.EmitDepth--;
 
-		return true;
+		_drainPendingEvents();
+		return result;
 	}
 
 	auto Application::EmitEvent(ApplicationEvent event, void* data) -> bool
 	{
-		if (!_events.contains((uint64_t)event))
+		auto it = _events.Events.find((uint64_t)event);
+		if (it == _events.Events.end())
 		{
 			return true;
 		}
 
-		return std::ranges::all_of(
-			_events[(uint64_t)event],
+		_events.EmitDepth++;
+		auto result = std::ranges::all_of(
+			it->second,
 			[data](const auto& cb) -> auto
 			{ return cb.Callback(data, cb.User); }
 		);
+		_events.EmitDepth--;
+
+		_drainPendingEvents();
+		return result;
 	}
 
 	void Application::RemoveCallbacks(std::string_view event)
 	{
-		if (!_events.contains(detail::hashString(event)))
+		auto hash = detail::hashString(event);
+		if (_events.EmitDepth > 0)
+		{
+			_events.PendingEvents.push_back(
+				{.Hash = hash, .Clear = true, .Cb = {}}
+			);
+			return;
+		}
+
+		auto it = _events.Events.find(hash);
+		if (it != _events.Events.end())
+		{
+			it->second.clear();
+		}
+	}
+
+	void Application::_drainPendingEvents()
+	{
+		if (_events.EmitDepth > 0 || _events.PendingEvents.empty())
 		{
 			return;
 		}
 
-		_events[detail::hashString(event)].clear();
+		for (auto& op : _events.PendingEvents)
+		{
+			if (op.Clear)
+			{
+				_events.Events[op.Hash].clear();
+			}
+			else
+			{
+				_events.Events[op.Hash].push_back(std::move(op.Cb));
+			}
+		}
+
+		_events.PendingEvents.clear();
 	}
 
 	auto Application::RegisterSurface(const SurfaceDesc& desc) -> Surface*
@@ -147,20 +238,28 @@ namespace mocca
 			return nullptr;
 		}
 
-		if (ptr->IsPlatformBacked())
-		{
-			_platformSurfaces.push_back(ptr);
-		}
+		ptr->_desc.Parent = desc.Parent;
 
-		if (desc.Parent != nullptr)
+		if (!_inTick)
 		{
-			ptr->_desc.Parent = desc.Parent;
-			desc.Parent->_children.push_back(std::move(surface));
-			desc.Parent->MarkDirty();
+			if (ptr->IsPlatformBacked())
+			{
+				_platformSurfaces.push_back(ptr);
+			}
+
+			if (desc.Parent != nullptr)
+			{
+				desc.Parent->_children.push_back(std::move(surface));
+				desc.Parent->MarkDirty();
+			}
+			else
+			{
+				_surfaces.push_back(std::move(surface));
+			}
 		}
 		else
 		{
-			_surfaces.push_back(std::move(surface));
+			_pendingSurfaces.emplace_back(desc.Parent, std::move(surface));
 		}
 		return ptr;
 	}
@@ -186,7 +285,9 @@ namespace mocca
 				segments++;
 				segmentLen = 0;
 			}
-			else if ((std::isalnum((unsigned char)c) != 0) || c == '_' || c == '-')
+			else if (
+				(std::isalnum((unsigned char)c) != 0) || c == '_' || c == '-'
+			)
 			{
 				segmentLen++;
 			}
@@ -234,11 +335,16 @@ namespace mocca
 			Name = segments[1];
 			Domain = "com";
 		}
-		else
+		else if (segments.size() == 3)
 		{
 			Domain = segments[0];
 			Organization = segments[1];
 			Name = segments[2];
+		}
+		else
+		{
+			_id = "<invalid>";
+			Name = Organization = Domain = std::string_view();
 		}
 	}
 
