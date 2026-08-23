@@ -236,7 +236,7 @@ namespace mocca
 		std::vector<Element> result;
 		result.reserve(count);
 
-		for (int i = 0; i < count; ++i)
+		for (size_t i = 0; i < count; ++i)
 		{
 			result.push_back(fn(i));
 		}

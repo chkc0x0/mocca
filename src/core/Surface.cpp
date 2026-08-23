@@ -491,14 +491,22 @@ namespace mocca
 		std::string indent(static_cast<size_t>(depth * 2), ' ');
 
 		mc_info(
-			"{}[Surface w={} h={}]",
+			"{}[Surface w={} h={} x={} y={}{}]",
 			indent,
 			GetDescriptor().Width,
-			GetDescriptor().Height
+			GetDescriptor().Height,
+			GetDescriptor().X,
+			GetDescriptor().Y,
+			_platform == nullptr ? " (composite)" : ""
 		);
 		if (_root)
 		{
 			_root->Print(depth + 1);
+		}
+
+		for (const auto& c : _children)
+		{
+			c->Print(depth + 1);
 		}
 	}
 

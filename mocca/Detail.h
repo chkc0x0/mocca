@@ -355,14 +355,11 @@ namespace mocca::detail
 		{
 			HookKey key{.Id = id, .Hook = hook};
 			auto it = _slots.find(key);
-			if (it != _slots.end())
-			{
-				mc_error(
-					ErrorCode::InvalidState,
-					"hook already exists; Create called twice. this will "
-					"overwrite data"
-				);
-			}
+
+			mc_assert(
+				it == _slots.end(),
+				"expected hook to not exist prior to call"
+			);
 			it = _slots.emplace(key, std::any(std::move(initial))).first;
 			return any_cast<T&>(it->second);
 		}
@@ -370,17 +367,13 @@ namespace mocca::detail
 		template <typename T> void Set(NodeId id, std::uint32_t hook, T value)
 		{
 			auto it = _slots.find(HookKey{.Id = id, .Hook = hook});
-			if (it != _slots.end())
+
+			mc_assert(it != _slots.end(), "expected an existent hook slot");
+
+			it->second = std::move(value);
+			if (_markDirty)
 			{
-				it->second = std::move(value);
-				if (_markDirty)
-				{
-					_markDirty(id);
-				}
-			}
-			else
-			{
-				mc_error(ErrorCode::InvalidArgument, "non existent hook slot");
+				_markDirty(id);
 			}
 		}
 

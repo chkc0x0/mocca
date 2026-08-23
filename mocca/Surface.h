@@ -10,11 +10,13 @@ namespace mocca
 {
 	class Surface;
 
-	enum class SurfaceFlags : char
+	namespace SurfaceFlags
 	{
-		None = 0,
-		External = 1 << 0,
-		AutomaticSize = 1 << 1
+		using FlagType = uint64_t;
+		
+		constexpr FlagType None = 0;
+		constexpr FlagType External = 1 << 0;
+		constexpr FlagType AutomaticSize = 1 << 1;
 	};
 
 	enum class SurfaceState : char
@@ -31,7 +33,7 @@ namespace mocca
 		float X = -1;
 		float Y = -1;
 		std::string Title;
-		SurfaceFlags Flags = SurfaceFlags::None;
+		uint64_t Flags = SurfaceFlags::None;
 		Surface* Parent = nullptr;
 		ComponentFn Root;
 	};

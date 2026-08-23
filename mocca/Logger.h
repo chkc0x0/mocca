@@ -94,7 +94,7 @@ namespace mocca
 }
 
 #define mc_log(level, code, message, ...)                                      \
-	mocca::Logger::Log(                                              \
+	mocca::Logger::Log(                                                        \
 		level,                                                                 \
 		message,                                                               \
 		__FILE__,                                                              \
