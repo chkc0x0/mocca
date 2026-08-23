@@ -90,7 +90,7 @@ namespace mocca::detail
 		DeclaredStyle Declared;
 		ComputedStyle Style;
 
-		Vector2 ScrollOffset{.X=0, .Y=0};
+		Vector2 ScrollOffset{.X = 0, .Y = 0};
 
 		std::vector<std::unique_ptr<Node>> Children;
 
@@ -501,6 +501,17 @@ namespace mocca::detail
 		void InsertDirty(NodeId id)
 		{
 			_dirtySet.insert(id);
+			_lastDirty = id;
+		}
+
+		auto DirtyCount() const -> size_t
+		{
+			return _dirtySet.size();
+		}
+
+		auto LastDirty() const -> uint64_t
+		{
+			return _lastDirty;
 		}
 
 	private:
@@ -509,5 +520,7 @@ namespace mocca::detail
 
 		std::unordered_set<NodeId> _dirtySet;
 		std::function<void(NodeId)> _markDirty;
+
+		uint64_t _lastDirty = 0;
 	};
 }

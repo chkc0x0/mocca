@@ -105,8 +105,11 @@ namespace mocca
 		std::vector<Surface*> _platformSurfaces;
 		std::vector<std::pair<Surface*, std::unique_ptr<Surface>>>
 			_pendingSurfaces;
+		std::vector<std::tuple<Surface*, Surface*, Surface*>> _pendingReparents;
 
 		bool _inTick = false;
+		uint8_t _stateOnEffectStreak = 0;
+		bool _stateOnEffectWarned = false;
 
 		struct
 		{
@@ -130,9 +133,11 @@ namespace mocca
 			std::vector<PendingEventOp> PendingEvents;
 			int EmitDepth = 0;
 		} _events;
+
 		void _drainPendingEvents();
 
 		Context _context;
+		
 		friend class Surface;
 		friend auto getCtx() -> Context*;
 	};

@@ -88,10 +88,7 @@ namespace mocca
 					_captureSurface = nullptr;
 				}
 
-				Application::main->EmitEvent(
-					ApplicationEvent::SurfaceDestroyed,
-					&*c
-				);
+				Surface::AnnounceSubtreeDestroyed(c.get());
 
 				return true;
 			}
@@ -118,6 +115,7 @@ namespace mocca
 
 			if (_zombieTimeout == 0)
 			{
+				_sweepChildren();
 				_state = SurfaceState::Dead;
 				return;
 			}
@@ -524,6 +522,83 @@ namespace mocca
 		for (auto& c : _children)
 		{
 			c->RequestClose();
+		}
+	}
+
+	auto Surface::DetachChild(Surface* which) -> std::unique_ptr<Surface>
+	{
+		std::unique_ptr<Surface> ptr = nullptr;
+
+		std::erase_if(
+			_children,
+			[&ptr, which](auto& surface) -> auto
+			{
+				if (surface.get() == which)
+				{
+					ptr = std::move(surface);
+					return true;
+				}
+
+				return false;
+			}
+		);
+
+		return ptr;
+	}
+
+	void Surface::AnnounceSubtreeDestroyed(Surface* s)
+	{
+		if (Application::main == nullptr)
+		{
+			return;
+		}
+
+		for (auto& c : s->_children)
+		{
+			AnnounceSubtreeDestroyed(c.get());
+		}
+		Application::main->EmitEvent(ApplicationEvent::SurfaceDestroyed, s);
+	}
+
+	void Surface::_sweepChildren()
+	{
+		for (auto& c : _children)
+		{
+			if (c->GetState() == SurfaceState::Alive)
+			{
+				bool cancelled = !Application::main->EmitEvent(
+					ApplicationEvent::SurfaceClosed,
+					c.get()
+				);
+				if (cancelled)
+				{
+					Surface* target = nullptr;
+					for (auto* p = this->_desc.Parent; p != nullptr;
+						 p = p->_desc.Parent)
+					{
+						if (p->GetState() == SurfaceState::Alive)
+						{
+							target = p;
+							break;
+						}
+					}
+					Application::main->_pendingReparents
+						.emplace_back(this, c.get(), target);
+				}
+				else
+				{
+					c->_state = SurfaceState::Zombie;
+
+					for (auto& gc : c->_children)
+					{
+						gc->RequestClose();
+					}
+				}
+			}
+			else if (c->GetState() == SurfaceState::Zombie)
+			{
+				c->_sweepChildren();
+			}
 		}
 	}
 }

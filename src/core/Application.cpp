@@ -3,6 +3,24 @@
 #include "Logger.h"
 #include <utility>
 
+namespace
+{
+	struct EventEmitScope
+	{
+		int& Depth;
+
+		explicit EventEmitScope(int& depth) : Depth{depth}
+		{
+			++Depth;
+		}
+
+		~EventEmitScope()
+		{
+			--Depth;
+		}
+	};
+}
+
 namespace mocca
 {
 	Application::Application(const std::string& appId)
@@ -45,6 +63,12 @@ namespace mocca
 
 	Application::~Application()
 	{
+		for (auto& s : _surfaces)
+		{
+			Surface::AnnounceSubtreeDestroyed(s.get());
+			s.reset();
+		}
+
 		if (main == this)
 		{
 			main = nullptr;
@@ -57,11 +81,11 @@ namespace mocca
 
 		std::erase_if(
 			_surfaces,
-			[this](const auto& s) -> auto
+			[](const auto& s) -> auto
 			{
 				if (s->GetState() == SurfaceState::Dead)
 				{
-					EmitEvent(ApplicationEvent::SurfaceDestroyed, &*s);
+					Surface::AnnounceSubtreeDestroyed(s.get());
 					return true;
 				}
 
@@ -81,6 +105,27 @@ namespace mocca
 		_context._store.ClearDirty();
 		_context._store.FlushEffects();
 
+		if (_context._store.DirtyCount() != 0)
+		{
+			if (++_stateOnEffectStreak > 16 && !_stateOnEffectWarned)
+			{
+				_stateOnEffectWarned = true;
+				mc_error(
+					ErrorCode::InvalidState,
+					"effects have set state on {} frames with no "
+					"input. an effect is probably setting state "
+					"unconditionally (last dirty component: #{})",
+					_stateOnEffectStreak,
+					_context._store.LastDirty()
+				);
+			}
+		}
+		else
+		{
+			_stateOnEffectStreak = 0;
+			_stateOnEffectWarned = false;
+		}
+
 		std::erase_if(
 			_pendingSurfaces,
 			[this](std::pair<Surface*, std::unique_ptr<Surface>>& pair) -> auto
@@ -90,7 +135,8 @@ namespace mocca
 					_platformSurfaces.push_back(pair.second.get());
 				}
 
-				if (pair.first != nullptr)
+				if (pair.first != nullptr &&
+					pair.first->GetState() == SurfaceState::Alive)
 				{
 					pair.first->_children.push_back(std::move(pair.second));
 					pair.first->MarkDirty();
@@ -102,6 +148,34 @@ namespace mocca
 				return true;
 			}
 		);
+
+		for (auto& [origin, child, target] : _pendingReparents)
+		{
+			if (child->GetState() != SurfaceState::Alive ||
+				child->_desc.Parent != origin)
+			{
+				continue;
+			}
+
+			auto owned = child->_desc.Parent->DetachChild(child);
+			if (owned == nullptr)
+			{
+				continue;
+			}
+			
+			if (target != nullptr)
+			{
+				child->_desc.Parent = target;
+				target->_children.push_back(std::move(owned));
+			}
+			else
+			{
+				child->_desc.Parent = nullptr;
+				_surfaces.push_back(std::move(owned));
+			}
+			((target != nullptr) ? target : child)->MarkDirty();
+		}
+		_pendingReparents.clear();
 	}
 
 	void Application::On(
@@ -157,13 +231,17 @@ namespace mocca
 			return true;
 		}
 
-		_events.EmitDepth++;
-		auto result = std::ranges::all_of(
-			it->second,
-			[data](const auto& cb) -> auto
-			{ return cb.Callback(data, cb.User); }
-		);
-		_events.EmitDepth--;
+		bool result = true;
+
+		{
+			EventEmitScope scope{_events.EmitDepth};
+
+			result = std::ranges::all_of(
+				it->second,
+				[data](const auto& cb) -> auto
+				{ return cb.Callback(data, cb.User); }
+			);
+		}
 
 		_drainPendingEvents();
 		return result;
@@ -177,13 +255,17 @@ namespace mocca
 			return true;
 		}
 
-		_events.EmitDepth++;
-		auto result = std::ranges::all_of(
-			it->second,
-			[data](const auto& cb) -> auto
-			{ return cb.Callback(data, cb.User); }
-		);
-		_events.EmitDepth--;
+		bool result = true;
+
+		{
+			EventEmitScope scope{_events.EmitDepth};
+
+			result = std::ranges::all_of(
+				it->second,
+				[data](const auto& cb) -> auto
+				{ return cb.Callback(data, cb.User); }
+			);
+		}
 
 		_drainPendingEvents();
 		return result;

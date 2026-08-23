@@ -60,6 +60,8 @@ namespace mocca
 			}
 		}
 
+		auto DetachChild(Surface* which) -> std::unique_ptr<Surface>;
+
 		[[nodiscard]] auto GetDrawData() const
 			-> const std::vector<cmds::DrawCommand>&
 		{
@@ -78,7 +80,10 @@ namespace mocca
 				_desc.Parent == nullptr || IsExternal(),
 				"cant set a platform for a composite surface"
 			);
-			mc_assert(_platform == nullptr, "this surface already has a platform");
+			mc_assert(
+				_platform == nullptr,
+				"this surface already has a platform"
+			);
 			_platform = std::make_unique<T>(this, GetDescriptor());
 		}
 
@@ -173,6 +178,9 @@ namespace mocca
 		auto NotifyOutsidePress(const PointerEvent& ev) -> bool;
 
 	private:
+		void _sweepChildren();
+		static void AnnounceSubtreeDestroyed(Surface* s);
+		
 		SurfaceDesc _desc;
 		std::unique_ptr<PlatformSurface> _platform;
 		detail::NodeId _rootId = 0;
@@ -187,7 +195,6 @@ namespace mocca
 		detail::NodeId _focusedNode = 0;
 		detail::NodeId _capturedNode = 0;
 
-		// DAMN YOU STD FUNCTION!!!!
 		std::function<bool(Surface&, const PointerEvent&)> _onOutsidePress;
 
 		Surface* _focusSurface = nullptr;
