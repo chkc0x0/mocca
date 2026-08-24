@@ -84,7 +84,7 @@ namespace mocca::detail
 		NodeId Id;
 		ElementKey Key = mc_keyNone;
 
-		Node* Parent = nullptr; // not read yet
+		Node* Parent = nullptr;
 		YGNodeRef YogaNode{nullptr};
 
 		DeclaredStyle Declared;
@@ -163,6 +163,9 @@ namespace mocca::detail
 	};
 
 	auto findScrollableAncestor(Node* node) -> Node*;
+
+	auto contentExtent(Node* n, float& maxX, float& maxY) -> void;
+	auto reclampScrollOffsets(Node* n) -> void;
 
 	template <typename Fn>
 	auto dispatchPointerEvent(

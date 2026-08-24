@@ -8,6 +8,8 @@
 #include "Style.h"
 #include "yoga/YGNode.h"
 
+#define mc_scrollStep 16
+
 namespace mocca
 {
 	Surface::~Surface()
@@ -60,6 +62,8 @@ namespace mocca
 			_desc.Width = YGNodeLayoutGetWidth(_root->YogaNode);
 			_desc.Height = YGNodeLayoutGetHeight(_root->YogaNode);
 		}
+
+		detail::reclampScrollOffsets(_root.get());
 	}
 
 	void Surface::Tick(double dt)
@@ -295,29 +299,24 @@ namespace mocca
 				auto* scrollable = detail::findScrollableAncestor(scrollTarget);
 				if (scrollable != nullptr)
 				{
-					scrollable->ScrollOffset.X += ev.ScrollX * 16;
-					scrollable->ScrollOffset.Y -= ev.ScrollY * 16;
+					scrollable->ScrollOffset.X += ev.ScrollX * mc_scrollStep;
+					scrollable->ScrollOffset.Y -= ev.ScrollY * mc_scrollStep;
 
 					float cw = YGNodeLayoutGetWidth(scrollable->YogaNode);
 					float ch = YGNodeLayoutGetHeight(scrollable->YogaNode);
 
 					float cmaxX = 0.0F;
 					float cmaxY = 0.0F;
-					uint32_t nc = YGNodeGetChildCount(scrollable->YogaNode);
-					for (uint32_t ci = 0; ci < nc; ci++)
-					{
-						auto* yc = YGNodeGetChild(scrollable->YogaNode, ci);
-						cmaxX = std::max<float>(
-							cmaxX,
-							YGNodeLayoutGetLeft(yc) + YGNodeLayoutGetWidth(yc)
-						);
-						cmaxY = std::max<float>(
-							cmaxY,
-							YGNodeLayoutGetTop(yc) + YGNodeLayoutGetHeight(yc)
-						);
-					}
-					float maxSx = std::max<float>(0.0F, cmaxX - cw);
-					float maxSy = std::max<float>(0.0F, cmaxY - ch);
+					detail::contentExtent(scrollable, cmaxX, cmaxY);
+
+					float maxSx = std::max<float>(
+						0.0F,
+						cmaxX - (scrollable->GetX() + cw)
+					);
+					float maxSy = std::max<float>(
+						0.0F,
+						cmaxY - (scrollable->GetY() + ch)
+					);
 
 					scrollable->ScrollOffset.X =
 						std::clamp(scrollable->ScrollOffset.X, 0.0F, maxSx);
