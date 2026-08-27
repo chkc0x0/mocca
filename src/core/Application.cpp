@@ -102,9 +102,9 @@ namespace mocca
 
 		_inTick = false;
 
-		_context._store.ClearDirty();
 		_context._store.FlushLayoutEffects(nullptr);
 		_context._store.FlushEffects();
+		_context._store.ClearDirty();
 
 		if (_context._store.DirtyCount() != 0)
 		{

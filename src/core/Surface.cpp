@@ -129,9 +129,28 @@ namespace mocca
 		{
 			auto* ctx = getCtx();
 			ctx->_currentSurface = this;
-			Update(dt);
-			ctx->_store.FlushLayoutEffects(this);
+
+			_dirty = false;
+			int settle = 0;
+			do
+			{
+				Update(dt);
+				ctx->_store.FlushLayoutEffects(this);
+			} while (_dirty && ++settle < 16);
+
+			if (_dirty)
+			{
+				mc_error(
+					ErrorCode::InvalidState,
+					"layout effects re-dirtied this surface 16 times "
+					"without settling (last dirty component: #{})",
+					ctx->_store.LastDirty()
+				);
+				_dirty = false;
+			}
+
 			ctx->_currentSurface = nullptr;
+			Paint();
 		}
 
 		for (auto& i : _children)
