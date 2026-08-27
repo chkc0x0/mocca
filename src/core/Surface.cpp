@@ -130,6 +130,7 @@ namespace mocca
 			auto* ctx = getCtx();
 			ctx->_currentSurface = this;
 			Update(dt);
+			ctx->_store.FlushLayoutEffects(this);
 			ctx->_currentSurface = nullptr;
 		}
 

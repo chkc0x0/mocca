@@ -9,6 +9,11 @@
 #include <variant>
 #include <vector>
 
+namespace mocca
+{
+	class Surface;
+}
+
 namespace mocca::detail
 {
 	using NodeId = std::uint64_t;
@@ -331,6 +336,13 @@ namespace mocca::detail
 		bool HasRun = false;
 	};
 
+	struct EffectFunction
+	{
+		std::function<void()> Callback;
+		bool IsLayout = false;
+		Surface* OwningSurface = nullptr;
+	};
+
 	class HookStore
 	{
 	public:
@@ -412,11 +424,11 @@ namespace mocca::detail
 		{
 			auto q = std::move(_effectQueue);
 			_effectQueue.clear();
-			for (auto& run : q)
+			for (auto& effect : q)
 			{
 				try
 				{
-					run();
+					effect.Callback();
 				}
 				catch (const std::exception& e)
 				{
@@ -434,6 +446,43 @@ namespace mocca::detail
 					);
 				}
 			}
+		}
+
+		void FlushLayoutEffects(Surface* surface)
+		{
+			std::vector<EffectFunction> kept;
+			kept.reserve(_effectQueue.size());
+			for (auto& e : _effectQueue)
+			{
+				if (e.IsLayout
+					&& (surface == nullptr || e.OwningSurface == surface))
+				{
+					try
+					{
+						e.Callback();
+					}
+					catch (const std::exception& ex)
+					{
+						mc_error(
+							ErrorCode::UserSide,
+							"layout effect threw an exception: {}",
+							ex.what()
+						);
+					}
+					catch (...)
+					{
+						mc_error(
+							ErrorCode::UserSide,
+							"layout effect threw a non-std exception"
+						);
+					}
+				}
+				else
+				{
+					kept.push_back(std::move(e));
+				}
+			}
+			_effectQueue = std::move(kept);
 		}
 
 		void RemoveComponent(NodeId id)
@@ -481,7 +530,16 @@ namespace mocca::detail
 
 		void PushEffect(const CleanupFn& fn)
 		{
-			_effectQueue.push_back(fn);
+			_effectQueue.push_back({.Callback = fn});
+		}
+
+		void PushLayoutEffect(const CleanupFn& fn, Surface* surface)
+		{
+			_effectQueue.push_back({
+				.Callback = fn,
+				.IsLayout = true,
+				.OwningSurface = surface,
+			});
 		}
 
 		void SetMarkDirty(std::function<void(NodeId)> fn)
@@ -512,11 +570,18 @@ namespace mocca::detail
 
 	private:
 		std::unordered_map<HookKey, std::any, HookKeyHash> _slots;
-		std::vector<std::function<void()>> _effectQueue;
+		std::vector<EffectFunction> _effectQueue;
 
 		std::unordered_set<NodeId> _dirtySet;
 		std::function<void(NodeId)> _markDirty;
 
 		uint64_t _lastDirty = 0;
 	};
+
+	template <typename Fn>
+	void runEffect(
+		NodeId id,
+		uint32_t hook,
+		Fn effect
+	);
 }

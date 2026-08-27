@@ -65,11 +65,20 @@ namespace mocca
 		useEffect(Fn effect, const std::vector<detail::EffectDependency>& deps);
 		template <typename Fn> friend void useEffect(Fn effect);
 
+		template <typename Fn>
+		friend void
+		useLayoutEffect(Fn effect, const std::vector<detail::EffectDependency>& deps);
+		template <typename Fn> friend void useLayoutEffect(Fn effect);
+
 		template <typename T>
 		friend auto useMemo(
 			std::function<T()> cb,
 			const std::vector<detail::EffectDependency>& deps
 		) -> const T&;
+
+		template <typename Fn>
+		friend void
+		detail::runEffect(detail::NodeId id, uint32_t hook, Fn effect);
 	};
 
 	auto getCtx() -> Context*;
@@ -177,6 +186,43 @@ namespace mocca
 		return value;
 	}
 
+	template <typename... Args>
+	auto deps(Args&&... args) -> std::vector<detail::EffectDependency>
+	{
+		return std::vector<detail::EffectDependency>{
+			detail::EffectDependency::Make(std::forward<Args>(args))...
+		};
+	}
+
+	namespace detail
+	{
+		template <typename Fn>
+		void runEffect(detail::NodeId id, uint32_t hook, Fn effect)
+		{
+			auto* ctx = getCtx();
+
+			detail::EffectSlot& s = ctx->_store.GetEffectSlot(id, hook);
+
+			auto old = std::move(s.Cleanup);
+			s.Cleanup = nullptr;
+			if (old)
+			{
+				old();
+			}
+
+			if constexpr (std::is_void_v<std::invoke_result_t<Fn>>)
+			{
+				effect();
+				s.HasRun = true;
+			}
+			else
+			{
+				s.Cleanup = effect();
+				s.HasRun = true;
+			}
+		}
+	}
+
 	template <typename Fn> void useEffect(Fn effect)
 	{
 		Context* ctx = getCtx();
@@ -185,36 +231,8 @@ namespace mocca
 
 		ctx->_store.PushEffect(
 			[ctx, id, hook, effect]() -> auto
-			{
-				detail::EffectSlot& s = ctx->_store.GetEffectSlot(id, hook);
-
-				auto old = std::move(s.Cleanup);
-				s.Cleanup = nullptr;
-				if (old)
-				{
-					old();
-				}
-
-				if constexpr (std::is_void_v<std::invoke_result_t<Fn>>)
-				{
-					effect();
-					s.HasRun = true;
-				}
-				else
-				{
-					s.Cleanup = effect();
-					s.HasRun = true;
-				}
-			}
+			{ detail::runEffect(id, hook, effect); }
 		);
-	}
-
-	template <typename... Args>
-	auto deps(Args&&... args) -> std::vector<detail::EffectDependency>
-	{
-		return std::vector<detail::EffectDependency>{
-			detail::EffectDependency::Make(std::forward<Args>(args))...
-		};
 	}
 
 	template <typename Fn>
@@ -233,27 +251,40 @@ namespace mocca
 
 			ctx->_store.PushEffect(
 				[ctx, id, hook, effect]() -> auto
-				{
-					detail::EffectSlot& s = ctx->_store.GetEffectSlot(id, hook);
+				{ detail::runEffect(id, hook, effect); }
+			);
+		}
+	}
 
-					auto old = std::move(s.Cleanup);
-					s.Cleanup = nullptr;
-					if (old)
-					{
-						old();
-					}
+	template <typename Fn> void useLayoutEffect(Fn effect)
+	{
+		Context* ctx = getCtx();
+		detail::NodeId id = ctx->_componentId;
+		std::uint32_t hook = ctx->_hookIndex++;
 
-					if constexpr (std::is_void_v<std::invoke_result_t<Fn>>)
-					{
-						effect();
-						s.HasRun = true;
-					}
-					else
-					{
-						s.Cleanup = effect();
-						s.HasRun = true;
-					}
-				}
+		ctx->_store.PushLayoutEffect(
+			[ctx, id, hook, effect]() -> auto
+			{ detail::runEffect(id, hook, effect); }, ctx->_currentSurface
+		);
+	}
+
+	template <typename Fn>
+	void useLayoutEffect(Fn effect, const std::vector<detail::EffectDependency>& deps)
+	{
+		Context* ctx = getCtx();
+		detail::NodeId id = ctx->_componentId;
+		std::uint32_t hook = ctx->_hookIndex++;
+		detail::EffectSlot& slot = ctx->_store.GetEffectSlot(id, hook);
+
+		bool changed = !slot.HasRun || slot.LastDeps != deps;
+
+		if (changed)
+		{
+			slot.LastDeps = deps;
+
+			ctx->_store.PushLayoutEffect(
+				[ctx, id, hook, effect]() -> auto
+				{ detail::runEffect(id, hook, effect); }, ctx->_currentSurface
 			);
 		}
 	}
