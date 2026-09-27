@@ -2,6 +2,7 @@
 #include "Context.h"
 #include "Logger.h"
 #include "Surface.h"
+#include <cctype>
 #include <string>
 
 namespace mocca
@@ -30,16 +31,64 @@ namespace mocca
 	public:
 		ApplicationID(const std::string& id);
 		ApplicationID() : _id("<not set>") {};
+		ApplicationID(const ApplicationID&) = delete;
+		ApplicationID(ApplicationID&&) noexcept = default;
+		auto operator=(const ApplicationID&) -> ApplicationID& = delete;
+		auto operator=(ApplicationID&&) noexcept -> ApplicationID& = default;
 
-		static constexpr auto ValidateID(std::string_view id) -> bool;
+		// just found out you cant put it in a cpp file
+		// lololol
+		static constexpr auto ValidateID(std::string_view id) -> bool
+		{
+			if (id.empty())
+			{
+				return false;
+			}
+
+			int segments = 0;
+			int segmentLen = 0;
+
+			for (char c : id)
+			{
+				if (c == '.')
+				{
+					if (segmentLen == 0)
+					{
+						return false;
+					}
+					segments++;
+					segmentLen = 0;
+				}
+				else if (
+					(std::isalnum((unsigned char)c) != 0) || c == '_' || c == '-'
+				)
+				{
+					segmentLen++;
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			if (segmentLen == 0)
+			{
+				return false;
+			}
+			segments++;
+
+			return segments == 2 || segments == 3;
+		}
 		[[nodiscard]] auto GetCompoundID() const -> std::string;
 
-		std::string_view Name;
-		std::string_view Organization;
-		std::string_view Domain;
+		[[nodiscard]] auto Name() const -> std::string_view;
+		[[nodiscard]] auto Organization() const -> std::string_view;
+		[[nodiscard]] auto Domain() const -> std::string_view;
 
 	private:
 		std::string _id;
+		std::size_t _firstDot = std::string_view::npos;
+		std::size_t _lastDot = std::string_view::npos;
 	};
 
 	class Application
@@ -137,7 +186,7 @@ namespace mocca
 		void _drainPendingEvents();
 
 		Context _context;
-		
+
 		friend class Surface;
 		friend auto getCtx() -> Context*;
 	};

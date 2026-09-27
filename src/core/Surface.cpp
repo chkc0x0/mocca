@@ -112,12 +112,12 @@ namespace mocca
 
 		if (GetState() == SurfaceState::Zombie)
 		{
-			if (_zombieTimeout > 0)
+			if (_zombieRemaining > 0)
 			{
-				_zombieTimeout--;
+				_zombieRemaining--;
 			}
 
-			if (_zombieTimeout == 0)
+			if (_zombieRemaining == 0)
 			{
 				_sweepChildren();
 				_state = SurfaceState::Dead;
@@ -130,12 +130,12 @@ namespace mocca
 			auto* ctx = getCtx();
 			ctx->_currentSurface = this;
 
-			_dirty = false;
 			int settle = 0;
 			do
 			{
+				_dirty = false;
 				Update(dt);
-				ctx->_store.FlushLayoutEffects(this);
+				ctx->_store->FlushLayoutEffects(this);
 			} while (_dirty && ++settle < 16);
 
 			if (_dirty)
@@ -144,7 +144,7 @@ namespace mocca
 					ErrorCode::InvalidState,
 					"layout effects re-dirtied this surface 16 times "
 					"without settling (last dirty component: #{})",
-					ctx->_store.LastDirty()
+					ctx->_store->LastDirty()
 				);
 				_dirty = false;
 			}
@@ -158,10 +158,7 @@ namespace mocca
 			i->Tick(dt);
 		}
 
-		if (IsDirty())
-		{
-			Paint();
-		}
+		Paint();
 
 		if (IsPlatformBacked())
 		{
@@ -171,7 +168,7 @@ namespace mocca
 
 	void Surface::Paint()
 	{
-		if (!_root || !_dirty)
+		if (!_root)
 		{
 			return;
 		}
@@ -262,16 +259,23 @@ namespace mocca
 	{
 		if (_captureSurface != nullptr)
 		{
-			ev.X -= _captureSurface->_desc.X;
-			ev.Y -= _captureSurface->_desc.Y;
-
-			_captureSurface->RoutePointer(ev);
-
-			if (!_captureSurface->IsCapturing())
+			if (_captureSurface->GetState() != SurfaceState::Alive)
 			{
 				_captureSurface = nullptr;
 			}
-			return;
+			else
+			{
+				ev.X -= _captureSurface->_desc.X;
+				ev.Y -= _captureSurface->_desc.Y;
+
+				_captureSurface->RoutePointer(ev);
+
+				if (!_captureSurface->IsCapturing())
+				{
+					_captureSurface = nullptr;
+				}
+				return;
+			}
 		}
 
 		for (size_t i = _children.size(); i > 0; --i)
@@ -545,6 +549,7 @@ namespace mocca
 		}
 
 		_state = SurfaceState::Zombie;
+		_zombieRemaining = _zombieTimeout;
 
 		for (auto& c : _children)
 		{
@@ -615,6 +620,7 @@ namespace mocca
 				else
 				{
 					c->_state = SurfaceState::Zombie;
+					c->_zombieRemaining = c->_zombieTimeout;
 
 					for (auto& gc : c->_children)
 					{

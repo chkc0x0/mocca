@@ -18,9 +18,15 @@ namespace mocca
 	{
 	public:
 		auto CreateSurface(const SurfaceDesc& desc) -> Surface*;
+		Context()
+		{
+			_store = std::make_unique<detail::HookStore>();
+        }
 
 	private:
-		detail::HookStore _store;
+		// want to reduce space so
+		// same thing but looks smaller in vscode
+		std::unique_ptr<detail::HookStore> _store;
 		Surface* _currentSurface{nullptr};
 
 		detail::NodeId _componentId;
@@ -96,13 +102,13 @@ namespace mocca
 
 		void operator()(T v) const
 		{
-			_ctx->_store.Set<T>(_id, _hook, std::move(v));
+			_ctx->_store->Set<T>(_id, _hook, std::move(v));
 		}
 
 		void operator()(std::function<T(const T&)> fn) const
 		{
-			T& current = _ctx->_store.GetOrCreate<T>(_id, _hook, T{});
-			_ctx->_store.Set<T>(_id, _hook, fn(current));
+			T& current = _ctx->_store->GetOrCreate<T>(_id, _hook, T{});
+			_ctx->_store->Set<T>(_id, _hook, fn(current));
 		}
 	};
 
@@ -125,8 +131,8 @@ namespace mocca
 
 		void operator()(U v) const
 		{
-			T& cur = _ctx->_store.Get<T>(_id, _hook);
-			_ctx->_store.Set<T>(_id, _hook, _reducer(cur, v));
+			T& cur = _ctx->_store->Get<T>(_id, _hook);
+			_ctx->_store->Set<T>(_id, _hook, _reducer(cur, v));
 		}
 	};
 
@@ -137,7 +143,7 @@ namespace mocca
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
 
-		T& value = ctx->_store.GetOrCreate<T>(id, hook, std::move(initial));
+		T& value = ctx->_store->GetOrCreate<T>(id, hook, std::move(initial));
 
 		return {value, StateSetter<T>{ctx, id, hook}};
 	}
@@ -153,9 +159,9 @@ namespace mocca
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
 
-		T& value = ctx->_store.Has(id, hook)
-					   ? ctx->_store.Get<T>(id, hook)
-					   : ctx->_store.Create<T>(
+		T& value = ctx->_store->Has(id, hook)
+					   ? ctx->_store->Get<T>(id, hook)
+					   : ctx->_store->Create<T>(
 							 id,
 							 hook,
 							 init ? init(initialArg) : initialArg
@@ -170,7 +176,7 @@ namespace mocca
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
 
-		T& value = ctx->_store.GetOrCreate<T>(id, hook, std::move(initial));
+		T& value = ctx->_store->GetOrCreate<T>(id, hook, std::move(initial));
 
 		return value;
 	}
@@ -181,7 +187,7 @@ namespace mocca
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
 
-		T& value = ctx->_store.GetOrCreate<T>(id, hook, {});
+		T& value = ctx->_store->GetOrCreate<T>(id, hook, {});
 
 		return value;
 	}
@@ -201,7 +207,7 @@ namespace mocca
 		{
 			auto* ctx = getCtx();
 
-			detail::EffectSlot& s = ctx->_store.GetEffectSlot(id, hook);
+			detail::EffectSlot& s = ctx->_store->GetEffectSlot(id, hook);
 
 			auto old = std::move(s.Cleanup);
 			s.Cleanup = nullptr;
@@ -229,7 +235,7 @@ namespace mocca
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
 
-		ctx->_store.PushEffect(
+		ctx->_store->PushEffect(
 			[ctx, id, hook, effect]() -> auto
 			{ detail::runEffect(id, hook, effect); }
 		);
@@ -241,7 +247,7 @@ namespace mocca
 		Context* ctx = getCtx();
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
-		detail::EffectSlot& slot = ctx->_store.GetEffectSlot(id, hook);
+		detail::EffectSlot& slot = ctx->_store->GetEffectSlot(id, hook);
 
 		bool changed = !slot.HasRun || slot.LastDeps != deps;
 
@@ -249,7 +255,7 @@ namespace mocca
 		{
 			slot.LastDeps = deps;
 
-			ctx->_store.PushEffect(
+			ctx->_store->PushEffect(
 				[ctx, id, hook, effect]() -> auto
 				{ detail::runEffect(id, hook, effect); }
 			);
@@ -262,7 +268,7 @@ namespace mocca
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
 
-		ctx->_store.PushLayoutEffect(
+		ctx->_store->PushLayoutEffect(
 			[ctx, id, hook, effect]() -> auto
 			{ detail::runEffect(id, hook, effect); }, ctx->_currentSurface
 		);
@@ -274,7 +280,7 @@ namespace mocca
 		Context* ctx = getCtx();
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
-		detail::EffectSlot& slot = ctx->_store.GetEffectSlot(id, hook);
+		detail::EffectSlot& slot = ctx->_store->GetEffectSlot(id, hook);
 
 		bool changed = !slot.HasRun || slot.LastDeps != deps;
 
@@ -282,7 +288,7 @@ namespace mocca
 		{
 			slot.LastDeps = deps;
 
-			ctx->_store.PushLayoutEffect(
+			ctx->_store->PushLayoutEffect(
 				[ctx, id, hook, effect]() -> auto
 				{ detail::runEffect(id, hook, effect); }, ctx->_currentSurface
 			);
@@ -298,7 +304,7 @@ namespace mocca
 		Context* ctx = getCtx();
 		detail::NodeId id = ctx->_componentId;
 		std::uint32_t hook = ctx->_hookIndex++;
-		detail::MemoSlot& slot = ctx->_store.GetMemoSlot(id, hook);
+		detail::MemoSlot& slot = ctx->_store->GetMemoSlot(id, hook);
 
 		bool changed = !slot.HasRun || slot.LastDeps != deps;
 

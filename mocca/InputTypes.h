@@ -74,12 +74,12 @@ namespace mocca
 			Scroll
 		};
 
-		Type EventType;
-		float X;
-		float Y;
-		int Button;
-		float ScrollX;
-		float ScrollY;
+		Type EventType = Type::Down;
+		float X = 0.0F;
+		float Y = 0.0F;
+		int Button = 0;
+		float ScrollX = 0.0F;
+		float ScrollY = 0.0F;
 		bool StopPropagation = false;
 	};
 
@@ -93,8 +93,8 @@ namespace mocca
 			Up
 		};
 
-		Type EventType;
-		KeyCode Code;
+		Type EventType = Type::Down;
+		KeyCode Code = KeyCode::Unknown;
 		bool StopPropagation = false;
 	};
 
@@ -109,8 +109,8 @@ namespace mocca
 			IMEEnd
 		};
 
-		Type EventType;
-		char32_t Codepoint;
+		Type EventType = Type::Character;
+		char32_t Codepoint = U'\0';
 		std::string IMEComposition;
 		bool StopPropagation = false;
 	};
@@ -127,9 +127,9 @@ namespace mocca
 			DPIChange
 		};
 
-		Type EventType;
-		float Data1;
-		float Data2;
+		Type EventType = Type::Resize;
+		float Data1 = 0.0F;
+		float Data2 = 0.0F;
 	};
 
 	struct InputBatch

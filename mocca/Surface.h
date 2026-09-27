@@ -130,6 +130,10 @@ namespace mocca
 		void SetZombieTimeout(int frames)
 		{
 			_zombieTimeout = frames;
+			if (_state == SurfaceState::Zombie)
+			{
+				_zombieRemaining = _zombieTimeout;
+			}
 		}
 
 		[[nodiscard]] auto IsDirty() const -> bool
@@ -189,7 +193,9 @@ namespace mocca
 		std::unique_ptr<detail::Node> _root = nullptr;
 		SurfaceState _state = SurfaceState::Alive;
 		bool _dirty = true;
+
 		int _zombieTimeout = 0;
+		int _zombieRemaining = 0;
 		Canvas _canvas;
 
 		std::vector<std::unique_ptr<Surface>> _children;

@@ -32,10 +32,10 @@ namespace mocca
 		_id = ApplicationID(appId);
 		main = this;
 
-		_context._store.SetMarkDirty(
+		_context._store->SetMarkDirty(
 			[this](detail::NodeId id) -> void
 			{
-				_context._store.InsertDirty(id);
+				_context._store->InsertDirty(id);
 				Surface* owner = nullptr;
 
 				for (auto& surface : _surfaces)
@@ -102,11 +102,11 @@ namespace mocca
 
 		_inTick = false;
 
-		_context._store.FlushLayoutEffects(nullptr);
-		_context._store.FlushEffects();
-		_context._store.ClearDirty();
+		_context._store->FlushLayoutEffects(nullptr);
+		_context._store->FlushEffects();
+		_context._store->ClearDirty();
 
-		if (_context._store.DirtyCount() != 0)
+		if (_context._store->DirtyCount() != 0)
 		{
 			if (++_stateOnEffectStreak > 16 && !_stateOnEffectWarned)
 			{
@@ -117,7 +117,7 @@ namespace mocca
 					"input. an effect is probably setting state "
 					"unconditionally (last dirty component: #{})",
 					_stateOnEffectStreak,
-					_context._store.LastDirty()
+					_context._store->LastDirty()
 				);
 			}
 		}
@@ -163,7 +163,7 @@ namespace mocca
 			{
 				continue;
 			}
-			
+
 			if (target != nullptr)
 			{
 				child->_desc.Parent = target;
@@ -347,94 +347,48 @@ namespace mocca
 		return ptr;
 	}
 
-	constexpr auto ApplicationID::ValidateID(std::string_view id) -> bool
-	{
-		if (id.empty())
-		{
-			return false;
-		}
-
-		int segments = 0;
-		int segmentLen = 0;
-
-		for (char c : id)
-		{
-			if (c == '.')
-			{
-				if (segmentLen == 0)
-				{
-					return false;
-				}
-				segments++;
-				segmentLen = 0;
-			}
-			else if (
-				(std::isalnum((unsigned char)c) != 0) || c == '_' || c == '-'
-			)
-			{
-				segmentLen++;
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		if (segmentLen == 0)
-		{
-			return false;
-		}
-		segments++;
-
-		return segments >= 2 && segments <= 3;
-	}
-
 	ApplicationID::ApplicationID(const std::string& id)
 	{
 		mc_assert(ValidateID(id), "invalid application id {}", id);
 
 		_id = id;
 
-		std::vector<std::string_view> segments;
-		{
-			std::string_view sv(_id);
-			size_t start = 0;
-			while (true)
-			{
-				size_t pos = sv.find('.', start);
-				if (pos == std::string_view::npos)
-				{
-					segments.emplace_back(sv.substr(start));
-					break;
-				}
-				segments.emplace_back(sv.substr(start, pos - start));
-				start = pos + 1;
-			}
-		}
-
-		if (segments.size() == 2)
-		{
-			Organization = segments[0];
-			Name = segments[1];
-			Domain = "com";
-		}
-		else if (segments.size() == 3)
-		{
-			Domain = segments[0];
-			Organization = segments[1];
-			Name = segments[2];
-		}
-		else
-		{
-			_id = "<invalid>";
-			Name = Organization = Domain = std::string_view();
-		}
+		_firstDot = _id.find('.');
+		_lastDot = _id.rfind('.');
 	}
 
 	auto ApplicationID::GetCompoundID() const -> std::string
 	{
-		return std::string(Domain) + "." + std::string(Organization) + "." +
-			   std::string(Name);
+		return std::string(Domain()) + "." + std::string(Organization()) + "." +
+			   std::string(Name());
+	}
+
+	auto ApplicationID::Domain() const -> std::string_view
+	{
+		if (_firstDot == _lastDot)
+		{
+			return "com";
+		}
+
+		return std::string_view(_id).substr(0, _firstDot);
+	}
+
+	auto ApplicationID::Name() const -> std::string_view
+	{
+		return std::string_view(_id).substr(_lastDot + 1);
+	}
+
+	auto ApplicationID::Organization() const -> std::string_view
+	{
+		if (_firstDot == _lastDot)
+		{
+			return std::string_view(_id).substr(0, _firstDot);
+		}
+
+		return std::string_view(_id).substr(
+			_firstDot + 1,
+			_lastDot - _firstDot - 1
+		);
 	}
 
 	void Application::Print() const
