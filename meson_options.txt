@@ -1,0 +1,12 @@
+option(
+    'sandbox',
+    type: 'boolean',
+    value: true,
+    description: 'build the sandbox',
+)
+option(
+    'tests',
+    type: 'boolean',
+    value: true,
+    description: 'build the tests',
+)
