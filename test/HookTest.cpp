@@ -21,7 +21,10 @@ namespace mtest
 			return c;
 		}
 
-		auto Reset() -> void { C() = Counters{}; }
+		auto Reset() -> void
+		{
+			C() = Counters{};
+		}
 	}
 
 	TEST_F(HookTest, StateSettlesOneFrame)
@@ -55,8 +58,7 @@ namespace mtest
 		EXPECT_EQ(C().LastValue, 3)
 			<< "the settle loop must run the state through to convergence in "
 			   "one tick";
-		EXPECT_GE(C().Renders, 4)
-			<< "each state change must drive a re-render";
+		EXPECT_GE(C().Renders, 4) << "each state change must drive a re-render";
 
 		Tick();
 		EXPECT_EQ(C().LastValue, 3) << "state must survive a later render";
@@ -79,8 +81,8 @@ namespace mtest
 				c.Renders++;
 				auto [v, setV] = mocca::useState(0);
 				mocca::useLayoutEffect(
-					[setV, &v]()
-				 -> void	{
+					[setV, &v]() -> void
+					{
 						if (v < 5)
 						{
 							C().Sets++;
@@ -113,17 +115,17 @@ namespace mtest
 			{
 				C().Renders++;
 				auto [v, setV] = mocca::useState(0);
-				mocca::useLayoutEffect(
-					[setV, &v]() -> void { setV(v + 1); }
-				);
+				mocca::useLayoutEffect([setV, &v]() -> void { setV(v + 1); });
 				return box(50, 50);
 			}
 		);
 
 		Tick();
 
-		EXPECT_EQ(C().Renders, 16)
-			<< "the runaway cap must fire";
+		EXPECT_EQ(C().Renders, 16) << "the runaway cap must fire";
+
+		EXPECT_TRUE(Saw("without settling"))
+			<< "captured log was: " << LogDump();
 	}
 
 	TEST_F(HookTest, RunawayEffectCapped)
@@ -145,9 +147,13 @@ namespace mtest
 			}
 		);
 
-		Tick();
+		Tick(40);
 
-		EXPECT_EQ(C().Renders, 16) << "the runaway cap must fire";
+		EXPECT_EQ(C().Renders, 40) << "a normal effect must not be capped";
+
+		EXPECT_TRUE(Saw("setting state unconditionally")) << "captured "
+															 "log was: "
+														  << LogDump();
 	}
 
 	TEST_F(HookTest, LayoutEffectOrder)
@@ -164,10 +170,8 @@ namespace mtest
 			{
 				auto& c = C();
 				c.Order.push_back(1);
-				mocca::useLayoutEffect([]()
-				{ C().Order.push_back(2); });
-				mocca::useEffect([]()
-			 -> void	{ C().Order.push_back(3); });
+				mocca::useLayoutEffect([]() { C().Order.push_back(2); });
+				mocca::useEffect([]() -> void { C().Order.push_back(3); });
 				return box(50, 50);
 			}
 		);
@@ -205,8 +209,7 @@ namespace mtest
 		EXPECT_EQ(C().Effects, 1);
 
 		Tick();
-		EXPECT_EQ(C().Effects, 1)
-			<< "a clean surface skips Update";
+		EXPECT_EQ(C().Effects, 1) << "a clean surface skips Update";
 
 		s->MarkDirty();
 		Tick();

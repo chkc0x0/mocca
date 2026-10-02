@@ -157,7 +157,7 @@ namespace mocca
 		std::vector<std::tuple<Surface*, Surface*, Surface*>> _pendingReparents;
 
 		bool _inTick = false;
-		uint8_t _stateOnEffectStreak = 0;
+		uint32_t _stateOnEffectStreak = 0;
 		bool _stateOnEffectWarned = false;
 
 		struct

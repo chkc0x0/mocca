@@ -4,6 +4,7 @@
 #include "Element.h"
 #include "StyleHelpers.h"
 #include "gtest/gtest.h"
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -28,8 +29,8 @@ namespace mtest
 	{
 		return countOf(
 			cmds,
-			[](const auto& c)
-		 -> auto	{ return std::get_if<mocca::cmds::DrawRectCmd>(&c) != nullptr; }
+			[](const auto& c) -> auto
+			{ return std::get_if<mocca::cmds::DrawRectCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -37,8 +38,8 @@ namespace mtest
 	{
 		return countOf(
 			cmds,
-			[](const auto& c)
-		 -> auto	{ return std::get_if<mocca::cmds::DrawTextCmd>(&c) != nullptr; }
+			[](const auto& c) -> auto
+			{ return std::get_if<mocca::cmds::DrawTextCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -58,8 +59,8 @@ namespace mtest
 	{
 		return countOf(
 			cmds,
-			[](const auto& c)
-		 -> auto	{ return std::get_if<mocca::cmds::PushClipCmd>(&c) != nullptr; }
+			[](const auto& c) -> auto
+			{ return std::get_if<mocca::cmds::PushClipCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -67,8 +68,8 @@ namespace mtest
 	{
 		return countOf(
 			cmds,
-			[](const auto& c)
-		 -> auto	{ return std::get_if<mocca::cmds::PopClipCmd>(&c) != nullptr; }
+			[](const auto& c) -> auto
+			{ return std::get_if<mocca::cmds::PopClipCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -76,8 +77,11 @@ namespace mtest
 	{
 		return countOf(
 			cmds,
-			[](const auto& c)
-		 -> auto	{ return std::get_if<mocca::cmds::PushTransformCmd>(&c) != nullptr; }
+			[](const auto& c) -> auto
+			{
+				return std::get_if<mocca::cmds::PushTransformCmd>(&c) !=
+					   nullptr;
+			}
 		);
 	}
 
@@ -85,8 +89,8 @@ namespace mtest
 	{
 		return countOf(
 			cmds,
-			[](const auto& c)
-		 -> auto	{ return std::get_if<mocca::cmds::PopTransformCmd>(&c) != nullptr; }
+			[](const auto& c) -> auto
+			{ return std::get_if<mocca::cmds::PopTransformCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -95,29 +99,23 @@ namespace mtest
 		return s.GetDrawData();
 	}
 
-	inline auto box(
-		float w,
-		float h,
-		mocca::Color c = mocca::colors::Transparent
-	) -> mocca::Element
+	inline auto
+	box(float w, float h, mocca::Color c = mocca::colors::Transparent)
+		-> mocca::Element
 	{
 		return mocca::box(
 			mocca::BoxDescriptor{
-				.Style =
-					{
-						.Width = {mocca::styles::px(w)},
-						.Height = {mocca::styles::px(h)},
-						.BackgroundColor = c,
-					},
+				.Style = {
+					.Width = {mocca::styles::px(w)},
+					.Height = {mocca::styles::px(h)},
+					.BackgroundColor = c,
+				},
 			}
 		);
 	}
 
-	inline auto boxWithText(
-		float w,
-		float h,
-		std::string content
-	) -> mocca::Element
+	inline auto boxWithText(float w, float h, std::string content)
+		-> mocca::Element
 	{
 		return mocca::box(
 			mocca::BoxDescriptor{
@@ -134,12 +132,14 @@ namespace mtest
 	class AppTest : public ::testing::Test
 	{
 	public:
-		explicit AppTest(const char* id = "mocca.test")
-			: _app(id)
+		explicit AppTest(const char* id = "mocca.test") : _app(id)
 		{
 		}
 
-		[[nodiscard]] auto App() -> mocca::Application& { return _app; }
+		[[nodiscard]] auto App() -> mocca::Application&
+		{
+			return _app;
+		}
 
 		auto Tick(int n = 1) -> void
 		{
@@ -149,8 +149,38 @@ namespace mtest
 			}
 		}
 
+	protected:
+		void SetUp() override
+		{
+			mocca::Logger::SetLogCallback(
+				[this](const mocca::LogMessage& m, void*) -> void
+				{ _log.emplace_back(m.Message); }
+			);
+		}
+
+		void TearDown() override
+		{
+			mocca::Logger::SetLogCallback(nullptr);
+			_log.clear();
+		}
+
+		[[nodiscard]] auto Saw(std::string_view str) const -> bool
+		{
+			return std::ranges::any_of(
+				_log,
+				[str](const auto& m) -> auto
+				{ return m.find(str) != std::string::npos; }
+			);
+		}
+
+		[[nodiscard]] auto LogDump() const -> std::string
+		{
+			return _log.empty() ? "<nothing>" : _log.front();
+		}
+
 	private:
 		mocca::Application _app;
+		std::vector<std::string> _log;
 	};
 
 	class SurfaceTest : public AppTest
@@ -174,9 +204,15 @@ namespace mtest
 	class DeathWatch
 	{
 	public:
-		void Watch(mocca::Surface* s) { _doomed = s; }
+		void Watch(mocca::Surface* s)
+		{
+			_doomed = s;
+		}
 
-		[[nodiscard]] auto Count() const -> int { return _count; }
+		[[nodiscard]] auto Count() const -> int
+		{
+			return _count;
+		}
 
 		auto Note(void* data) -> void
 		{
@@ -197,12 +233,14 @@ namespace mtest
 		explicit LifecycleTestBase(const char* id = "mocca.test.lifecycle")
 			: AppTest(id)
 		{
-			App().On(mocca::ApplicationEvent::SurfaceDestroyed,
-					 [this](void* d, void*) -> bool
-					 {
-							Watch.Note(d);
-							return true;
-					 });
+			App().On(
+				mocca::ApplicationEvent::SurfaceDestroyed,
+				[this](void* d, void*) -> bool
+				{
+					Watch.Note(d);
+					return true;
+				}
+			);
 		}
 
 		DeathWatch Watch;
@@ -214,24 +252,20 @@ namespace mtest
 		mocca::Surface** outChild = nullptr
 	) -> std::pair<mocca::Surface*, mocca::Surface*>
 	{
-		auto* parent = t.App().RegisterSurface(
-			{
-				.Width = 200,
-				.Height = 200,
-				.Title = "parent",
-				.Root = []() -> mocca::Element { return box(200, 200); },
-			}
-		);
+		auto* parent = t.App().RegisterSurface({
+			.Width = 200,
+			.Height = 200,
+			.Title = "parent",
+			.Root = []() -> mocca::Element { return box(200, 200); },
+		});
 
-		auto* child = t.App().RegisterSurface(
-			{
-				.Width = 50,
-				.Height = 50,
-				.Title = "child",
-				.Parent = parent,
-				.Root = []() -> mocca::Element { return box(50, 50); },
-			}
-		);
+		auto* child = t.App().RegisterSurface({
+			.Width = 50,
+			.Height = 50,
+			.Title = "child",
+			.Parent = parent,
+			.Root = []() -> mocca::Element { return box(50, 50); },
+		});
 
 		if (outParent != nullptr)
 		{

@@ -236,7 +236,7 @@ namespace mocca
 		std::uint32_t hook = ctx->_hookIndex++;
 
 		ctx->_store->PushEffect(
-			[ctx, id, hook, effect]() -> auto
+			[id, hook, effect]() -> auto
 			{ detail::runEffect(id, hook, effect); }
 		);
 	}
@@ -256,7 +256,7 @@ namespace mocca
 			slot.LastDeps = deps;
 
 			ctx->_store->PushEffect(
-				[ctx, id, hook, effect]() -> auto
+				[id, hook, effect]() -> auto
 				{ detail::runEffect(id, hook, effect); }
 			);
 		}
@@ -269,7 +269,7 @@ namespace mocca
 		std::uint32_t hook = ctx->_hookIndex++;
 
 		ctx->_store->PushLayoutEffect(
-			[ctx, id, hook, effect]() -> auto
+			[id, hook, effect]() -> auto
 			{ detail::runEffect(id, hook, effect); }, ctx->_currentSurface
 		);
 	}
@@ -289,7 +289,7 @@ namespace mocca
 			slot.LastDeps = deps;
 
 			ctx->_store->PushLayoutEffect(
-				[ctx, id, hook, effect]() -> auto
+				[id, hook, effect]() -> auto
 				{ detail::runEffect(id, hook, effect); }, ctx->_currentSurface
 			);
 		}
