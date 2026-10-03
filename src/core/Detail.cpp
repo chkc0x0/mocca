@@ -2,6 +2,7 @@
 #include "Context.h"
 #include "Application.h"
 #include "Style.h"
+#include "yoga/YGNodeLayout.h"
 #include <cstddef>
 #include <iostream>
 #include <ranges>
@@ -428,6 +429,369 @@ namespace mocca::detail
 
 		return oldNode;
 	}
+
+	void styleValuePrintEmptyError()
+	{
+		mc_error(ErrorCode::InvalidState, "no value stored here!");
+	}
+
+	auto Node::FindNodeById(Node* root, NodeId id) -> Node*
+	{
+		if (root == nullptr)
+		{
+			return nullptr;
+		}
+		if (root->Id == id)
+		{
+			return root;
+		}
+		for (const auto& child : root->Children)
+		{
+			auto* found = FindNodeById(child.get(), id);
+			if (found != nullptr)
+			{
+				return found;
+			}
+		}
+		return nullptr;
+	}
+
+	auto hitTestImpl(
+		Node* root,
+		float x,
+		float y,
+		float accScrollX,
+		float accScrollY
+	) -> Node*
+	{
+		if (root == nullptr)
+		{
+			return nullptr;
+		}
+
+		float childAccX = accScrollX;
+		float childAccY = accScrollY;
+		if (root->IsBox() && root->Style.Overflow == OverflowType::Scroll)
+		{
+			childAccX += root->ScrollOffset.X;
+			childAccY += root->ScrollOffset.Y;
+		}
+
+		for (auto& it : std::views::reverse(root->Children))
+		{
+			auto* hit = hitTestImpl(it.get(), x, y, childAccX, childAccY);
+			if (hit != nullptr)
+			{
+				return hit;
+			}
+		}
+
+		if (root->IsComponent())
+		{
+			return nullptr;
+		}
+
+		float nx = root->GetX();
+		float ny = root->GetY();
+		float nw = YGNodeLayoutGetWidth(root->YogaNode);
+		float nh = YGNodeLayoutGetHeight(root->YogaNode);
+
+		float testX = x + accScrollX;
+		float testY = y + accScrollY;
+
+		if (testX >= nx && testX < nx + nw && testY >= ny && testY < ny + nh)
+		{
+			for (Node* clip = root->Parent; clip != nullptr;
+				 clip = clip->Parent)
+			{
+				if (!clip->IsBox() ||
+					clip->Style.Overflow == OverflowType::Visible)
+				{
+					continue;
+				}
+
+				float shiftX = 0.0F;
+				float shiftY = 0.0F;
+
+				for (Node* n = root;; n = n->Parent)
+				{
+					if (n->IsBox() && n->Style.Overflow == OverflowType::Scroll)
+					{
+						shiftX += n->ScrollOffset.X;
+						shiftY += n->ScrollOffset.Y;
+					}
+					if (n == clip)
+					{
+						break;
+					}
+				}
+
+				float cx = clip->GetX();
+				float cy = clip->GetY();
+				float cw = YGNodeLayoutGetWidth(clip->YogaNode);
+				float ch = YGNodeLayoutGetHeight(clip->YogaNode);
+
+				float bandX = x + accScrollX - shiftX;
+				float bandY = y + accScrollY - shiftY;
+
+				if (bandX < cx || bandX >= cx + cw || bandY < cy ||
+					bandY >= cy + ch)
+				{
+					return nullptr;
+				}
+			}
+
+			return root;
+		}
+
+		return nullptr;
+	}
+
+	auto Node::HitTest(Node* root, float x, float y) -> Node*
+	{
+		return hitTestImpl(root, x, y, 0, 0);
+	}
+
+	auto findScrollableAncestor(Node* node) -> Node*
+	{
+		for (Node* n = node; n != nullptr; n = n->Parent)
+		{
+			if (n->IsBox() && n->Style.Overflow == OverflowType::Scroll)
+			{
+				return n;
+			}
+		}
+		return nullptr;
+	}
+
+	auto contentExtent(Node* n, float& maxX, float& maxY) -> void
+	{
+		if (n == nullptr)
+		{
+			return;
+		}
+
+		if (!n->IsComponent() && n->YogaNode != nullptr)
+		{
+			maxX =
+				std::max(maxX, n->GetX() + YGNodeLayoutGetWidth(n->YogaNode));
+			maxY =
+				std::max(maxY, n->GetY() + YGNodeLayoutGetHeight(n->YogaNode));
+		}
+
+		for (auto& c : n->Children)
+		{
+			contentExtent(c.get(), maxX, maxY);
+		}
+	}
+
+	auto reclampScrollOffsets(Node* n) -> void
+	{
+		if (n == nullptr)
+		{
+			return;
+		}
+
+		if (n->IsBox() && n->Style.Overflow == OverflowType::Scroll &&
+			n->YogaNode != nullptr)
+		{
+			float maxX = 0.0F;
+			float maxY = 0.0F;
+			contentExtent(n, maxX, maxY);
+
+			float vx = n->GetX();
+			float vy = n->GetY();
+			float vw = YGNodeLayoutGetWidth(n->YogaNode);
+			float vh = YGNodeLayoutGetHeight(n->YogaNode);
+
+			float maxSx = std::max(0.0F, maxX - (vx + vw));
+			float maxSy = std::max(0.0F, maxY - (vy + vh));
+
+			n->ScrollOffset.X = std::clamp(n->ScrollOffset.X, 0.0F, maxSx);
+			n->ScrollOffset.Y = std::clamp(n->ScrollOffset.Y, 0.0F, maxSy);
+		}
+
+		for (auto& c : n->Children)
+		{
+			reclampScrollOffsets(c.get());
+		}
+	}
+
+	auto HookStore::Has(NodeId id, std::uint32_t hook) -> bool
+	{
+		HookKey key{.Id = id, .Hook = hook};
+		return _slots.contains(key);
+	}
+
+	auto HookStore::GetEffectSlot(NodeId id, std::uint32_t hook) -> EffectSlot&
+	{
+		HookKey key{.Id = id, .Hook = hook};
+		auto it = _slots.find(key);
+		if (it == _slots.end())
+		{
+			it = _slots.emplace(key, std::any(EffectSlot{})).first;
+		}
+		return std::any_cast<EffectSlot&>(it->second);
+	}
+
+	auto HookStore::GetMemoSlot(NodeId id, std::uint32_t hook) -> MemoSlot&
+	{
+		HookKey key{.Id = id, .Hook = hook};
+		auto it = _slots.find(key);
+		if (it == _slots.end())
+		{
+			it = _slots.emplace(key, std::any(MemoSlot{})).first;
+		}
+		return std::any_cast<MemoSlot&>(it->second);
+	}
+
+	void HookStore::FlushEffects()
+	{
+		auto q = std::move(_effectQueue);
+		_effectQueue.clear();
+		for (auto& effect : q)
+		{
+			try
+			{
+				effect.Callback();
+			}
+			catch (const std::exception& e)
+			{
+				mc_error(
+					ErrorCode::UserSide,
+					"effect threw an exception: {}",
+					e.what()
+				);
+			}
+			catch (...)
+			{
+				mc_error(
+					ErrorCode::UserSide,
+					"effect threw a non-std exception"
+				);
+			}
+		}
+	}
+
+	void HookStore::FlushLayoutEffects(Surface* surface)
+	{
+		std::vector<EffectFunction> kept;
+		kept.reserve(_effectQueue.size());
+		for (auto& e : _effectQueue)
+		{
+			if (e.IsLayout &&
+				(surface == nullptr || e.OwningSurface == surface))
+			{
+				try
+				{
+					e.Callback();
+				}
+				catch (const std::exception& ex)
+				{
+					mc_error(
+						ErrorCode::UserSide,
+						"layout effect threw an exception: {}",
+						ex.what()
+					);
+				}
+				catch (...)
+				{
+					mc_error(
+						ErrorCode::UserSide,
+						"layout effect threw a non-std exception"
+					);
+				}
+			}
+			else
+			{
+				kept.push_back(std::move(e));
+			}
+		}
+		_effectQueue = std::move(kept);
+	}
+
+	void HookStore::RemoveComponent(NodeId id)
+	{
+		for (auto it = _slots.begin(); it != _slots.end();)
+		{
+			if (it->first.Id == id)
+			{
+				if (auto* eff = std::any_cast<EffectSlot>(&it->second))
+				{
+					auto old = std::move(eff->Cleanup);
+					eff->Cleanup = nullptr;
+					if (old)
+					{
+						try
+						{
+							old();
+						}
+						catch (const std::exception& e)
+						{
+							mc_error(
+								ErrorCode::UserSide,
+								"cleanup threw during removal: {}",
+								e.what()
+							);
+						}
+						catch (...)
+						{
+							mc_error(
+								ErrorCode::UserSide,
+								"cleanup threw a non-std exception during "
+								"removal"
+							);
+						}
+					}
+				}
+				it = _slots.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+
+	void HookStore::PushEffect(const CleanupFn& fn)
+	{
+		_effectQueue.push_back({.Callback = fn});
+	}
+
+	void HookStore::PushLayoutEffect(const CleanupFn& fn, Surface* surface)
+	{
+		_effectQueue.push_back({
+			.Callback = fn,
+			.IsLayout = true,
+			.OwningSurface = surface,
+		});
+	}
+
+	void HookStore::SetMarkDirty(std::function<void(NodeId)> fn)
+	{
+		_markDirty = std::move(fn);
+	}
+
+	void HookStore::ClearDirty()
+	{
+		_dirtySet.clear();
+	}
+
+	void HookStore::InsertDirty(NodeId id)
+	{
+		_dirtySet.insert(id);
+		_lastDirty = id;
+	}
+
+	auto HookStore::DirtyCount() const -> size_t
+	{
+		return _dirtySet.size();
+	}
+
+	auto HookStore::LastDirty() const -> uint64_t
+	{
+		return _lastDirty;
+	}
 }
 
 namespace mocca
@@ -481,198 +845,4 @@ namespace mocca
 		d.Parent = _currentSurface;
 		return Application::main->RegisterSurface(d);
 	}
-
-	namespace detail
-	{
-
-		auto Node::FindNodeById(Node* root, NodeId id) -> Node*
-		{
-			if (root == nullptr)
-			{
-				return nullptr;
-			}
-			if (root->Id == id)
-			{
-				return root;
-			}
-			for (const auto& child : root->Children)
-			{
-				auto* found = FindNodeById(child.get(), id);
-				if (found != nullptr)
-				{
-					return found;
-				}
-			}
-			return nullptr;
-		}
-
-		auto hitTestImpl(
-			Node* root,
-			float x,
-			float y,
-			float accScrollX,
-			float accScrollY
-		) -> Node*
-		{
-			if (root == nullptr)
-			{
-				return nullptr;
-			}
-
-			float childAccX = accScrollX;
-			float childAccY = accScrollY;
-			if (root->IsBox() && root->Style.Overflow == OverflowType::Scroll)
-			{
-				childAccX += root->ScrollOffset.X;
-				childAccY += root->ScrollOffset.Y;
-			}
-
-			for (auto& it : std::views::reverse(root->Children))
-			{
-				auto* hit = hitTestImpl(it.get(), x, y, childAccX, childAccY);
-				if (hit != nullptr)
-				{
-					return hit;
-				}
-			}
-
-			if (root->IsComponent())
-			{
-				return nullptr;
-			}
-
-			float nx = root->GetX();
-			float ny = root->GetY();
-			float nw = YGNodeLayoutGetWidth(root->YogaNode);
-			float nh = YGNodeLayoutGetHeight(root->YogaNode);
-
-			float testX = x + accScrollX;
-			float testY = y + accScrollY;
-
-			if (testX >= nx && testX < nx + nw && testY >= ny &&
-				testY < ny + nh)
-			{
-				for (Node* clip = root->Parent; clip != nullptr;
-					 clip = clip->Parent)
-				{
-					if (!clip->IsBox() ||
-						clip->Style.Overflow == OverflowType::Visible)
-					{
-						continue;
-					}
-
-					float shiftX = 0.0F;
-					float shiftY = 0.0F;
-
-					for (Node* n = root;; n = n->Parent)
-					{
-						if (n->IsBox() &&
-							n->Style.Overflow == OverflowType::Scroll)
-						{
-							shiftX += n->ScrollOffset.X;
-							shiftY += n->ScrollOffset.Y;
-						}
-						if (n == clip)
-						{
-							break;
-						}
-					}
-
-					float cx = clip->GetX();
-					float cy = clip->GetY();
-					float cw = YGNodeLayoutGetWidth(clip->YogaNode);
-					float ch = YGNodeLayoutGetHeight(clip->YogaNode);
-
-					float bandX = x + accScrollX - shiftX;
-					float bandY = y + accScrollY - shiftY;
-
-					if (bandX < cx || bandX >= cx + cw || bandY < cy ||
-						  bandY >= cy + ch)
-					{
-						return nullptr;
-					}
-				}
-
-				return root;
-			}
-
-			return nullptr;
-		}
-
-		auto Node::HitTest(Node* root, float x, float y) -> Node*
-		{
-			return hitTestImpl(root, x, y, 0, 0);
-		}
-
-		auto findScrollableAncestor(Node* node) -> Node*
-		{
-			for (Node* n = node; n != nullptr; n = n->Parent)
-			{
-				if (n->IsBox() && n->Style.Overflow == OverflowType::Scroll)
-				{
-					return n;
-				}
-			}
-			return nullptr;
-		}
-
-		auto contentExtent(Node* n, float& maxX, float& maxY) -> void
-		{
-			if (n == nullptr)
-			{
-				return;
-			}
-
-			if (!n->IsComponent() && n->YogaNode != nullptr)
-			{
-				maxX =
-					std::max(maxX, n->GetX() + YGNodeLayoutGetWidth(n->YogaNode));
-				maxY = std::max(
-					maxY,
-					n->GetY() + YGNodeLayoutGetHeight(n->YogaNode)
-				);
-			}
-
-			for (auto& c : n->Children)
-			{
-				contentExtent(c.get(), maxX, maxY);
-			}
-		}
-
-		auto reclampScrollOffsets(Node* n) -> void
-		{
-			if (n == nullptr)
-			{
-				return;
-			}
-
-			if (n->IsBox() && n->Style.Overflow == OverflowType::Scroll &&
-				n->YogaNode != nullptr)
-			{
-				float maxX = 0.0F;
-				float maxY = 0.0F;
-				contentExtent(n, maxX, maxY);
-
-				float vx = n->GetX();
-				float vy = n->GetY();
-				float vw = YGNodeLayoutGetWidth(n->YogaNode);
-				float vh = YGNodeLayoutGetHeight(n->YogaNode);
-
-				float maxSx = std::max(0.0F, maxX - (vx + vw));
-				float maxSy = std::max(0.0F, maxY - (vy + vh));
-
-				n->ScrollOffset.X =
-					std::clamp(n->ScrollOffset.X, 0.0F, maxSx);
-				n->ScrollOffset.Y =
-					std::clamp(n->ScrollOffset.Y, 0.0F, maxSy);
-			}
-
-			for (auto& c : n->Children)
-			{
-				reclampScrollOffsets(c.get());
-			}
-		}
-
-	}
-
 }

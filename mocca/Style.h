@@ -1,8 +1,8 @@
 #pragma once
-#include "Logger.h"
 #include "Math.h"
 #include "styles.def"
 #include "yoga/YGConfig.h"
+#include <string_view>
 #include <variant>
 
 namespace mocca
@@ -10,6 +10,7 @@ namespace mocca
 	namespace detail
 	{
 		struct Node;
+		void styleValuePrintEmptyError();
 	}
 
 	enum class StyleKeyword : char
@@ -93,7 +94,7 @@ namespace mocca
 		{
 			if (!IsValue())
 			{
-				mc_error(ErrorCode::InvalidState, "no value stored here!");
+				detail::styleValuePrintEmptyError();
 				return {};
 			}
 

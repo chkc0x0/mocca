@@ -37,6 +37,7 @@ mocca_lib = library(
     sources: sources,
     dependencies: dependencies,
     include_directories: include_directories('mocca'),
+    cpp_pch: 'mocca/pch.h'
 )
 
 mocca_dep = declare_dependency(
@@ -69,6 +70,7 @@ if get_option('tests')
             'test/ApplicationIdTest.cpp',
         ),
         include_directories: include_directories('test'),
+        override_options: ['unity=on', 'unity_size=8']
     )
 
     test('mocca', test_exe, timeout: 60)
