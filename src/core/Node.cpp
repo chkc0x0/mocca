@@ -339,7 +339,7 @@ namespace mocca::detail
 		}
 
 		// kill orphans
-		for (auto& [k, n] : oldKeyed)
+		for (auto& [K, n] : oldKeyed)
 		{
 			if (n)
 			{
@@ -385,15 +385,25 @@ namespace mocca::detail
 
 		if (oldNode->IsText())
 		{
-			oldNode->Kind = std::get<TextElement>(newElement->Node);
+			const auto& incoming = std::get<TextElement>(newElement->Node);
+			bool contentChanged =
+				std::get<TextElement>(oldNode->Kind).Content !=
+				incoming.Content;
+
+			if (contentChanged)
+			{
+				oldNode->Kind = incoming;
+				YGNodeMarkDirty(oldNode->YogaNode);
+			}
+
 			YGNodeSetMeasureFunc(
 				oldNode->YogaNode,
 				&mocca::mtext::detail::measureFunc
 			);
-			YGNodeMarkDirty(oldNode->YogaNode);
 		}
 
 		oldNode->Events = newElement->Events;
+		oldNode->Declared = newElement->Style;
 
 		auto childElements = CollectChildElements(newElement, oldNode->Id);
 		oldNode->Children = ReconcileChildren(
@@ -411,7 +421,7 @@ namespace mocca::detail
 			.X = n.GetX(),
 			.Y = n.GetY(),
 			.Width = YGNodeLayoutGetWidth(n.YogaNode),
-			.Height = YGNodeLayoutGetHeight(n.YogaNode)
+			.Height = YGNodeLayoutGetHeight(n.YogaNode),
 		};
 	}
 
@@ -428,9 +438,9 @@ namespace mocca::detail
 		}
 
 		bool inside = !node->IsComponent() &&
-							layoutRect(*node).Contains(
-								{.X = x + scroll.X, .Y = y + scroll.Y}
-							);
+					  layoutRect(*node).Contains(
+						  {.X = x + scroll.X, .Y = y + scroll.Y}
+					  );
 
 		if (!inside && clipsChildren(*node))
 		{
@@ -444,7 +454,7 @@ namespace mocca::detail
 			childScroll.Y += node->ScrollOffset.Y;
 		}
 
-		for (auto & it : std::views::reverse(node->Children))
+		for (auto& it : std::views::reverse(node->Children))
 		{
 			if (Node* hit = hitTestImpl(it.get(), x, y, childScroll))
 			{

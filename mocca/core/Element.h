@@ -110,7 +110,7 @@ namespace mocca
 			.Node = BoxElement{.Children = std::move(desc.Children)},
 			.Key = desc.Key,
 			.Style = desc.Style,
-			.Events = std::move(desc.Events)
+			.Events = std::move(desc.Events),
 		};
 	}
 
@@ -119,7 +119,7 @@ namespace mocca
 	{
 		return Element{
 			.Node = BoxElement{.Children = std::move(children)},
-			.Key = key
+			.Key = key,
 		};
 	}
 
@@ -129,7 +129,7 @@ namespace mocca
 			.Node = TextElement{.Content = std::move(desc.Content)},
 			.Key = desc.Key,
 			.Style = desc.Style,
-			.Events = std::move(desc.Events)
+			.Events = std::move(desc.Events),
 		};
 	}
 
@@ -138,7 +138,7 @@ namespace mocca
 	{
 		return Element{
 			.Node = TextElement{.Content = std::move(content)},
-			.Key = key
+			.Key = key,
 		};
 	}
 
@@ -149,7 +149,7 @@ namespace mocca
 		return Element{
 			.Node = ComponentElement{.Fn = erased},
 			.Key = desc.Key,
-			.Style = desc.Style
+			.Style = desc.Style,
 		};
 	}
 

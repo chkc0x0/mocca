@@ -2,6 +2,8 @@
 #include "core/Logger.h"
 #include "yoga/YGConfig.h"
 #include "yoga/YGNodeStyle.h"
+#include <cmath>
+#include <limits>
 
 namespace mocca::styles::detail::applying::layout
 {
@@ -349,7 +351,11 @@ namespace mocca::styles::detail::applying::layout
 
 	void applyAspectRatio(YGNodeRef ref, float value)
 	{
-		YGNodeStyleSetAspectRatio(ref, value);
+		bool autoRatio = value == 0.0F || std::isinf(value);
+		YGNodeStyleSetAspectRatio(
+			ref,
+			autoRatio ? std::numeric_limits<float>::quiet_NaN() : value
+		);
 	}
 
 	void applyDisplay(YGNodeRef ref, DisplayType value)

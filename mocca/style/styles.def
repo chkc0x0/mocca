@@ -2,7 +2,7 @@
 #include <limits>
 
 #ifndef mc_styleProperty
-#define mc_styleProperty(name, type, inherits, initial)
+#define mc_styleProperty(name, type, inherits, initial, declType)
 #define mc_stylePropertyEdge(name, type)
 #endif
 
