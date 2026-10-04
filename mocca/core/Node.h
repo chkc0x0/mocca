@@ -61,6 +61,7 @@ namespace mocca::detail
 			return "Unknown";
 		}
 
+		void SyncYogaChildren();
 		static auto BuildNodeTree(const Element& element)
 			-> std::unique_ptr<Node>;
 		void BuildYogaTree();
@@ -90,8 +91,7 @@ namespace mocca::detail
 		void Paint(Canvas& canvas);
 
 		static auto HitTest(Node* root, float x, float y) -> Node*;
-		static auto FindNodeById(Node* root, NodeId id) -> Node*;
-		static void AddComponentToYoga(YGNodeRef parent, Node& node);
+		static Node* FindNodeById(Node* root, NodeId id);
 
 		EventHandlers Events;
 	};

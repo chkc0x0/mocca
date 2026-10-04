@@ -1,9 +1,11 @@
 #include "core/Node.h"
 #include "core/HookStore.h"
 #include "text/Measure.h"
+#include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
 #include <iostream>
 #include <ranges>
+#include <vector>
 #include "core/Context.h"
 
 namespace mocca::detail
@@ -16,38 +18,10 @@ namespace mocca::detail
 		}
 	}
 
-	void Node::AddComponentToYoga(YGNodeRef parent, Node& node)
+	static void
+	CollectFlatYogaChildren(Node& node, std::vector<YGNodeRef>& out)
 	{
-		for (auto& grandchild : node.Children)
-		{
-			if (grandchild->IsComponent())
-			{
-				AddComponentToYoga(parent, *grandchild);
-			}
-			else
-			{
-				grandchild->BuildYogaTree();
-				YGNodeInsertChild(
-					parent,
-					grandchild->YogaNode,
-					YGNodeGetChildCount(parent)
-				);
-			}
-		}
-	}
-
-	void Node::BuildYogaTree()
-	{
-		if (YogaNode == nullptr)
-		{
-			return;
-		}
-
-		ApplyLayoutStyles();
-
-		YGNodeRemoveAllChildren(YogaNode);
-
-		for (auto& child : Children)
+		for (auto& child : node.Children)
 		{
 			if (!child)
 			{
@@ -56,18 +30,58 @@ namespace mocca::detail
 
 			if (child->IsComponent())
 			{
-				AddComponentToYoga(YogaNode, *child);
+				CollectFlatYogaChildren(*child, out);
 			}
 			else
 			{
-				child->BuildYogaTree();
-				YGNodeInsertChild(
-					YogaNode,
-					child->YogaNode,
-					YGNodeGetChildCount(YogaNode)
-				);
+				out.push_back(child->YogaNode);
 			}
 		}
+	}
+
+	void Node::SyncYogaChildren()
+	{
+		if (YogaNode != nullptr)
+		{
+			ApplyLayoutStyles();
+
+			auto expected = std::vector<YGNodeRef>{};
+			CollectFlatYogaChildren(*this, expected);
+
+			size_t have = YGNodeGetChildCount(YogaNode);
+			size_t keep = 0;
+			while (keep < have && keep < expected.size() &&
+				   YGNodeGetChild(YogaNode, keep) == expected[keep])
+			{
+				++keep;
+			}
+
+			while (YGNodeGetChildCount(YogaNode) > keep)
+			{
+				YGNodeRemoveChild(
+					YogaNode,
+					YGNodeGetChild(YogaNode, keep)
+				);
+			}
+
+			for (size_t i = keep; i < expected.size(); ++i)
+			{
+				YGNodeInsertChild(YogaNode, expected[i], i);
+			}
+		}
+
+		for (auto& child : Children)
+		{
+			if (child)
+			{
+				child->SyncYogaChildren();
+			}
+		}
+	}
+
+	void Node::BuildYogaTree()
+	{
+		SyncYogaChildren();
 	}
 
 	void Node::ApplyLayoutStyles() const

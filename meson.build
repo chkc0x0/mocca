@@ -75,6 +75,7 @@ if get_option('tests')
             'test/ApplicationIdTest.cpp',
             'test/EventBusTest.cpp',
             'test/HookTest.cpp',
+            'test/LayoutTest.cpp',
             'test/RenderTest.cpp',
             'test/SurfaceLifecycleTest.cpp',
         ),

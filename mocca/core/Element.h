@@ -172,7 +172,7 @@ namespace mocca
 		return Element{
 			.Node = ComponentElement{.Fn = erased, .Props = props},
 			.Key = desc.Key,
-			.Style = desc.Style
+			.Style = desc.Style,
 		};
 	}
 
