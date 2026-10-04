@@ -1,9 +1,10 @@
 #pragma once
-#include "Canvas.h"
-#include "Detail.h"
+#include "core/Logger.h"
+#include "gfx/Canvas.h"
+#include "core/Node.h"
 #include "Element.h"
-#include "InputTypes.h"
-#include "PlatformSurface.h"
+#include "input/InputTypes.h"
+#include "platform/PlatformSurface.h"
 #include <memory>
 
 namespace mocca
@@ -77,9 +78,8 @@ namespace mocca
 
 		template <typename T> void SetPlatform()
 		{
-			// i cannot simplify this further alright?
 			mc_assert(
-				_desc.Parent == nullptr || IsExternal(),
+				IsExternal(),
 				"cant set a platform for a composite surface"
 			);
 			mc_assert(

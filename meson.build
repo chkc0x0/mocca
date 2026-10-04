@@ -3,9 +3,18 @@ project('mocca', 'cpp', version: '0.0.1', default_options: ['cpp_std=c++23'])
 sources = [
     'src/core/Application.cpp',
     'src/core/Logger.cpp',
-    'src/core/Detail.cpp',
     'src/core/Surface.cpp',
-    'src/core/Style.cpp',
+    'src/core/Node.cpp',
+    'src/core/HookStore.cpp',
+    'src/core/Context.cpp',
+    'src/gfx/Canvas.cpp',
+    'src/style/Style.cpp',
+    'src/core/Element.cpp',
+    'src/core/HookFrame.cpp',
+    'src/text/Measure.cpp',
+    'src/text/Unicode.cpp',
+    'src/core/Identifiers.cpp',
+    'src/input/Scroll.cpp'
 ]
 
 cmake = import('cmake')
@@ -37,7 +46,7 @@ mocca_lib = library(
     sources: sources,
     dependencies: dependencies,
     include_directories: include_directories('mocca'),
-    cpp_pch: 'mocca/pch.h'
+    cpp_pch: 'mocca/core/pch.h',
 )
 
 mocca_dep = declare_dependency(
@@ -63,14 +72,14 @@ if get_option('tests')
         'mocca_tests',
         dependencies: [mocca_dep, dependency('gtest', main: true)],
         sources: files(
-            'test/RenderTest.cpp',
-            'test/HookTest.cpp',
-            'test/EventBusTest.cpp',
-            'test/SurfaceLifecycleTest.cpp',
             'test/ApplicationIdTest.cpp',
+            'test/EventBusTest.cpp',
+            'test/HookTest.cpp',
+            'test/RenderTest.cpp',
+            'test/SurfaceLifecycleTest.cpp',
         ),
         include_directories: include_directories('test'),
-        override_options: ['unity=on', 'unity_size=8']
+        override_options: ['unity=on', 'unity_size=8'],
     )
 
     test('mocca', test_exe, timeout: 60)

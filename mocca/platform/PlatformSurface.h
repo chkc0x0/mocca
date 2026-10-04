@@ -1,6 +1,6 @@
 #pragma once
-#include "DrawCommands.h"
-#include "InputTypes.h"
+#include "gfx/DrawCommands.h"
+#include "input/InputTypes.h"
 #include <vector>
 
 namespace mocca

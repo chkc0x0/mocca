@@ -1,6 +1,6 @@
-#include "Application.h"
-#include "Detail.h"
-#include "Logger.h"
+#include "core/Application.h"
+#include "core/HookStore.h"
+#include "core/Logger.h"
 #include <utility>
 
 namespace
@@ -186,11 +186,13 @@ namespace mocca
 		void* userData
 	)
 	{
-		auto hash = detail::hashString(event);
+		auto hash = hashString(event);
 		if (_events.EmitDepth > 0)
 		{
 			_events.PendingEvents.push_back(
-				{.Hash = hash, .Clear = false, .Cb = {std::move(cb), userData}}
+				{.Hash = hash,
+				 .Clear = false,
+				 .Cb = {.Callback = std::move(cb), .User = userData}}
 			);
 			return;
 		}
@@ -227,7 +229,7 @@ namespace mocca
 
 	auto Application::EmitEvent(std::string_view event, void* data) -> bool
 	{
-		auto it = _events.Events.find(detail::hashString(event));
+		auto it = _events.Events.find(hashString(event));
 		if (it == _events.Events.end())
 		{
 			return true;
@@ -275,7 +277,7 @@ namespace mocca
 
 	void Application::RemoveCallbacks(std::string_view event)
 	{
-		auto hash = detail::hashString(event);
+		auto hash = hashString(event);
 		if (_events.EmitDepth > 0)
 		{
 			_events.PendingEvents.push_back(

@@ -1,6 +1,7 @@
 #pragma once
-#include "InputTypes.h"
-#include "Style.h"
+#include "input/InputTypes.h"
+#include "Identifiers.h"
+#include "style/Style.h"
 #include <any>
 #include <cstdint>
 #include <functional>
@@ -13,58 +14,10 @@
 
 namespace mocca
 {
-	struct ElementKey
-	{
-		ElementKey(std::string_view str)
-		{
-			uint64_t hash = 14695981039346656037ULL;
-			for (char c : str)
-			{
-				hash ^= static_cast<uint8_t>(c);
-				hash *= 1099511628211ULL;
-			}
-			_value = hash;
-		}
-
-		ElementKey(uint64_t value) : _value(value) {};
-		ElementKey(int value) : _value(static_cast<uint64_t>(value)) {};
-		ElementKey() : _value(0) {};
-		ElementKey(const char* str) : ElementKey(std::string_view(str)) {};
-
-		operator uint64_t() const
-		{
-			return _value;
-		}
-
-		auto operator<=>(const ElementKey& other) const
-		{
-			return _value <=> other._value;
-		}
-
-		auto operator==(const ElementKey& other) const -> bool
-		{
-			return _value == other._value;
-		}
-		auto operator==(int other) const -> bool
-		{
-			return _value == static_cast<uint64_t>(other);
-		}
-		auto operator==(std::string_view other) const -> bool
-		{
-			return ElementKey(other) == *this;
-		}
-
-	private:
-		uint64_t _value;
-	};
-
 	struct Element;
 
 	using ComponentFn = std::function<Element()>;
 	using ComponentPropsFn = std::function<Element(const std::any&)>;
-
-	using CleanupFn = std::function<void()>;
-	using EffectFn = std::function<CleanupFn()>;
 
 	using PointerCallback = std::function<void(PointerEvent&)>;
 	using KeyCallback = std::function<void(KeyEvent&)>;

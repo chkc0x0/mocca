@@ -1,8 +1,8 @@
 #pragma once
-#include "Application.h"
-#include "DrawCommands.h"
-#include "Element.h"
-#include "StyleHelpers.h"
+#include "core/Application.h"
+#include "gfx/DrawCommands.h"
+#include "core/Element.h"
+#include "style/StyleHelpers.h"
 #include "gtest/gtest.h"
 #include <algorithm>
 #include <string>

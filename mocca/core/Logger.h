@@ -54,6 +54,18 @@ namespace mocca
 
 		// you're not really intended to use this
 		// use the macros instead
+		static void Log(
+			LogLevel severity,
+			std::string_view message,
+			std::string_view file,
+			std::string_view function,
+			int line,
+			ErrorCode code
+		)
+		{
+			LogImpl(severity, message, file, function, line, code);
+		}
+
 		template <typename... Args>
 		static void Log(
 			LogLevel severity,
@@ -89,6 +101,15 @@ namespace mocca
 			int line,
 			ErrorCode code,
 			std::format_args args
+		);
+
+		static void LogImpl(
+			LogLevel severity,
+			std::string_view message,
+			std::string_view file,
+			std::string_view function,
+			int line,
+			ErrorCode code
 		);
 	};
 }
@@ -143,11 +164,10 @@ namespace mocca
 			mc_log(                                                            \
 				mocca::LogLevel::Error,                                        \
 				mocca::ErrorCode::AssertFailed,                                \
-				"assertion \"{}\" failed: " message,                           \
+				"assertion \"" #expr "\" failed: " message,                    \
 				__FILE__,                                                      \
 				__FUNCTION__,                                                  \
 				__LINE__,                                                      \
-				#expr,                                                         \
 				##__VA_ARGS__                                                  \
 			);                                                                 \
 		}                                                                      \

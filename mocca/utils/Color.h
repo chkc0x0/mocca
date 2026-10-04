@@ -312,7 +312,7 @@ namespace mocca
 			{
 				h += 360.0;
 			}
-			return {.L=l, .C=c, .H=h};
+			return {.L = l, .C = c, .H = h};
 		}
 	}
 
@@ -512,7 +512,6 @@ namespace mocca
 			double b_ = (-0.0041960863 * lc) - (0.7034186147 * mc) +
 						(1.7076147010 * sc);
 
-			// Linear sRGB -> gamma sRGB
 			auto gamma = [](double x) -> double
 			{
 				x = x < 0.0 ? 0.0 : (x > 1.0 ? 1.0 : x);
@@ -637,44 +636,4 @@ namespace mocca
 		inline constexpr Color AlmostBlack = {10, 10, 10, 255};
 		inline constexpr Color Black = {0, 0, 0, 255};
 	}
-
-	struct Vector2
-	{
-		float X;
-		float Y;
-	};
-
-	struct IVec2
-	{
-		int X;
-		int Y;
-	};
-
-	struct Rectangle
-	{
-		float X;
-		float Y;
-		float Width;
-		float Height;
-
-		[[nodiscard]] auto Intersect(const Rectangle& other) const -> Rectangle
-		{
-			float x1 = std::max(X, other.X);
-			float y1 = std::max(Y, other.Y);
-			float x2 = std::min(X + Width, other.X + other.Width);
-			float y2 = std::min(Y + Height, other.Y + other.Height);
-
-			if (x2 < x1 || y2 < y1)
-			{
-				return {.X = x1, .Y = y1, .Width = 0, .Height = 0};
-			}
-
-			return {.X = x1, .Y = y1, .Width = x2 - x1, .Height = y2 - y1};
-		}
-
-		[[nodiscard]] auto IsEmpty() const -> bool
-		{
-			return Width <= 0 || Height <= 0;
-		}
-	};
 }

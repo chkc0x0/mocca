@@ -1,5 +1,6 @@
 #pragma once
-#include "Math.h"
+#include "utils/Color.h"
+#include "utils/Math.h"
 #include <string>
 #include <variant>
 
@@ -38,6 +39,11 @@ namespace mocca::cmds
 	{
 	};
 
-	using DrawCommand =
-		std::variant<DrawRectCmd, DrawTextCmd, PushClipCmd, PopClipCmd, PushTransformCmd, PopTransformCmd>;
+	using DrawCommand = std::variant<
+		DrawRectCmd,
+		DrawTextCmd,
+		PushClipCmd,
+		PopClipCmd,
+		PushTransformCmd,
+		PopTransformCmd>;
 }

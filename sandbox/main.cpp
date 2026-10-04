@@ -1,6 +1,7 @@
-#include "Application.h"
-#include "Element.h"
-#include "StyleHelpers.h"
+#include "core/Application.h"
+#include "core/Element.h"
+#include "core/Hooks.h"
+#include "style/StyleHelpers.h"
 #include "sandbox/GLFWPlatformSurface.h"
 #include <iostream>
 #include "GLFW/glfw3.h"
@@ -10,19 +11,19 @@ using namespace mocca;
 struct Todo
 {
 	int Id;
-	std::u32string Text;
+	std::string Text;
 	bool Done;
 };
 
 struct TodoInputProps
 {
-	std::function<void(const std::u32string&)> OnSubmit;
+	std::function<void(const std::string&)> OnSubmit;
 };
 
 auto TodoInput(const TodoInputProps& props) -> Element
 {
 	using namespace mocca::styles;
-	auto [draft, setDraft] = useState(std::u32string{});
+	auto [draft, setDraft] = useState(std::string{});
 	auto [hovered, setHovered] = useState(false);
 
 	return box(
@@ -37,13 +38,13 @@ auto TodoInput(const TodoInputProps& props) -> Element
 											: colors::Transparent},
 			.Events = {
 				.OnPointerDown = [setHovered](auto& ev) -> auto
-				{ setHovered([](auto prev) { return !prev; }); },
+				{ setHovered([](auto prev) -> auto { return !prev; }); },
 				.OnKeyDown = [setDraft, draft, props](auto& ev) -> auto
 				{
 					if (ev.Code == KeyCode::Backspace)
 					{
 						setDraft(
-							[](std::u32string prev) -> auto
+							[](std::string prev) -> auto
 							{
 								if (!prev.empty())
 								{
@@ -59,8 +60,8 @@ auto TodoInput(const TodoInputProps& props) -> Element
 						{
 							props.OnSubmit(draft);
 							setDraft(
-								[](const std::u32string&) -> auto
-								{ return std::u32string{}; }
+								[](const std::string&) -> auto
+								{ return std::string{}; }
 							);
 						}
 					}
@@ -70,7 +71,7 @@ auto TodoInput(const TodoInputProps& props) -> Element
 					if (ev.Code == KeyCode::Backspace)
 					{
 						setDraft(
-							[](std::u32string prev) -> auto
+							[](std::string prev) -> auto
 							{
 								if (!prev.empty())
 								{
@@ -84,9 +85,9 @@ auto TodoInput(const TodoInputProps& props) -> Element
 				.OnTextInput = [setDraft](auto& ev) -> auto
 				{
 					setDraft(
-						[ev](std::u32string prev) -> auto
+						[ev](std::string prev) -> auto
 						{
-							prev.push_back(ev.Codepoint);
+							prev += ev.Text;
 							return prev;
 						}
 					);
@@ -97,7 +98,7 @@ auto TodoInput(const TodoInputProps& props) -> Element
 					.Content =
 						draft.empty()
 							? std::string("Type a todo and press Enter...")
-							: mocca::detail::toUtf8(draft),
+							: draft,
 				}),
 			},
 		}
@@ -115,7 +116,7 @@ auto TodoItem(const TodoItemProps& props) -> Element
 	using namespace mocca::styles;
 
 	std::string prefix = props.Item.Done ? "[x] " : "[ ] ";
-	std::string label = prefix + mocca::detail::toUtf8(props.Item.Text);
+	std::string label = prefix + props.Item.Text;
 
 	return box(
 		BoxDescriptor{
@@ -146,7 +147,7 @@ auto buildTodoApp() -> Element
 	auto [nextId, setNextId] = useState(0);
 
 	auto addTodo =
-		[setTodos, setNextId, nextId](const std::u32string& text) -> void
+		[setTodos, setNextId, nextId](const std::string& text) -> void
 	{
 		setTodos(
 			[text, nextId](std::vector<Todo> prev) -> auto
@@ -234,7 +235,7 @@ auto main(int argc, const char** argv) -> int
 		[](auto* data, auto* user) -> auto
 		{
 			auto* surface = (Surface*)data;
-			if (surface->GetParent() == nullptr)
+			if (surface->IsExternal())
 			{
 				surface->SetPlatform<GLFWPlatformSurface>();
 			}
@@ -255,13 +256,15 @@ auto main(int argc, const char** argv) -> int
 		.Width = 800,
 		.Height = 600,
 		.Title = "Sandbox",
-		.Root = buildTodoApp,
+		.Flags = SurfaceFlags::External,
+		.Root = buildTodoApp
 	});
 
 	auto* surface = app.RegisterSurface({
 		.Width = 800,
 		.Height = 600,
 		.Title = "Sandbox2",
+		.Flags = SurfaceFlags::External,
 		.Root = buildTodoApp,
 	});
 

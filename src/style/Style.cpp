@@ -1,5 +1,5 @@
-#include "Style.h"
-#include "Logger.h"
+#include "style/Style.h"
+#include "core/Logger.h"
 #include "yoga/YGConfig.h"
 #include "yoga/YGNodeStyle.h"
 
@@ -526,5 +526,33 @@ namespace mocca::styles::detail::applying::layout
 	void applyOverflow(YGNodeRef ref, OverflowType value)
 	{
 		YGNodeStyleSetOverflow(ref, (YGOverflow)((int)value));
+	}
+}
+
+namespace mocca
+{
+	auto ComputedStyle::Cascade(
+		const DeclaredStyle& declared,
+		const ComputedStyle& parent
+	) -> ComputedStyle
+	{
+		ComputedStyle computed;
+#define mc_styleProperty(name, ...)                                            \
+	computed.name = declared.name.Resolve(                                     \
+		parent.name,                                                           \
+		styles::detail::properties::name##Property                             \
+	);
+		mc_layoutProperties mc_renderProperties
+#undef mc_styleProperty
+			return computed;
+	}
+
+	namespace detail
+	{
+
+		void styleValuePrintEmptyError()
+		{
+			mc_error(ErrorCode::InvalidState, "no value stored here!");
+		}
 	}
 }

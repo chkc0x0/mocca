@@ -1,6 +1,7 @@
 #include "GLFWPlatformSurface.h"
-#include "Logger.h"
-#include "Math.h"
+#include "core/Logger.h"
+#include "text/Unicode.h"
+#include "utils/Math.h"
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "nanovg.h"
@@ -370,8 +371,8 @@ void GLFWPlatformSurface::OnChar(GLFWwindow* window, unsigned int codepoint)
 		glfwGetWindowUserPointer(window)
 	);
 	self->_pending.Text.push_back({
-		.EventType = mocca::TextEvent::Type::Character,
-		.Codepoint = static_cast<char32_t>(codepoint),
+		.EventType = mocca::TextEvent::Type::Commit,
+		.Text = mocca::mtext::unicode::encode(static_cast<char32_t>(codepoint)),
 	});
 }
 

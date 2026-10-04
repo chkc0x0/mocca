@@ -103,15 +103,14 @@ namespace mocca
 	public:
 		enum class Type : char
 		{
-			Character,
-			IMEStart, // handle these in ime-supporting backends like sdl or wayland
-			IMEUpdate,
-			IMEEnd
+			Commit,
+			Preedit
 		};
 
-		Type EventType = Type::Character;
-		char32_t Codepoint = U'\0';
-		std::string IMEComposition;
+		Type EventType = Type::Commit;
+		std::string Text;
+		std::size_t PreeditCursorBegin = 0;
+		std::size_t PreeditCursorEnd = 0;
 		bool StopPropagation = false;
 	};
 

@@ -1,4 +1,5 @@
 #include "TestSupport.h"
+#include "core/Hooks.h"
 
 namespace mtest
 {

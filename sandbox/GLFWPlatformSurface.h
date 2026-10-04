@@ -1,7 +1,7 @@
 #pragma once
-#include "InputTypes.h"
-#include "PlatformSurface.h"
-#include "Surface.h"
+#include "input/InputTypes.h"
+#include "platform/PlatformSurface.h"
+#include "core/Surface.h"
 #include <vector>
 
 struct GLFWwindow;

@@ -1,12 +1,15 @@
-#include "Surface.h"
+#include "core/Surface.h"
 #include <algorithm>
 #include <ranges>
-#include "Application.h"
-#include "Detail.h"
-#include "InputTypes.h"
-#include "Logger.h"
-#include "Style.h"
+#include "core/Application.h"
+#include "core/HookStore.h"
+#include "input/Scroll.h"
+#include "input/Dispatch.h"
+#include "input/InputTypes.h"
+#include "core/Logger.h"
+#include "style/Style.h"
 #include "yoga/YGNode.h"
+#include "yoga/YGNodeLayout.h"
 
 #define mc_scrollStep 16
 
@@ -403,7 +406,7 @@ namespace mocca
 			return;
 		}
 
-		detail::dispatchKeyEvent(
+		detail::dispatchKeyTextEvent(
 			_root.get(),
 			_focusedNode,
 			ev,
@@ -446,7 +449,7 @@ namespace mocca
 			return;
 		}
 
-		detail::dispatchTextEvent(
+		detail::dispatchKeyTextEvent(
 			_root.get(),
 			_focusedNode,
 			ev,

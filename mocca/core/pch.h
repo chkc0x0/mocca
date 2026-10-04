@@ -17,5 +17,6 @@
 #include <cmath>
 #include <numbers>
 #include "Logger.h"
-#include "Math.h"
-#include "Style.h"
+#include "utils/Math.h"
+#include "style/Style.h"
+#include "utils/Color.h"

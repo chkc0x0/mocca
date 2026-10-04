@@ -1,4 +1,4 @@
-#include "Application.h"
+#include "core/Application.h"
 #include <csignal>
 #include <print>
 
@@ -99,9 +99,21 @@ namespace mocca
 	)
 	{
 		auto msg = std::vformat(message, args);
+		Log(severity, msg, file, function, line, code);
+	}
+
+	void Logger::LogImpl(
+		LogLevel severity,
+		std::string_view message,
+		std::string_view file,
+		std::string_view function,
+		int line,
+		ErrorCode code
+	)
+	{
 		LogMessage logMessage{
 			.Severity = severity,
-			.Message = msg,
+			.Message = message,
 			.File = file,
 			.Function = function,
 			.Line = line,
