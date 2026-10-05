@@ -29,16 +29,20 @@ auto TodoInput(const TodoInputProps& props) -> Element
 	return box(
 		BoxDescriptor{
 			.Style =
-				{.Width = {percent(100)},
-				 .Height = {px(40)},
-				 .Padding = padding(px(4)),
-				 .AlignItems = Alignment::FlexStart,
-				 .JustifyContent = Justification::Center,
-				 .BackgroundColor = hovered ? colors::Red
-											: colors::Transparent},
+				{
+					.Width = {percent(100)},
+					.Height = {px(40)},
+					.Padding = padding(px(4)),
+					.AlignItems = Alignment::FlexStart,
+					.JustifyContent = Justification::Center,
+					.BackgroundColor = hovered ? colors::Red
+											   : colors::Transparent,
+				},
 			.Events = {
-				.OnPointerDown = [setHovered](auto& ev) -> auto
-				{ setHovered([](auto prev) -> auto { return !prev; }); },
+				.OnPointerEnter = [setHovered](auto& ev) -> auto
+				{ setHovered(true); },
+				.OnPointerLeave = [setHovered](auto& ev) -> auto
+				{ setHovered(false); },
 				.OnKeyDown = [setDraft, draft, props](auto& ev) -> auto
 				{
 					if (ev.Code == KeyCode::Backspace)
@@ -257,7 +261,7 @@ auto main(int argc, const char** argv) -> int
 		.Height = 600,
 		.Title = "Sandbox",
 		.Flags = SurfaceFlags::External,
-		.Root = buildTodoApp
+		.Root = buildTodoApp,
 	});
 
 	auto* surface = app.RegisterSurface({

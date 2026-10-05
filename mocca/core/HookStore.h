@@ -2,6 +2,7 @@
 #include "Identifiers.h"
 #include "core/Logger.h"
 #include <any>
+#include <type_traits>
 #include <functional>
 #include <unordered_set>
 
@@ -18,6 +19,12 @@ namespace mocca::detail
 	template <typename T>
 	concept EqualityComparable = requires(const T& a, const T& b) {
 		{ a == b } -> std::convertible_to<bool>;
+	};
+	
+	template <typename T>
+	struct StateComparable
+		: std::bool_constant<std::is_scalar_v<T> || std::is_enum_v<T>>
+	{
 	};
 	
 	struct HookKey
@@ -134,6 +141,15 @@ namespace mocca::detail
 			auto it = _slots.find(HookKey{.Id = id, .Hook = hook});
 
 			mc_assert(it != _slots.end(), "expected an existent hook slot");
+
+			if constexpr (StateComparable<T>::value)
+			{
+				auto& current = any_cast<T&>(it->second);
+				if (current == value)
+				{
+					return;
+				}
+			}
 
 			it->second = std::move(value);
 			if (_markDirty)

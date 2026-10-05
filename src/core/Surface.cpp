@@ -39,6 +39,11 @@ namespace mocca
 
 		_rootId = _root->Id;
 
+		if (detail::Node::FindNodeById(_root.get(), _hoveredNode) == nullptr)
+		{
+			_hoveredNode = 0;
+		}
+
 		if (_focusedNode != 0 &&
 			detail::Node::FindNodeById(_root.get(), _focusedNode) == nullptr)
 		{
@@ -257,6 +262,72 @@ namespace mocca
 		}
 	}
 
+	auto hoverChain(detail::Node* node) -> std::vector<detail::NodeId>
+	{
+		std::vector<detail::NodeId> chain;
+		for (auto* n = node; n != nullptr; n = n->Parent)
+		{
+			chain.push_back(n->Id);
+		}
+		return chain;
+	}
+
+	void Surface::UpdateHover(const PointerEvent& ev)
+	{
+		if (_root == nullptr)
+		{
+			return;
+		}
+
+		auto* hit = detail::Node::HitTest(_root.get(), ev.X, ev.Y);
+		auto next = hoverChain(hit);
+		auto prev = hoverChain(
+			detail::Node::FindNodeById(_root.get(), _hoveredNode)
+		);
+
+		if (next == prev)
+		{
+			return;
+		}
+
+		auto emit = [&](detail::NodeId id, PointerEvent::Type type) -> void
+		{
+			auto* node = detail::Node::FindNodeById(_root.get(), id);
+			if (node == nullptr)
+			{
+				return;
+			}
+
+			auto& cb = type == PointerEvent::Type::Enter
+										 ? node->Events.OnPointerEnter
+										 : node->Events.OnPointerLeave;
+			if (cb)
+			{
+				PointerEvent synth = ev;
+				synth.EventType = type;
+				cb(synth);
+			}
+		};
+
+		for (auto id : prev)
+		{
+			if (std::ranges::find(next, id) == next.end())
+			{
+				emit(id, PointerEvent::Type::Leave);
+			}
+		}
+
+		for (unsigned long & it : std::views::reverse(next))
+		{
+			if (std::ranges::find(prev, it) == prev.end())
+			{
+				emit(it, PointerEvent::Type::Enter);
+			}
+		}
+
+		_hoveredNode = hit != nullptr ? hit->Id : 0;
+	}
+
 	// TODO refactor; it now moved to this lol
 	void Surface::RoutePointer(PointerEvent ev)
 	{
@@ -386,6 +457,18 @@ namespace mocca
 						n->Events.OnPointerMove(e);
 					}
 					break;
+				case PointerEvent::Type::Enter:
+					if (n->Events.OnPointerEnter)
+					{
+						n->Events.OnPointerEnter(e);
+					}
+					break;
+				case PointerEvent::Type::Leave:
+					if (n->Events.OnPointerLeave)
+					{
+						n->Events.OnPointerLeave(e);
+					}
+					break;
 				default:
 					break;
 				}
@@ -395,6 +478,13 @@ namespace mocca
 		if (ev.EventType == PointerEvent::Type::Down && target != nullptr)
 		{
 			FocusNode(target->Id);
+		}
+
+		if (ev.EventType == PointerEvent::Type::Move ||
+			ev.EventType == PointerEvent::Type::Down ||
+			ev.EventType == PointerEvent::Type::Up)
+		{
+			UpdateHover(ev);
 		}
 	}
 

@@ -8,7 +8,7 @@
 
 namespace mocca::detail
 {
-	inline NodeId nextNodeId = 0;
+	inline NodeId nextNodeId = 1;
 
 	struct Node
 	{

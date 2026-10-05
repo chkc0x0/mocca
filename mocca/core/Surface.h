@@ -179,6 +179,7 @@ namespace mocca
 
 	protected:
 		void RoutePointer(PointerEvent ev);
+		void UpdateHover(const PointerEvent& ev);
 		void RouteKey(KeyEvent& ev);
 		void RouteText(TextEvent& ev);
 		auto NotifyOutsidePress(const PointerEvent& ev) -> bool;
@@ -202,6 +203,7 @@ namespace mocca
 
 		detail::NodeId _focusedNode = 0;
 		detail::NodeId _capturedNode = 0;
+		detail::NodeId _hoveredNode = 0;
 
 		std::function<bool(Surface&, const PointerEvent&)> _onOutsidePress;
 

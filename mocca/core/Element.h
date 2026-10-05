@@ -25,6 +25,8 @@ namespace mocca
 
 	struct EventHandlers
 	{
+		PointerCallback OnPointerEnter;
+		PointerCallback OnPointerLeave;
 		PointerCallback OnPointerDown;
 		PointerCallback OnPointerUp;
 		PointerCallback OnPointerMove;

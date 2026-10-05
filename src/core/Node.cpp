@@ -18,8 +18,7 @@ namespace mocca::detail
 		}
 	}
 
-	static void
-	CollectFlatYogaChildren(Node& node, std::vector<YGNodeRef>& out)
+	static void CollectFlatYogaChildren(Node& node, std::vector<YGNodeRef>& out)
 	{
 		for (auto& child : node.Children)
 		{
@@ -58,10 +57,7 @@ namespace mocca::detail
 
 			while (YGNodeGetChildCount(YogaNode) > keep)
 			{
-				YGNodeRemoveChild(
-					YogaNode,
-					YGNodeGetChild(YogaNode, keep)
-				);
+				YGNodeRemoveChild(YogaNode, YGNodeGetChild(YogaNode, keep));
 			}
 
 			for (size_t i = keep; i < expected.size(); ++i)
@@ -486,6 +482,11 @@ namespace mocca::detail
 
 	auto Node::FindNodeById(Node* root, NodeId id) -> Node*
 	{
+		if (id == 0)
+		{
+			return nullptr;
+		}
+		
 		if (root == nullptr)
 		{
 			return nullptr;
