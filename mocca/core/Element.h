@@ -2,6 +2,7 @@
 #include "input/InputTypes.h"
 #include "Identifiers.h"
 #include "style/Style.h"
+#include "style/StyleSparse.h"
 #include <any>
 #include <cstdint>
 #include <functional>
@@ -56,6 +57,7 @@ namespace mocca
 	{
 		std::variant<BoxElement, TextElement, ComponentElement> Node;
 		ElementKey Key = mc_keyNone;
+		styles::StyleList Declared;
 		DeclaredStyle Style;
 		EventHandlers Events;
 

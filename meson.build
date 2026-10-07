@@ -14,7 +14,8 @@ sources = [
     'src/text/Measure.cpp',
     'src/text/Unicode.cpp',
     'src/core/Identifiers.cpp',
-    'src/input/Scroll.cpp'
+    'src/input/Scroll.cpp',
+    'src/style/StyleSparse.cpp'
 ]
 
 cmake = import('cmake')

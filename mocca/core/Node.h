@@ -23,12 +23,13 @@ namespace mocca::detail
 
 		DeclaredStyle Declared;
 		ComputedStyle Style;
+		styles::StyleSet Computed;
 
 		Vector2 ScrollOffset{.X = 0, .Y = 0};
-
 		std::vector<std::unique_ptr<Node>> Children;
-
 		std::variant<std::monostate, TextElement, ComponentElement> Kind;
+		
+		EventHandlers Events;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -91,8 +92,6 @@ namespace mocca::detail
 		void Paint(Canvas& canvas);
 
 		static auto HitTest(Node* root, float x, float y) -> Node*;
-		static Node* FindNodeById(Node* root, NodeId id);
-
-		EventHandlers Events;
+		static auto FindNodeById(Node* root, NodeId id) -> Node*;
 	};
 }

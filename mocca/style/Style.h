@@ -4,6 +4,8 @@
 #include "yoga/YGNode.h"
 #include <string_view>
 #include <variant>
+#include "StyleEnums.h"
+#include "Length.h"
 
 namespace mocca
 {
@@ -12,76 +14,6 @@ namespace mocca
 		struct Node;
 		void styleValuePrintEmptyError();
 	}
-
-	enum class StyleKeyword : char
-	{
-		Unset,
-		Inherit,
-		Initial
-	};
-
-	enum class Alignment : char
-	{
-		FlexStart,
-		Center,
-		FlexEnd,
-		Stretch,
-		Baseline,
-		SpaceBetween,
-		SpaceAround,
-		SpaceEvenly,
-		Start,
-		End
-	};
-
-	enum class DisplayType : char
-	{
-		Flex,
-		None,
-		Contents,
-		Grid
-	};
-
-	enum class FlexDirections : char
-	{
-		Column,
-		ColumnReverse,
-		Row,
-		RowReverse
-	};
-
-	enum class WrappingType : char
-	{
-		None,
-		Wrap,
-		WrapReverse
-	};
-
-	enum class Justification : char
-	{
-		FlexStart,
-		Center,
-		FlexEnd,
-		SpaceBetween,
-		SpaceAround,
-		SpaceEvenly,
-		Stretch,
-		Start,
-		End
-	};
-
-	enum class LayoutDirections : char
-	{
-		LTR,
-		RTL
-	};
-
-	enum class OverflowType : char
-	{
-		Visible,
-		Hidden,
-		Scroll
-	};
 
 	template <typename T> struct StyleValue
 	{
@@ -172,23 +104,6 @@ namespace mocca
 
 	private:
 		std::variant<T, StyleKeyword> _data;
-	};
-
-	enum class LengthUnit : char
-	{
-		Pixels,
-		Percent
-	};
-
-	struct Length
-	{
-	public:
-		LengthUnit Unit{};
-		float Value{0};
-
-		Length() = default;
-		Length(float pixels) : Value(pixels) {};
-		Length(LengthUnit unit, float value) : Unit(unit), Value(value) {};
 	};
 
 	template <typename T> struct Edges
