@@ -36,21 +36,32 @@ namespace mocca::styles::detail::applying::layout
 						{ YGNodeStyleSetWidthPercent(ref, pct); }
 					);
 				}
-				else if constexpr (std::is_same_v<T, AutoTag>)
+				else
 				{
-					YGNodeStyleSetWidthAuto(ref);
-				}
-				else if constexpr (std::is_same_v<T, MaxContentTag>)
-				{
-					YGNodeStyleSetWidthMaxContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, FitContentTag>)
-				{
-					YGNodeStyleSetWidthFitContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, StretchTag>)
-				{
-					YGNodeStyleSetWidthStretch(ref);
+					uint8_t v = arg;
+
+					switch (v)
+					{
+					case Auto:
+						YGNodeStyleSetWidthAuto(ref);
+						break;
+					case MaxContent:
+						YGNodeStyleSetWidthMaxContent(ref);
+						break;
+					case FitContent:
+						YGNodeStyleSetWidthFitContent(ref);
+						break;
+					case Stretch:
+						YGNodeStyleSetWidthStretch(ref);
+						break;
+					default:
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"Width does not take...whatever this is ({})",
+							arg
+						);
+						break;
+					}
 				}
 			},
 			value
@@ -74,28 +85,39 @@ namespace mocca::styles::detail::applying::layout
 						{ YGNodeStyleSetHeightPercent(ref, pct); }
 					);
 				}
-				else if constexpr (std::is_same_v<T, AutoTag>)
+				else
 				{
-					YGNodeStyleSetHeightAuto(ref);
-				}
-				else if constexpr (std::is_same_v<T, MaxContentTag>)
-				{
-					YGNodeStyleSetHeightMaxContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, FitContentTag>)
-				{
-					YGNodeStyleSetHeightFitContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, StretchTag>)
-				{
-					YGNodeStyleSetHeightStretch(ref);
+					uint8_t v = arg;
+
+					switch (v)
+					{
+					case Auto:
+						YGNodeStyleSetHeightAuto(ref);
+						break;
+					case MaxContent:
+						YGNodeStyleSetHeightMaxContent(ref);
+						break;
+					case FitContent:
+						YGNodeStyleSetHeightFitContent(ref);
+						break;
+					case Stretch:
+						YGNodeStyleSetHeightStretch(ref);
+						break;
+					default:
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"Height does not take...whatever this is ({})",
+							arg
+						);
+						break;
+					}
 				}
 			},
 			value
 		);
 	}
 
-	void applyMinWidth(YGNodeRef ref, SizingValueNoAuto value)
+	void applyMinWidth(YGNodeRef ref, SizingValue value)
 	{
 		std::visit(
 			[ref](auto&& arg) -> auto
@@ -112,24 +134,43 @@ namespace mocca::styles::detail::applying::layout
 						{ YGNodeStyleSetMinWidthPercent(ref, pct); }
 					);
 				}
-				else if constexpr (std::is_same_v<T, MaxContentTag>)
+				else
 				{
-					YGNodeStyleSetMinWidthMaxContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, FitContentTag>)
-				{
-					YGNodeStyleSetMinWidthFitContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, StretchTag>)
-				{
-					YGNodeStyleSetMinWidthStretch(ref);
+					uint8_t v = arg;
+
+					switch (v)
+					{
+					case Auto:
+						YGNodeStyleSetMinHeight(ref, 0);
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"MinWidth cannot take Auto, defaulting to 0"
+						);
+						break;
+					case MaxContent:
+						YGNodeStyleSetMinWidthMaxContent(ref);
+						break;
+					case FitContent:
+						YGNodeStyleSetMinWidthFitContent(ref);
+						break;
+					case Stretch:
+						YGNodeStyleSetMinWidthStretch(ref);
+						break;
+					default:
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"MinWidth does not take...whatever this is ({})",
+							arg
+						);
+						break;
+					}
 				}
 			},
 			value
 		);
 	}
 
-	void applyMinHeight(YGNodeRef ref, SizingValueNoAuto value)
+	void applyMinHeight(YGNodeRef ref, SizingValue value)
 	{
 		std::visit(
 			[ref](auto&& arg) -> auto
@@ -146,24 +187,43 @@ namespace mocca::styles::detail::applying::layout
 						{ YGNodeStyleSetMinHeightPercent(ref, pct); }
 					);
 				}
-				else if constexpr (std::is_same_v<T, MaxContentTag>)
+				else
 				{
-					YGNodeStyleSetMinHeightMaxContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, FitContentTag>)
-				{
-					YGNodeStyleSetMinHeightFitContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, StretchTag>)
-				{
-					YGNodeStyleSetMinHeightStretch(ref);
+					uint8_t v = arg;
+
+					switch (v)
+					{
+					case Auto:
+						YGNodeStyleSetMinHeight(ref, 0);
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"MinHeight cannot take Auto, defaulting to 0"
+						);
+						break;
+					case MaxContent:
+						YGNodeStyleSetMinHeightMaxContent(ref);
+						break;
+					case FitContent:
+						YGNodeStyleSetMinHeightFitContent(ref);
+						break;
+					case Stretch:
+						YGNodeStyleSetMinHeightStretch(ref);
+						break;
+					default:
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"MinHeight does not take...whatever this is ({})",
+							arg
+						);
+						break;
+					}
 				}
 			},
 			value
 		);
 	}
 
-	void applyMaxWidth(YGNodeRef ref, SizingValueNoAuto value)
+	void applyMaxWidth(YGNodeRef ref, SizingValue value)
 	{
 		std::visit(
 			[ref](auto&& arg) -> auto
@@ -180,24 +240,43 @@ namespace mocca::styles::detail::applying::layout
 						{ YGNodeStyleSetMaxWidthPercent(ref, pct); }
 					);
 				}
-				else if constexpr (std::is_same_v<T, MaxContentTag>)
+				else
 				{
-					YGNodeStyleSetMaxWidthMaxContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, FitContentTag>)
-				{
-					YGNodeStyleSetMaxWidthFitContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, StretchTag>)
-				{
-					YGNodeStyleSetMaxWidthStretch(ref);
+					uint8_t v = arg;
+
+					switch (v)
+					{
+					case Auto:
+						YGNodeStyleSetMaxWidth(ref, 0);
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"MaxWidth cannot take Auto, defaulting to 0"
+						);
+						break;
+					case MaxContent:
+						YGNodeStyleSetMaxWidthMaxContent(ref);
+						break;
+					case FitContent:
+						YGNodeStyleSetMaxWidthFitContent(ref);
+						break;
+					case Stretch:
+						YGNodeStyleSetMaxWidthStretch(ref);
+						break;
+					default:
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"MaxWidth does not take...whatever this is ({})",
+							arg
+						);
+						break;
+					}
 				}
 			},
 			value
 		);
 	}
 
-	void applyMaxHeight(YGNodeRef ref, SizingValueNoAuto value)
+	void applyMaxHeight(YGNodeRef ref, SizingValue value)
 	{
 		std::visit(
 			[ref](auto&& arg) -> auto
@@ -214,17 +293,36 @@ namespace mocca::styles::detail::applying::layout
 						{ YGNodeStyleSetMaxHeightPercent(ref, pct); }
 					);
 				}
-				else if constexpr (std::is_same_v<T, MaxContentTag>)
+				else
 				{
-					YGNodeStyleSetMaxHeightMaxContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, FitContentTag>)
-				{
-					YGNodeStyleSetMaxHeightFitContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, StretchTag>)
-				{
-					YGNodeStyleSetMaxHeightStretch(ref);
+					uint8_t v = arg;
+
+					switch (v)
+					{
+					case Auto:
+						YGNodeStyleSetMaxHeight(ref, 0);
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"MaxHeight cannot take Auto, defaulting to 0"
+						);
+						break;
+					case MaxContent:
+						YGNodeStyleSetMaxHeightMaxContent(ref);
+						break;
+					case FitContent:
+						YGNodeStyleSetMaxHeightFitContent(ref);
+						break;
+					case Stretch:
+						YGNodeStyleSetMaxHeightStretch(ref);
+						break;
+					default:
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"MaxHeight does not take...whatever this is ({})",
+							arg
+						);
+						break;
+					}
 				}
 			},
 			value
@@ -290,7 +388,7 @@ namespace mocca::styles::detail::applying::layout
 							YGNodeStyleSetMargin(ref, edge, arg.Value);
 						}
 					}
-					else if constexpr (std::is_same_v<T, AutoTag>)
+					else if (arg == Auto)
 					{
 						YGNodeStyleSetMarginAuto(ref, edge);
 					}
@@ -397,21 +495,32 @@ namespace mocca::styles::detail::applying::layout
 						{ YGNodeStyleSetFlexBasisPercent(ref, pct); }
 					);
 				}
-				else if constexpr (std::is_same_v<T, AutoTag>)
+				else
 				{
-					YGNodeStyleSetFlexBasisAuto(ref);
-				}
-				else if constexpr (std::is_same_v<T, MaxContentTag>)
-				{
-					YGNodeStyleSetFlexBasisMaxContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, FitContentTag>)
-				{
-					YGNodeStyleSetFlexBasisFitContent(ref);
-				}
-				else if constexpr (std::is_same_v<T, StretchTag>)
-				{
-					YGNodeStyleSetFlexBasisStretch(ref);
+					uint8_t v = arg;
+
+					switch (v)
+					{
+					case Auto:
+						YGNodeStyleSetFlexBasisAuto(ref);
+						break;
+					case MaxContent:
+						YGNodeStyleSetFlexBasisMaxContent(ref);
+						break;
+					case FitContent:
+						YGNodeStyleSetFlexBasisFitContent(ref);
+						break;
+					case Stretch:
+						YGNodeStyleSetFlexBasisStretch(ref);
+						break;
+					default:
+						mc_error(
+							ErrorCode::InvalidArgument,
+							"FlexBasis does not take...whatever this is ({})",
+							arg
+						);
+						break;
+					}
 				}
 			},
 			value
@@ -484,7 +593,7 @@ namespace mocca::styles::detail::applying::layout
 							YGNodeStyleSetPosition(ref, edge, arg.Value);
 						}
 					}
-					else if constexpr (std::is_same_v<T, AutoTag>)
+					else if (arg == 0)
 					{
 						YGNodeStyleSetPositionAuto(ref, edge);
 					}

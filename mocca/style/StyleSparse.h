@@ -6,6 +6,7 @@
 #include <vector>
 #include "StyleEnums.h"
 #include "Length.h"
+#include "style/Style.h"
 #include "utils/Color.h"
 
 namespace mocca::styles
@@ -19,6 +20,13 @@ namespace mocca::styles
 		mc_layoutProperties mc_renderProperties
 #undef mc_styleProperty
 			StylePropertyCount,
+	};
+
+	enum class StylePropertyGroup : char
+	{
+		Layout,
+		Render,
+		Text,
 	};
 
 	enum class StyleValueType : char
@@ -77,7 +85,7 @@ namespace mocca::styles
 		}
 
 		void Add(const StyleEntry& e);
-		
+
 		template <std::size_t N> void Add(const StyleEntryGroup<N>& g)
 		{
 			for (const StyleEntry& e : g.Entries)
@@ -85,7 +93,7 @@ namespace mocca::styles
 				Add(e);
 			}
 		}
-		
+
 		template <class Item> void AddIf(bool cond, const Item& item)
 		{
 			if (cond)
@@ -110,7 +118,7 @@ namespace mocca::styles
 		}
 
 		[[nodiscard]] auto Find(StyleProperty p) const -> const StyleEntry*;
-		
+
 		void Clear()
 		{
 			_entries.clear();
@@ -205,4 +213,24 @@ namespace mocca::styles
 	private:
 		std::vector<StyleEntry> _entries;
 	};
+
+	template<StyleProperty T>
+	struct PropTraits
+	{
+	};
+
+#define mc_styleProperty(name, type, inherits, initial, declType)              \
+	template <> struct PropTraits<StyleProperty::name>                         \
+	{                                                                          \
+		using Value = type;                                                    \
+		static constexpr bool Inherits = inherits;                             \
+		static constexpr Value Initial = initial;                              \
+		static constexpr StylePropertyGroup Group = mc_styleGroup;             \
+	};
+#include "styles.def"
+#define mc_styleGroup StylePropertyGroup::Layout
+	mc_layoutProperties
+#undef mc_styleGroup
+#define mc_styleGroup StylePropertyGroup::Render
+		mc_renderProperties
 }

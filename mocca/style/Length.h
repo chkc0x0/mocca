@@ -14,8 +14,8 @@ namespace mocca
 		LengthUnit Unit{};
 		float Value{0};
 
-		Length() = default;
-		Length(float pixels) : Value(pixels) {};
-		Length(LengthUnit unit, float value) : Unit(unit), Value(value) {};
+		constexpr Length() = default;
+		constexpr Length(float pixels) : Value(pixels) {};
+		constexpr Length(LengthUnit unit, float value) : Unit(unit), Value(value) {};
 	};
 }

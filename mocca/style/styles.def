@@ -8,11 +8,11 @@
 
 #define mc_layoutProperties \
     mc_styleProperty(Width, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
-    mc_styleProperty(MinWidth, SizingValueNoAuto, false, (SizingValueNoAuto{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValueNoAuto>) \
-    mc_styleProperty(MaxWidth, SizingValueNoAuto, false, (SizingValueNoAuto{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValueNoAuto>) \
+    mc_styleProperty(MinWidth, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValue>) \
+    mc_styleProperty(MaxWidth, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValue>) \
     mc_styleProperty(Height, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
-    mc_styleProperty(MinHeight, SizingValueNoAuto, false, (SizingValueNoAuto{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValueNoAuto>) \
-    mc_styleProperty(MaxHeight, SizingValueNoAuto, false, (SizingValueNoAuto{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValueNoAuto>) \
+    mc_styleProperty(MinHeight, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValue>) \
+    mc_styleProperty(MaxHeight, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValue>) \
     mc_styleProperty(Padding, Edges<Length>, false, (Edges<Length>{0}), DeclaredEdges<Length>) \
     mc_styleProperty(Border, Edges<Length>, false, (Edges<Length>{0}), DeclaredEdges<Length>) \
     mc_styleProperty(Margin, Edges<AutoValue<Length>>, false, (Edges<AutoValue<Length>>{0}), DeclaredEdges<AutoValue<Length>>) \

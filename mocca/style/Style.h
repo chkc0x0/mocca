@@ -175,45 +175,18 @@ namespace mocca
 		}
 	};
 
-	namespace styles
+	namespace
 	{
-		namespace detail
-		{
-			struct AutoTag
-			{
-			};
-			struct MaxContentTag
-			{
-			};
-			struct FitContentTag
-			{
-			};
-			struct StretchTag
-			{
-			};
-		}
-
-		inline constexpr detail::AutoTag Auto{};
-		inline constexpr detail::MaxContentTag MaxContent{};
-		inline constexpr detail::FitContentTag FitContent{};
-		inline constexpr detail::StretchTag Stretch{};
+		inline constexpr uint8_t Auto = 0;
+		inline constexpr uint8_t MaxContent = 1;
+		inline constexpr uint8_t FitContent = 2;
+		inline constexpr uint8_t Stretch = 3;
 	}
 
 	template <typename T>
-	using AutoValue = std::variant<T, styles::detail::AutoTag>;
+	using AutoValue = std::variant<T, uint8_t>;
 
-	using SizingValue = std::variant<
-		Length,
-		styles::detail::AutoTag,
-		styles::detail::MaxContentTag,
-		styles::detail::FitContentTag,
-		styles::detail::StretchTag>;
-
-	using SizingValueNoAuto = std::variant<
-		Length,
-		styles::detail::MaxContentTag,
-		styles::detail::FitContentTag,
-		styles::detail::StretchTag>;
+	using SizingValue = std::variant<Length, uint8_t>;
 
 	struct DeclaredStyle
 	{
