@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
+#include <cassert>
 #include <span>
 #include <vector>
 #include "StyleEnums.h"
@@ -214,17 +215,20 @@ namespace mocca::styles
 		std::vector<StyleEntry> _entries;
 	};
 
-	template<StyleProperty T>
-	struct PropTraits
+	template <StyleProperty T> struct PropTraits
 	{
 	};
 
+#undef mc_styleProperty
 #define mc_styleProperty(name, type, inherits, initial, declType)              \
 	template <> struct PropTraits<StyleProperty::name>                         \
 	{                                                                          \
 		using Value = type;                                                    \
 		static constexpr bool Inherits = inherits;                             \
-		static constexpr Value Initial = initial;                              \
+		static constexpr auto Initial() -> Value                               \
+		{                                                                      \
+			return initial;                                                    \
+		}                                                                      \
 		static constexpr StylePropertyGroup Group = mc_styleGroup;             \
 	};
 #include "styles.def"
@@ -233,4 +237,175 @@ namespace mocca::styles
 #undef mc_styleGroup
 #define mc_styleGroup StylePropertyGroup::Render
 		mc_renderProperties
+#undef mc_styleProperty
+
+		namespace detail
+	{
+		constexpr auto encodeStyleEntry(StyleKeyword k) -> StyleEntry
+		{
+			return {.Type = StyleValueType::Keyword, .Payload = {.Keyword = k}};
+		}
+
+		constexpr auto encodeStyleEntry(Length l) -> StyleEntry
+		{
+			return {.Type = StyleValueType::Length, .Payload = {.Length = l}};
+		}
+
+		constexpr auto encodeStyleEntry(Color c) -> StyleEntry
+		{
+			return {.Type = StyleValueType::Color, .Payload = {.Color = c}};
+		}
+
+		constexpr auto encodeStyleEntry(float f) -> StyleEntry
+		{
+			return {.Type = StyleValueType::Value, .Payload = {.Float = f}};
+		}
+
+		constexpr auto encodeStyleEntry(Alignment a) -> StyleEntry
+		{
+			return {
+				.Type = StyleValueType::AuxKeyword,
+				.Aux = static_cast<uint8_t>(a),
+			};
+		}
+
+		constexpr auto encodeStyleEntry(FlexDirections f) -> StyleEntry
+		{
+			return {
+				.Type = StyleValueType::AuxKeyword,
+				.Aux = static_cast<uint8_t>(f),
+			};
+		}
+
+		constexpr auto encodeStyleEntry(WrappingType w) -> StyleEntry
+		{
+			return {
+				.Type = StyleValueType::AuxKeyword,
+				.Aux = static_cast<uint8_t>(w),
+			};
+		}
+
+		constexpr auto encodeStyleEntry(Justification j) -> StyleEntry
+		{
+			return {
+				.Type = StyleValueType::AuxKeyword,
+				.Aux = static_cast<uint8_t>(j),
+			};
+		}
+
+		constexpr auto encodeStyleEntry(LayoutDirections l) -> StyleEntry
+		{
+			return {
+				.Type = StyleValueType::AuxKeyword,
+				.Aux = static_cast<uint8_t>(l),
+			};
+		}
+
+		constexpr auto encodeStyleEntry(OverflowType o) -> StyleEntry
+		{
+			return {
+				.Type = StyleValueType::AuxKeyword,
+				.Aux = static_cast<uint8_t>(o),
+			};
+		}
+
+		constexpr auto encodeStyleEntry(DisplayType d) -> StyleEntry
+		{
+			return {
+				.Type = StyleValueType::AuxKeyword,
+				.Aux = static_cast<uint8_t>(d),
+			};
+		}
+
+		template <class T>
+		constexpr auto encodeStyleEntry(AutoValue<T> k) -> StyleEntry
+		{
+			return std::visit(
+				[](auto&& arg) -> StyleEntry
+				{
+					using V = std::decay_t<decltype(arg)>;
+
+					if constexpr (std::is_same_v<V, uint8_t>)
+					{
+						assert(arg == 0);
+						return {
+							.Type = StyleValueType::AuxKeyword,
+							.Aux = 0,
+						};
+					}
+					else
+					{
+						return encodeStyleEntry<T>(arg);
+					}
+				},
+				k
+			);
+		}
+
+		template <class T>
+		constexpr auto encodeStyleEntry(SizingValue k) -> StyleEntry
+		{
+			return std::visit(
+				[](auto&& arg) -> StyleEntry
+				{
+					using V = std::decay_t<decltype(arg)>;
+
+					if constexpr (std::is_same_v<V, uint8_t>)
+					{
+						return {
+							.Type = StyleValueType::AuxKeyword,
+							.Aux = arg,
+						};
+					}
+					else
+					{
+						return encodeStyleEntry(arg);
+					}
+				}
+			);
+		}
+
+		template <class V>
+		constexpr auto edges(V t, V r, V b, V l) -> StyleEntryGroup<4>
+		{
+			return {
+				{
+					encodeStyleEntry(t),
+					encodeStyleEntry(r),
+					encodeStyleEntry(b),
+					encodeStyleEntry(l),
+				},
+			};
+		}
+	}
+
+#define mc_styleProperty(name, type, ...)                                      \
+	constexpr auto name(type val) -> StyleEntry                                \
+	{                                                                          \
+		return detail::encodeStyleEntry(val);                                  \
+	}
+	mc_layoutProperties mc_renderProperties
+#undef mc_styleProperty
+
+#undef mc_stylePropertyEdge
+#define mc_stylePropertyEdge(name, type)                                       \
+	constexpr auto name(type a)                                                \
+	{                                                                          \
+		return detail::edges(a, a, a, a);                                      \
+	}                                                                          \
+	constexpr auto name(type v, type h)                                        \
+	{                                                                          \
+		return detail::edges(v, h, v, h);                                      \
+	}                                                                          \
+	constexpr auto name(type t, type b, type h)                                \
+	{                                                                          \
+		return detail::edges(t, h, b, h);                                      \
+	}                                                                          \
+	constexpr auto name(type t, type r, type b, type l)                        \
+	{                                                                          \
+		return detail::edges(t, r, b, l);                                      \
+	}
+
+		mc_propertyEdges
+#undef mc_stylePropertyEdge
 }

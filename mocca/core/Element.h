@@ -1,7 +1,6 @@
 #pragma once
 #include "input/InputTypes.h"
 #include "Identifiers.h"
-#include "style/Style.h"
 #include "style/StyleSparse.h"
 #include <any>
 #include <cstdint>
@@ -57,8 +56,7 @@ namespace mocca
 	{
 		std::variant<BoxElement, TextElement, ComponentElement> Node;
 		ElementKey Key = mc_keyNone;
-		styles::StyleList Declared;
-		DeclaredStyle Style;
+		styles::StyleList Style;
 		EventHandlers Events;
 
 		[[nodiscard]] auto IsBox() const -> bool
@@ -86,7 +84,7 @@ namespace mocca
 	{
 	public:
 		ElementKey Key = mc_keyNone;
-		DeclaredStyle Style;
+		styles::StyleList Style;
 		EventHandlers Events;
 		std::vector<Element> Children;
 	};
@@ -95,7 +93,7 @@ namespace mocca
 	{
 	public:
 		ElementKey Key = mc_keyNone;
-		DeclaredStyle Style;
+		styles::StyleList Style;
 		EventHandlers Events;
 		std::string Content;
 	};
@@ -104,7 +102,8 @@ namespace mocca
 	{
 	public:
 		ElementKey Key = mc_keyNone;
-		DeclaredStyle Style;
+		styles::StyleList Style;
+		EventHandlers Events; // maybe?
 		ComponentFn Fn;
 	};
 

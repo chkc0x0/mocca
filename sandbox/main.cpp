@@ -1,10 +1,10 @@
 #include "core/Application.h"
 #include "core/Element.h"
 #include "core/Hooks.h"
-#include "style/StyleHelpers.h"
 #include "sandbox/GLFWPlatformSurface.h"
 #include <iostream>
 #include "GLFW/glfw3.h"
+#include "style/StyleHelpers.h"
 
 using namespace mocca;
 
@@ -30,13 +30,14 @@ auto TodoInput(const TodoInputProps& props) -> Element
 		BoxDescriptor{
 			.Style =
 				{
-					.Width = {percent(100)},
-					.Height = {px(40)},
-					.Padding = padding(px(4)),
-					.AlignItems = Alignment::FlexStart,
-					.JustifyContent = Justification::Center,
-					.BackgroundColor = hovered ? colors::Red
-											   : colors::Transparent,
+					Width(percent(100)),
+					Height(px(40)),
+					Padding(px(4)),
+					AlignItems(Alignment::FlexStart),
+					JustifyContent(Justification::Center),
+					BackgroundColor(
+						hovered ? colors::Red : colors::Transparent
+					),
 				},
 			.Events = {
 				.OnPointerEnter = [setHovered](auto& ev) -> auto
@@ -126,10 +127,10 @@ auto TodoItem(const TodoItemProps& props) -> Element
 		BoxDescriptor{
 			.Style =
 				{
-					.Width = {percent(100)},
-					.Height = {px(20)},
-					.AlignItems = Alignment::FlexStart,
-					.JustifyContent = Justification::Center,
+					Width(percent(100)),
+					Height(px(20)),
+					AlignItems(Alignment::FlexStart),
+					JustifyContent(Justification::Center),
 				},
 			.Events =
 				{
@@ -184,25 +185,22 @@ auto buildTodoApp() -> Element
 		BoxDescriptor{
 			.Style =
 				{
-					.Width = {px(300)},
-					.Height = {px(500)},
-					.Padding = padding(px(8)),
-					.AlignItems = Alignment::Stretch,
-					.BackgroundColor = Color::Oklch(0.7, 0.1036, 171),
+					Width(px(300)),
+					Height(px(500)),
+					Padding(px(8)),
+					AlignItems(Alignment::Stretch),
+					BackgroundColor(Color::Oklch(0.7, 0.1036, 171)),
 				},
 			.Children = {
 				component(TodoInput, TodoInputProps{.OnSubmit = addTodo}),
 				box({
 					.Style =
 						{
-							.Width = {percent(100)},
-							.Height = {px(400)},
-							.Margin = margin(px(5)),
-							.AlignItems = Alignment::FlexStart,
-							.Overflow =
-								{
-									OverflowType::Scroll,
-								},
+							Width(percent(100)),
+							Height(px(400)),
+							Margin(px(5)),
+							AlignItems(Alignment::FlexStart),
+							Overflow(OverflowType::Scroll),
 						},
 					.Children = mapElements(
 						todos,

@@ -329,78 +329,83 @@ namespace mocca::styles::detail::applying::layout
 		);
 	}
 
-	void applyPadding(YGNodeRef ref, Edges<Length> value)
+	void applyPadding(YGNodeRef ref, Length value, YGEdge edge)
 	{
-		if (value.Left.Unit == LengthUnit::Percent)
+		if (value.Unit == LengthUnit::Percent)
 		{
-			YGNodeStyleSetPaddingPercent(ref, YGEdgeLeft, value.Left.Value);
+			YGNodeStyleSetPaddingPercent(ref, edge, value.Value);
 		}
 		else
 		{
-			YGNodeStyleSetPadding(ref, YGEdgeLeft, value.Left.Value);
-		}
-
-		if (value.Top.Unit == LengthUnit::Percent)
-		{
-			YGNodeStyleSetPaddingPercent(ref, YGEdgeTop, value.Top.Value);
-		}
-		else
-		{
-			YGNodeStyleSetPadding(ref, YGEdgeTop, value.Top.Value);
-		}
-
-		if (value.Right.Unit == LengthUnit::Percent)
-		{
-			YGNodeStyleSetPaddingPercent(ref, YGEdgeRight, value.Right.Value);
-		}
-		else
-		{
-			YGNodeStyleSetPadding(ref, YGEdgeRight, value.Right.Value);
-		}
-
-		if (value.Bottom.Unit == LengthUnit::Percent)
-		{
-			YGNodeStyleSetPaddingPercent(ref, YGEdgeBottom, value.Bottom.Value);
-		}
-		else
-		{
-			YGNodeStyleSetPadding(ref, YGEdgeBottom, value.Bottom.Value);
+			YGNodeStyleSetPadding(ref, edge, value.Value);
 		}
 	}
 
-	void applyMargin(YGNodeRef ref, Edges<AutoValue<Length>> value)
+	void applyPaddingTop(YGNodeRef ref, Length value)
 	{
-		auto applyEdge = [&](YGEdge edge, AutoValue<Length> v) -> void
-		{
-			std::visit(
-				[ref, edge](auto&& arg) -> void
+		applyPadding(ref, value, YGEdgeTop);
+	}
+
+	void applyPaddingRight(YGNodeRef ref, Length value)
+	{
+		applyPadding(ref, value, YGEdgeRight);
+	}
+
+	void applyPaddingBottom(YGNodeRef ref, Length value)
+	{
+		applyPadding(ref, value, YGEdgeBottom);
+	}
+
+	void applyPaddingLeft(YGNodeRef ref, Length value)
+	{
+		applyPadding(ref, value, YGEdgeLeft);
+	}
+
+	void applyMargin(YGNodeRef ref, AutoValue<Length> v, YGEdge edge)
+	{
+		std::visit(
+			[ref, edge](auto&& arg) -> void
+			{
+				using T = std::decay_t<decltype(arg)>;
+
+				if constexpr (std::is_same_v<T, Length>)
 				{
-					using T = std::decay_t<decltype(arg)>;
-
-					if constexpr (std::is_same_v<T, Length>)
+					if (arg.Unit == LengthUnit::Percent)
 					{
-						if (arg.Unit == LengthUnit::Percent)
-						{
-							YGNodeStyleSetMarginPercent(ref, edge, arg.Value);
-						}
-						else
-						{
-							YGNodeStyleSetMargin(ref, edge, arg.Value);
-						}
+						YGNodeStyleSetMarginPercent(ref, edge, arg.Value);
 					}
-					else if (arg == Auto)
+					else
 					{
-						YGNodeStyleSetMarginAuto(ref, edge);
+						YGNodeStyleSetMargin(ref, edge, arg.Value);
 					}
-				},
-				v
-			);
-		};
+				}
+				else if (arg == Auto)
+				{
+					YGNodeStyleSetMarginAuto(ref, edge);
+				}
+			},
+			v
+		);
+	}
 
-		applyEdge(YGEdgeLeft, value.Left);
-		applyEdge(YGEdgeTop, value.Top);
-		applyEdge(YGEdgeRight, value.Right);
-		applyEdge(YGEdgeBottom, value.Bottom);
+	void applyMarginTop(YGNodeRef ref, AutoValue<Length> value)
+	{
+		applyMargin(ref, value, YGEdgeTop);
+	}
+
+	void applyMarginRight(YGNodeRef ref, AutoValue<Length> value)
+	{
+		applyMargin(ref, value, YGEdgeRight);
+	}
+
+	void applyMarginBottom(YGNodeRef ref, AutoValue<Length> value)
+	{
+		applyMargin(ref, value, YGEdgeBottom);
+	}
+
+	void applyMarginLeft(YGNodeRef ref, AutoValue<Length> value)
+	{
+		applyMargin(ref, value, YGEdgeLeft);
 	}
 
 	void applyAlignContent(YGNodeRef ref, Alignment value)
@@ -461,21 +466,35 @@ namespace mocca::styles::detail::applying::layout
 		YGNodeStyleSetDisplay(ref, (YGDisplay)((int)value));
 	}
 
-	void applyBorder(YGNode* ref, Edges<Length> value)
+	void applyBorder(YGNode* ref, Length value, YGEdge edge)
 	{
-		if (value.Left.Unit == LengthUnit::Percent ||
-			value.Top.Unit == LengthUnit::Percent ||
-			value.Right.Unit == LengthUnit::Percent ||
-			value.Bottom.Unit == LengthUnit::Percent)
+		if (value.Unit == LengthUnit::Percent)
 		{
 			mc_info("percentages are not allowed in Border");
 			return;
 		}
 
-		YGNodeStyleSetBorder(ref, YGEdgeLeft, value.Left.Value);
-		YGNodeStyleSetBorder(ref, YGEdgeTop, value.Top.Value);
-		YGNodeStyleSetBorder(ref, YGEdgeRight, value.Right.Value);
-		YGNodeStyleSetBorder(ref, YGEdgeBottom, value.Bottom.Value);
+		YGNodeStyleSetBorder(ref, edge, value.Value);
+	}
+
+	void applyBorderTop(YGNodeRef ref, Length value)
+	{
+		applyBorder(ref, value, YGEdgeTop);
+	}
+
+	void applyBorderRight(YGNodeRef ref, Length value)
+	{
+		applyBorder(ref, value, YGEdgeRight);
+	}
+
+	void applyBorderBottom(YGNodeRef ref, Length value)
+	{
+		applyBorder(ref, value, YGEdgeBottom);
+	}
+
+	void applyBorderLeft(YGNodeRef ref, Length value)
+	{
+		applyBorder(ref, value, YGEdgeLeft);
 	}
 
 	void applyFlexBasis(YGNodeRef ref, SizingValue value)
@@ -552,60 +571,73 @@ namespace mocca::styles::detail::applying::layout
 		YGNodeStyleSetFlexWrap(ref, (YGWrap)((int)value));
 	}
 
-	void applyGap(YGNodeRef ref, Axes<Length> value)
+	void applyGap(YGNodeRef ref, Length value, YGGutter axis)
 	{
-		if (value.Horizontal.Unit == LengthUnit::Percent)
+		if (value.Unit == LengthUnit::Percent)
 		{
-			YGNodeStyleSetGapPercent(ref, YGGutterRow, value.Horizontal.Value);
+			YGNodeStyleSetGapPercent(ref, axis, value.Value);
 		}
 		else
 		{
-			YGNodeStyleSetGap(ref, YGGutterRow, value.Horizontal.Value);
-		}
-
-		if (value.Vertical.Unit == LengthUnit::Percent)
-		{
-			YGNodeStyleSetGapPercent(ref, YGGutterColumn, value.Vertical.Value);
-		}
-		else
-		{
-			YGNodeStyleSetGap(ref, YGGutterColumn, value.Vertical.Value);
+			YGNodeStyleSetGap(ref, axis, value.Value);
 		}
 	}
 
-	void applyPosition(YGNodeRef ref, Edges<AutoValue<Length>> value)
+	void applyGapHorizontal(YGNodeRef ref, Length value)
 	{
-		auto applyEdge = [&](YGEdge edge, AutoValue<Length> v) -> void
-		{
-			std::visit(
-				[ref, edge](auto&& arg) -> void
+		applyGap(ref, value, YGGutterRow);
+	}
+
+	void applyGapVertical(YGNodeRef ref, Length value)
+	{
+		applyGap(ref, value, YGGutterColumn);
+	}
+
+	void applyPositionEdge(YGNodeRef ref, AutoValue<Length> v, YGEdge edge)
+	{
+		std::visit(
+			[ref, edge](auto&& arg) -> void
+			{
+				using T = std::decay_t<decltype(arg)>;
+
+				if constexpr (std::is_same_v<T, Length>)
 				{
-					using T = std::decay_t<decltype(arg)>;
-
-					if constexpr (std::is_same_v<T, Length>)
+					if (arg.Unit == LengthUnit::Percent)
 					{
-						if (arg.Unit == LengthUnit::Percent)
-						{
-							YGNodeStyleSetPositionPercent(ref, edge, arg.Value);
-						}
-						else
-						{
-							YGNodeStyleSetPosition(ref, edge, arg.Value);
-						}
+						YGNodeStyleSetPositionPercent(ref, edge, arg.Value);
 					}
-					else if (arg == 0)
+					else
 					{
-						YGNodeStyleSetPositionAuto(ref, edge);
+						YGNodeStyleSetPosition(ref, edge, arg.Value);
 					}
-				},
-				v
-			);
-		};
+				}
+				else if (arg == 0)
+				{
+					YGNodeStyleSetPositionAuto(ref, edge);
+				}
+			},
+			v
+		);
+	}
 
-		applyEdge(YGEdgeLeft, value.Left);
-		applyEdge(YGEdgeTop, value.Top);
-		applyEdge(YGEdgeRight, value.Right);
-		applyEdge(YGEdgeBottom, value.Bottom);
+	void applyTop(YGNodeRef ref, AutoValue<Length> value)
+	{
+		applyPositionEdge(ref, value, YGEdgeTop);
+	}
+
+	void applyLeft(YGNodeRef ref, AutoValue<Length> value)
+	{
+		applyPositionEdge(ref, value, YGEdgeLeft);
+	}
+
+	void applyRight(YGNodeRef ref, AutoValue<Length> value)
+	{
+		applyPositionEdge(ref, value, YGEdgeRight);
+	}
+
+	void applyBottom(YGNodeRef ref, AutoValue<Length> value)
+	{
+		applyPositionEdge(ref, value, YGEdgeBottom);
 	}
 
 	void applyJustifyContent(YGNodeRef ref, Justification value)
