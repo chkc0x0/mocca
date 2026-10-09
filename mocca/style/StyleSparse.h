@@ -7,6 +7,7 @@
 #include <vector>
 #include "StyleEnums.h"
 #include "Length.h"
+#include "core/Logger.h"
 #include "style/Style.h"
 #include "utils/Color.h"
 
@@ -25,9 +26,12 @@ namespace mocca::styles
 
 	enum class StylePropertyGroup : char
 	{
-		Layout,
+		LayoutSizing,
+		LayoutSpacing,
+		LayoutFlex,
+		LayoutPosition,
 		Render,
-		Text,
+		Inherited,
 	};
 
 	enum class StyleValueType : char
@@ -38,6 +42,22 @@ namespace mocca::styles
 		Length,
 		Color,
 	};
+
+	struct StyleEntry;
+
+	template <typename T, typename = void> struct StyleEntryReader
+	{
+		static auto Read(const StyleEntry& /*unused*/) -> T
+		{
+			static_assert(false, "no StyleEntryReader for this type");
+			return T{};
+		}
+	};
+
+	template <typename T> auto getStyleEntryValue(const StyleEntry& s) -> T
+	{
+		return StyleEntryReader<T>::Read(s);
+	}
 
 	struct StyleEntry
 	{
@@ -50,9 +70,95 @@ namespace mocca::styles
 			StyleKeyword Keyword;
 			float Float;
 			int Int = 0;
+			uint8_t Enum;
 			struct Length Length;
 			struct Color Color;
 		} Payload;
+
+		[[nodiscard]] auto IsValue() const -> bool
+		{
+			return Type != StyleValueType::Keyword;
+		};
+
+		template <typename Prop>
+		auto Resolve(const Prop::Value& parentValue, const Prop& prop) const
+			-> Prop::Value
+		{
+			if (IsValue())
+			{
+				return getStyleEntryValue<Prop::Value>();
+			}
+
+			if (Type == StyleValueType::Keyword &&
+				Payload.Keyword == StyleKeyword::Inherit)
+			{
+				return parentValue;
+			}
+
+			if (Type == StyleValueType::Keyword &&
+				Payload.Keyword == StyleKeyword::Initial)
+			{
+				return Prop::Initial();
+			}
+
+			return Prop::Inherits ? parentValue : Prop::Initial();
+		}
+	};
+
+	// Leaf types
+	template <> struct StyleEntryReader<Length>
+	{
+		static auto Read(const StyleEntry& s) -> Length
+		{
+			return s.Payload.Length;
+		}
+	};
+
+	template <> struct StyleEntryReader<Color>
+	{
+		static auto Read(const StyleEntry& s) -> Color
+		{
+			return s.Payload.Color;
+		}
+	};
+
+	template <> struct StyleEntryReader<float>
+	{
+		static auto Read(const StyleEntry& s) -> float
+		{
+			return s.Payload.Float;
+		}
+	};
+
+	template <> struct StyleEntryReader<int>
+	{
+		static auto Read(const StyleEntry& s) -> int
+		{
+			return s.Payload.Int;
+		}
+	};
+
+	// Enums
+	template <typename T>
+		requires std::is_enum_v<T>
+	struct StyleEntryReader<T>
+	{
+		static auto Read(const StyleEntry& s) -> T
+		{
+			return static_cast<T>(s.Payload.Enum);
+		}
+	};
+
+	template <typename T> struct StyleEntryReader<std::variant<T, uint8_t>>
+	{
+		static auto Read(const StyleEntry& s) -> std::variant<T, uint8_t>
+		{
+			if (s.Type == StyleValueType::AuxKeyword && s.Aux == Auto)
+			{
+				return Auto;
+			}
+			return StyleEntryReader<T>::Read(s);
+		}
 	};
 
 	template <size_t N> struct StyleEntryGroup
@@ -219,8 +325,58 @@ namespace mocca::styles
 	{
 	};
 
+	class ComputedStyle
+	{
+	public:
+#define mc_styleProperty(name, type, inh, initial, ...) type name = initial;
+		struct LayoutSizingProps
+		{
+			mc_layoutSizingProps
+		} LayoutSizing;
+
+		struct LayoutSpacingProps
+		{
+			mc_layoutSpacingProps
+		} LayoutSpacing;
+
+		struct LayoutFlexProps
+		{
+			mc_layoutFlexProps
+		} LayoutFlex;
+
+		struct LayoutPositionProps
+		{
+			mc_layoutPosProps
+		} LayoutPosition;
+
+		struct RenderProps
+		{
+			mc_renderPropertiesReset
+		} Render;
+
+		// maybe switch to per category later
+		// if it's a problem
+		struct InheritedProps
+		{
+			mc_layoutPropertiesInh mc_renderPropertiesInh
+		} Inherited;
 #undef mc_styleProperty
-#define mc_styleProperty(name, type, inherits, initial, declType)              \
+
+		void Apply(const StyleEntry& e, ComputedStyle& parent);
+		static auto Cascade(const StyleSet& s, ComputedStyle& parent)
+			-> ComputedStyle;
+
+		template <StyleProperty P>
+		[[nodiscard]] auto Get() const -> const PropTraits<P>::Value&;
+
+	private:
+		template <StyleProperty P> auto _ref() -> PropTraits<P>::Value&;
+	};
+
+#undef mc_styleProperty
+#define mc_cat_(a, b) a##b
+#define mc_cat(a, b) mc_cat_(a, b)
+#define mc_styleProperty(name, type, inherits, initial, ...)                   \
 	template <> struct PropTraits<StyleProperty::name>                         \
 	{                                                                          \
 		using Value = type;                                                    \
@@ -229,15 +385,34 @@ namespace mocca::styles
 		{                                                                      \
 			return initial;                                                    \
 		}                                                                      \
-		static constexpr StylePropertyGroup Group = mc_styleGroup;             \
+		static constexpr StylePropertyGroup Group =                            \
+			StylePropertyGroup::mc_styleGroup;                                 \
+		static constexpr auto Handle = &ComputedStyle::mc_styleGroup;          \
+		static constexpr auto Field =                                          \
+			&ComputedStyle::mc_cat(mc_styleGroup, Props)::name;                \
 	};
 #include "styles.def"
-#define mc_styleGroup StylePropertyGroup::Layout
-	mc_layoutProperties
+#define mc_styleGroup LayoutSizing
+	mc_layoutSizingProps
 #undef mc_styleGroup
-#define mc_styleGroup StylePropertyGroup::Render
-		mc_renderProperties
+#define mc_styleGroup LayoutSpacing
+		mc_layoutSpacingProps
+#undef mc_styleGroup
+#define mc_styleGroup LayoutFlex
+			mc_layoutFlexProps
+#undef mc_styleGroup
+#define mc_styleGroup LayoutPosition
+				mc_layoutPosProps
+#undef mc_styleGroup
+#define mc_styleGroup Render
+					mc_renderPropertiesReset
+#undef mc_styleGroup
+#define mc_styleGroup Inherited
+						mc_inheritProperties
+#undef mc_styleGroup
 #undef mc_styleProperty
+#undef mc_cat_
+#undef mc_cat
 
 		namespace detail
 	{
@@ -265,7 +440,7 @@ namespace mocca::styles
 		{
 			return {
 				.Type = StyleValueType::AuxKeyword,
-				.Aux = static_cast<uint8_t>(a),
+				.Payload = {.Enum = static_cast<uint8_t>(a)},
 			};
 		}
 
@@ -273,7 +448,7 @@ namespace mocca::styles
 		{
 			return {
 				.Type = StyleValueType::AuxKeyword,
-				.Aux = static_cast<uint8_t>(f),
+				.Payload = {.Enum = static_cast<uint8_t>(f)},
 			};
 		}
 
@@ -281,7 +456,7 @@ namespace mocca::styles
 		{
 			return {
 				.Type = StyleValueType::AuxKeyword,
-				.Aux = static_cast<uint8_t>(w),
+				.Payload = {.Enum = static_cast<uint8_t>(w)},
 			};
 		}
 
@@ -289,7 +464,7 @@ namespace mocca::styles
 		{
 			return {
 				.Type = StyleValueType::AuxKeyword,
-				.Aux = static_cast<uint8_t>(j),
+				.Payload = {.Enum = static_cast<uint8_t>(j)},
 			};
 		}
 
@@ -297,7 +472,7 @@ namespace mocca::styles
 		{
 			return {
 				.Type = StyleValueType::AuxKeyword,
-				.Aux = static_cast<uint8_t>(l),
+				.Payload = {.Enum = static_cast<uint8_t>(l)},
 			};
 		}
 
@@ -305,7 +480,7 @@ namespace mocca::styles
 		{
 			return {
 				.Type = StyleValueType::AuxKeyword,
-				.Aux = static_cast<uint8_t>(o),
+				.Payload = {.Enum = static_cast<uint8_t>(o)},
 			};
 		}
 
@@ -313,7 +488,7 @@ namespace mocca::styles
 		{
 			return {
 				.Type = StyleValueType::AuxKeyword,
-				.Aux = static_cast<uint8_t>(d),
+				.Payload = {.Enum = static_cast<uint8_t>(d)},
 			};
 		}
 
@@ -408,4 +583,25 @@ namespace mocca::styles
 
 		mc_propertyEdges
 #undef mc_stylePropertyEdge
+
+		template <StyleProperty P>
+		auto ComputedStyle::Get() const -> const PropTraits<P>::Value&
+	{
+		using L = PropTraits<P>;
+		return (this->*L::Handle).*L::Field;
+	}
+
+	template <StyleProperty P>
+	auto ComputedStyle::_ref() -> PropTraits<P>::Value&
+	{
+		using L = PropTraits<P>;
+		return (this->*L::Handle).*L::Field;
+	}
+
+	auto getDefaultStyle() -> ComputedStyle&
+	{
+		// TODO: make this interned so it's just a bunch of handles instead of this mess
+		static ComputedStyle style;
+		return style;
+	}
 }

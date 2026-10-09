@@ -55,14 +55,19 @@ namespace mocca
 			_capturedNode = 0;
 		}
 
-		_root->ComputeStyle(styles::DefaultStyle);
+		_root->ComputeStyle(styles::getDefaultStyle());
 
 		_root->BuildYogaTree();
 		YGNodeCalculateLayout(
 			_root->YogaNode,
 			_desc.Width,
 			_desc.Height,
-			(YGDirection)((int)_root->Style.LayoutDirection + 1)
+			static_cast<YGDirection>(
+				static_cast<int>(
+					_root->Style.Get<styles::StyleProperty::LayoutDirection>()
+				) +
+				1
+			)
 		);
 
 		if (IsAutomaticSize())
@@ -299,8 +304,8 @@ namespace mocca
 			}
 
 			auto& cb = type == PointerEvent::Type::Enter
-										 ? node->Events.OnPointerEnter
-										 : node->Events.OnPointerLeave;
+						   ? node->Events.OnPointerEnter
+						   : node->Events.OnPointerLeave;
 			if (cb)
 			{
 				PointerEvent synth = ev;
@@ -317,7 +322,7 @@ namespace mocca
 			}
 		}
 
-		for (unsigned long & it : std::views::reverse(next))
+		for (unsigned long& it : std::views::reverse(next))
 		{
 			if (std::ranges::find(prev, it) == prev.end())
 			{

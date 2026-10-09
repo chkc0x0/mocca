@@ -6,51 +6,68 @@
 #define mc_stylePropertyEdge(name, type)
 #endif
 
-#define mc_layoutProperties \
-    mc_styleProperty(Width, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
-    mc_styleProperty(MinWidth, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValue>) \
-    mc_styleProperty(MaxWidth, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValue>) \
-    mc_styleProperty(Height, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
-    mc_styleProperty(MinHeight, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValue>) \
-    mc_styleProperty(MaxHeight, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()}), StyleValue<SizingValue>) \
-    mc_styleProperty(PaddingTop, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(PaddingLeft, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(PaddingRight, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(PaddingBottom, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(BorderTop, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(BorderLeft, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(BorderRight, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(BorderBottom, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(MarginTop, AutoValue<Length>, false, (AutoValue<Length>{0}), StyleValue<AutoValue<Length>>) \
-    mc_styleProperty(MarginLeft, AutoValue<Length>, false, (AutoValue<Length>{0}), StyleValue<AutoValue<Length>>) \
-    mc_styleProperty(MarginBottom, AutoValue<Length>, false, (AutoValue<Length>{0}), StyleValue<AutoValue<Length>>) \
-    mc_styleProperty(MarginRight, AutoValue<Length>, false, (AutoValue<Length>{0}), StyleValue<AutoValue<Length>>) \
-    mc_styleProperty(AlignContent, Alignment, false, Alignment::FlexStart, StyleValue<Alignment>) \
-    mc_styleProperty(AlignItems, Alignment, false, Alignment::Stretch, StyleValue<Alignment>) \
-    mc_styleProperty(AlignSelf, AutoValue<Alignment>, false, Auto, StyleValue<AutoValue<Alignment>>) \
-    mc_styleProperty(AspectRatio, float, false, 0.0F, StyleValue<float>) \
-    mc_styleProperty(Display, DisplayType, false, DisplayType::Flex, StyleValue<DisplayType>) \
-    mc_styleProperty(FlexBasis, SizingValue, false, (SizingValue{Auto}), StyleValue<SizingValue>) \
-    mc_styleProperty(FlexGrow, float, false, 0.0F, StyleValue<float>) \
-    mc_styleProperty(FlexShrink, float, false, 0.0F, StyleValue<float>) \
-    mc_styleProperty(Flex, float, false, std::numeric_limits<double>::quiet_NaN(), StyleValue<float>) \
-    mc_styleProperty(FlexDirection, FlexDirections, false, FlexDirections::Column, StyleValue<FlexDirections>) \
-    mc_styleProperty(FlexWrap, WrappingType, false, WrappingType::None, StyleValue<WrappingType>) \
-    mc_styleProperty(GapHorizontal, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(GapVertical, Length, false, (Length{0}), StyleValue<Length>) \
-    mc_styleProperty(Top, AutoValue<Length>, false, (AutoValue<Length>{0}), StyleValue<AutoValue<Length>>) \
-    mc_styleProperty(Left, AutoValue<Length>, false, (AutoValue<Length>{0}), StyleValue<AutoValue<Length>>) \
-    mc_styleProperty(Bottom, AutoValue<Length>, false, (AutoValue<Length>{0}), StyleValue<AutoValue<Length>>) \
-    mc_styleProperty(Right, AutoValue<Length>, false, (AutoValue<Length>{0}), StyleValue<AutoValue<Length>>) \
-    mc_styleProperty(JustifyContent, Justification, false, Justification::FlexStart, StyleValue<Justification>) \
-    mc_styleProperty(JustifyItems, Justification, false, Justification::Stretch, StyleValue<Justification>) \
-    mc_styleProperty(JustifySelf, AutoValue<Justification>, false, Auto, StyleValue<AutoValue<Justification>>) \
-    mc_styleProperty(LayoutDirection, LayoutDirections, true, LayoutDirections::LTR, StyleValue<LayoutDirections>) \
-    mc_styleProperty(Overflow, OverflowType, false, OverflowType::Visible, StyleValue<OverflowType>)
+#define mc_layoutSizingProps \
+    mc_styleProperty(Width, SizingValue, false, (SizingValue{Auto})) \
+    mc_styleProperty(MinWidth, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()})) \
+    mc_styleProperty(MaxWidth, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()})) \
+    mc_styleProperty(Height, SizingValue, false, (SizingValue{Auto})) \
+    mc_styleProperty(MinHeight, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()})) \
+    mc_styleProperty(MaxHeight, SizingValue, false, (SizingValue{std::numeric_limits<double>::quiet_NaN()})) \
+    mc_styleProperty(AspectRatio, float, false, 0.0F)
 
-#define mc_renderProperties \
-    mc_styleProperty(BackgroundColor, Color, false, mocca::colors::Transparent, StyleValue<Color>) \
-    mc_styleProperty(TextColor, Color, false, mocca::colors::AlmostBlack, StyleValue<Color>)
+#define mc_layoutSpacingProps \
+    mc_styleProperty(PaddingTop, Length, false, (Length{0})) \
+    mc_styleProperty(PaddingLeft, Length, false, (Length{0})) \
+    mc_styleProperty(PaddingRight, Length, false, (Length{0})) \
+    mc_styleProperty(PaddingBottom, Length, false, (Length{0})) \
+    mc_styleProperty(BorderTop, Length, false, (Length{0})) \
+    mc_styleProperty(BorderLeft, Length, false, (Length{0})) \
+    mc_styleProperty(BorderRight, Length, false, (Length{0})) \
+    mc_styleProperty(BorderBottom, Length, false, (Length{0})) \
+    mc_styleProperty(MarginTop, AutoValue<Length>, false, (AutoValue<Length>{0})) \
+    mc_styleProperty(MarginLeft, AutoValue<Length>, false, (AutoValue<Length>{0})) \
+    mc_styleProperty(MarginBottom, AutoValue<Length>, false, (AutoValue<Length>{0})) \
+    mc_styleProperty(MarginRight, AutoValue<Length>, false, (AutoValue<Length>{0})) 
+
+#define mc_layoutFlexProps \
+    mc_styleProperty(AlignContent, Alignment, false, Alignment::FlexStart) \
+    mc_styleProperty(AlignItems, Alignment, false, Alignment::Stretch) \
+    mc_styleProperty(AlignSelf, AutoValue<Alignment>, false, Auto) \
+    mc_styleProperty(Display, DisplayType, false, DisplayType::Flex) \
+    mc_styleProperty(FlexBasis, SizingValue, false, (SizingValue{Auto})) \
+    mc_styleProperty(FlexGrow, float, false, 0.0F) \
+    mc_styleProperty(FlexShrink, float, false, 0.0F) \
+    mc_styleProperty(Flex, float, false, std::numeric_limits<double>::quiet_NaN()) \
+    mc_styleProperty(FlexDirection, FlexDirections, false, FlexDirections::Column) \
+    mc_styleProperty(FlexWrap, WrappingType, false, WrappingType::None) \
+    mc_styleProperty(GapHorizontal, Length, false, (Length{0})) \
+    mc_styleProperty(GapVertical, Length, false, (Length{0}))
+
+#define mc_layoutPosProps \
+    mc_styleProperty(Top, AutoValue<Length>, false, (AutoValue<Length>{0})) \
+    mc_styleProperty(Left, AutoValue<Length>, false, (AutoValue<Length>{0})) \
+    mc_styleProperty(Bottom, AutoValue<Length>, false, (AutoValue<Length>{0})) \
+    mc_styleProperty(Right, AutoValue<Length>, false, (AutoValue<Length>{0})) \
+    mc_styleProperty(JustifyContent, Justification, false, Justification::FlexStart) \
+    mc_styleProperty(JustifyItems, Justification, false, Justification::Stretch) \
+    mc_styleProperty(JustifySelf, AutoValue<Justification>, false, Auto) \
+    mc_styleProperty(Overflow, OverflowType, false, OverflowType::Visible)
+
+#define mc_layoutPropertiesReset \
+    mc_layoutSizingProps mc_layoutSpacingProps mc_layoutFlexProps mc_layoutPosProps
+
+#define mc_layoutPropertiesInh \
+    mc_styleProperty(LayoutDirection, LayoutDirections, true, LayoutDirections::LTR)
+
+#define mc_renderPropertiesReset \
+    mc_styleProperty(BackgroundColor, Color, false, mocca::colors::Transparent)
+
+#define mc_renderPropertiesInh \
+    mc_styleProperty(TextColor, Color, true, mocca::colors::AlmostBlack)
+
+#define mc_layoutProperties mc_layoutPropertiesReset mc_layoutPropertiesInh
+#define mc_renderProperties mc_renderPropertiesReset mc_renderPropertiesInh
+#define mc_inheritProperties mc_layoutPropertiesInh mc_renderPropertiesInh
     
 #define mc_propertyEdges \
     mc_stylePropertyEdge(Padding, Length) \

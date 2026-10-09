@@ -21,9 +21,8 @@ namespace mocca::detail
 		Node* Parent = nullptr;
 		YGNodeRef YogaNode{nullptr};
 
-		DeclaredStyle Declared;
-		ComputedStyle Style;
-		styles::StyleSet Computed;
+		styles::StyleSet Declared;
+		styles::ComputedStyle Style;
 
 		Vector2 ScrollOffset{.X = 0, .Y = 0};
 		std::vector<std::unique_ptr<Node>> Children;
@@ -67,7 +66,7 @@ namespace mocca::detail
 			-> std::unique_ptr<Node>;
 		void BuildYogaTree();
 		void ApplyLayoutStyles() const;
-		void ComputeStyle(const ComputedStyle& parentComputed);
+		void ComputeStyle(styles::ComputedStyle& parentComputed);
 
 		[[nodiscard]] auto GetX() const -> float;
 		[[nodiscard]] auto GetY() const -> float;

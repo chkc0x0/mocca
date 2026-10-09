@@ -678,21 +678,6 @@ namespace mocca::styles::detail::applying::layout
 
 namespace mocca
 {
-	auto ComputedStyle::Cascade(
-		const DeclaredStyle& declared,
-		const ComputedStyle& parent
-	) -> ComputedStyle
-	{
-		ComputedStyle computed;
-#define mc_styleProperty(name, ...)                                            \
-	computed.name = declared.name.Resolve(                                     \
-		parent.name,                                                           \
-		styles::detail::properties::name##Property                             \
-	);
-		mc_layoutProperties mc_renderProperties
-#undef mc_styleProperty
-			return computed;
-	}
 
 	namespace detail
 	{

@@ -82,15 +82,32 @@ namespace mocca::detail
 
 	void Node::ApplyLayoutStyles() const
 	{
+#define mc_styleGroup LayoutSizing
+
 #define mc_styleProperty(name, ...)                                            \
-	styles::detail::applying::layout::apply##name(YogaNode, Style.name);
-		mc_layoutProperties
+	styles::detail::applying::layout::apply##name(                             \
+		YogaNode,                                                              \
+		Style.mc_styleGroup.name                                                    \
+	);
+		mc_layoutSizingProps
+#undef mc_styleGroup
+#define mc_styleGroup LayoutSpacing
+			mc_layoutSpacingProps
+#undef mc_styleGroup
+#define mc_styleGroup LayoutFlex
+				mc_layoutFlexProps
+#undef mc_styleGroup
+#define mc_styleGroup LayoutPosition
+					mc_layoutPosProps
+#undef mc_styleGroup
+#define mc_styleGroup Inherited
+			mc_layoutPropertiesInh
 #undef mc_styleProperty
 	}
 
-	void Node::ComputeStyle(const ComputedStyle& parentComputed)
+	void Node::ComputeStyle(styles::ComputedStyle& parentComputed)
 	{
-		Style = ComputedStyle::Cascade(Declared, parentComputed);
+		Style = styles::ComputedStyle::Cascade(Declared, parentComputed);
 
 		for (auto& child : Children)
 		{
@@ -106,7 +123,7 @@ namespace mocca::detail
 		auto node = std::make_unique<Node>();
 		node->Id = nextNodeId++;
 		node->Key = element.Key;
-		node->Declared = element.Style;
+		node->Declared.Assign(element.Style);
 
 		std::visit(
 			[&](const auto& arm) -> auto
@@ -191,16 +208,17 @@ namespace mocca::detail
 
 		if (IsBox())
 		{
-			bool clips = Style.Overflow == OverflowType::Hidden ||
-						 Style.Overflow == OverflowType::Scroll;
-			bool scrolls = Style.Overflow == OverflowType::Scroll;
+			auto overflow = Style.Get<styles::StyleProperty::Overflow>();
+			bool clips = overflow == OverflowType::Hidden ||
+						 overflow == OverflowType::Scroll;
+			bool scrolls = overflow == OverflowType::Scroll;
 
 			if (clips)
 			{
 				canvas.PushClip(x, y, w, h);
 			}
 
-			canvas.DrawRect(x, y, w, h, Style.BackgroundColor);
+			canvas.DrawRect(x, y, w, h, Style.Get<styles::StyleProperty::BackgroundColor>());
 
 			if (scrolls)
 			{
@@ -228,7 +246,7 @@ namespace mocca::detail
 				x,
 				y,
 				std::get<TextElement>(Kind).Content,
-				Style.TextColor
+				Style.Get<styles::StyleProperty::TextColor>()
 			);
 		}
 		else
@@ -413,7 +431,7 @@ namespace mocca::detail
 		}
 
 		oldNode->Events = newElement->Events;
-		oldNode->Declared = newElement->Style;
+		oldNode->Declared.Assign(newElement->Style);
 
 		auto childElements = CollectChildElements(newElement, oldNode->Id);
 		oldNode->Children = ReconcileChildren(
@@ -437,7 +455,9 @@ namespace mocca::detail
 
 	auto clipsChildren(const Node& n) -> bool
 	{
-		return n.IsBox() && n.Style.Overflow != OverflowType::Visible;
+		return n.IsBox() &&
+			   n.Style.Get<styles::StyleProperty::Overflow>() !=
+				   OverflowType::Visible;
 	}
 
 	auto hitTestImpl(Node* node, float x, float y, Vector2 scroll) -> Node*
@@ -458,7 +478,9 @@ namespace mocca::detail
 		}
 
 		Vector2 childScroll = scroll;
-		if (node->IsBox() && node->Style.Overflow == OverflowType::Scroll)
+		if (node->IsBox() &&
+			node->Style.Get<styles::StyleProperty::Overflow>() ==
+				OverflowType::Scroll)
 		{
 			childScroll.X += node->ScrollOffset.X;
 			childScroll.Y += node->ScrollOffset.Y;
