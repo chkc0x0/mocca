@@ -129,7 +129,7 @@ namespace mocca::styles
 			mc_layoutProperties mc_renderProperties default
 				: mc_error(
 					  ErrorCode::InvalidArgument,
-					  "how did we get to this style?"
+					  "how did we get to this style? ({})", (int)e.Prop
 				  );
 			break;
 		}
@@ -147,5 +147,12 @@ namespace mocca::styles
 		}
 
 		return out;
+	}
+
+	auto getDefaultStyle() -> ComputedStyle&
+	{
+		// TODO: make this interned so it's just a bunch of handles instead of this mess
+		static ComputedStyle style;
+		return style;
 	}
 }

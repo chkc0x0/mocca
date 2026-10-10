@@ -106,9 +106,9 @@ namespace mtest
 		return mocca::box(
 			mocca::BoxDescriptor{
 				.Style = {
-					.Width = {mocca::styles::px(w)},
-					.Height = {mocca::styles::px(h)},
-					.BackgroundColor = c,
+					mocca::styles::Width(mocca::styles::px(w)),
+					mocca::styles::Height(mocca::styles::px(h)),
+					mocca::styles::BackgroundColor(c),
 				},
 			}
 		);
@@ -121,8 +121,8 @@ namespace mtest
 			mocca::BoxDescriptor{
 				.Style =
 					{
-						.Width = {mocca::styles::px(w)},
-						.Height = {mocca::styles::px(h)},
+						mocca::styles::Width(mocca::styles::px(w)),
+						mocca::styles::Height(mocca::styles::px(h)),
 					},
 				.Children = {mocca::text(std::move(content))},
 			}

@@ -15,7 +15,7 @@ namespace mtest
 	using mocca::ElementKey;
 	using mocca::FlexDirections;
 	using mocca::TextDescriptor;
-	using mocca::styles::px;
+	using namespace mocca::styles;
 
 	class LayoutTest : public SurfaceTest
 	{
@@ -82,26 +82,33 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(400.0F)};
-				root.Style.Height = {px(300.0F)};
-				root.Style.FlexDirection = FlexDirections::Column;
-
 				std::vector<Element> rows;
 				for (int i = 0; i < 5; ++i)
 				{
-					BoxDescriptor row{};
-					row.Key = static_cast<mocca::ElementKey>(i + 1);
-					row.Style.Height = {px(20.0F)};
-					row.Children = {
-						box(10, 10, mocca::colors::Red),
-						boxWithText(80, 10, "row" + std::to_string(i)),
-						box(10, 10, mocca::colors::AlmostBlack),
-					};
-					rows.push_back(mocca::box(row));
+					rows.push_back(
+						mocca::box({
+							.Key = i + 1,
+							.Style =
+								{
+									Height(px(20.0F)),
+								},
+							.Children = {
+								box(10, 10, mocca::colors::Red),
+								boxWithText(80, 10, "row" + std::to_string(i)),
+								box(10, 10, mocca::colors::AlmostBlack),
+							},
+						})
+					);
 				}
-				root.Children = std::move(rows);
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(400.0F)),
+							Height(px(300.0F)),
+							FlexDirection(FlexDirections::Column),
+						},
+					.Children = std::move(rows),
+				});
 			}
 		);
 
@@ -136,14 +143,17 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(200.0F)};
-				root.Style.Height = {px(200.0F)};
-				root.Children = {
-					box(50, 50, mocca::colors::Red),
-					boxWithText(50, 50, "static"),
-				};
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(200.0F)),
+							Height(px(200.0F)),
+						},
+					.Children = {
+						box(50, 50, mocca::colors::Red),
+						boxWithText(50, 50, "static"),
+					},
+				});
 			}
 		);
 
@@ -174,18 +184,22 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(200.0F)};
-				root.Style.Height = {px(200.0F)};
-				root.Style.FlexDirection = FlexDirections::Column;
+				std::vector<Element> children;
+				children.reserve(g_count);
+
 				for (int i = 0; i < g_count; ++i)
 				{
-					BoxDescriptor row{};
-					row.Key = static_cast<mocca::ElementKey>(i + 1);
-					row.Style.Height = {px(20.0F)};
-					root.Children.push_back(box(20, 20, mocca::colors::Red));
+					children.push_back(box(20, 20, mocca::colors::Red));
 				}
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(200.0F)),
+							Height(px(200.0F)),
+							FlexDirection(FlexDirections::Column),
+						},
+					.Children = std::move(children),
+				});
 			}
 		);
 
@@ -216,18 +230,22 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(200.0F)};
-				root.Style.Height = {px(200.0F)};
-				root.Style.FlexDirection = FlexDirections::Column;
+				std::vector<Element> children;
+				children.reserve(g_count);
+
 				for (int i = 0; i < g_count; ++i)
 				{
-					BoxDescriptor row{};
-					row.Key = static_cast<mocca::ElementKey>(i + 1);
-					row.Style.Height = {px(20.0F)};
-					root.Children.push_back(box(20, 20, mocca::colors::Red));
+					children.push_back(box(20, 20, mocca::colors::Red));
 				}
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(200.0F)),
+							Height(px(200.0F)),
+							FlexDirection(FlexDirections::Column),
+						},
+					.Children = std::move(children),
+				});
 			}
 		);
 
@@ -256,27 +274,35 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(300.0F)};
-				root.Style.Height = {px(100.0F)};
-				root.Style.FlexDirection = FlexDirections::Row;
-				root.Style.AlignItems = Alignment::FlexStart;
-
 				std::vector<mocca::Element> cells;
+				cells.reserve(3);
+
 				for (int i = 0; i < 3; ++i)
 				{
-					BoxDescriptor cell{};
-					cell.Key = static_cast<mocca::ElementKey>(i + 1);
-					cell.Style.Width = {px(30.0F)};
-					cell.Style.Height = {px(30.0F)};
-					cells.push_back(mocca::box(cell));
+					cells.push_back(
+						mocca::box({
+							.Key = i + 1,
+							.Style = {
+								Width(px(30)),
+								Height(px(30)),
+							},
+						})
+					);
 				}
 				if (g_reversed)
 				{
 					std::reverse(cells.begin(), cells.end());
 				}
-				root.Children = std::move(cells);
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(300.0F)),
+							Height(px(100.0F)),
+							FlexDirection(FlexDirections::Row),
+							AlignItems(Alignment::FlexStart),
+						},
+					.Children = std::move(cells),
+				});
 			}
 		);
 
@@ -333,19 +359,15 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(300.0F)};
-				root.Style.Height = {px(100.0F)};
-				root.Style.FlexDirection = FlexDirections::Row;
-				root.Style.AlignItems = Alignment::FlexStart;
-
 				auto leaf = [](ElementKey k, float w) -> Element
 				{
-					BoxDescriptor d{};
-					d.Key = k;
-					d.Style.Width = {px(w)};
-					d.Style.Height = {px(10.0F)};
-					return mocca::box(d);
+					return mocca::box({
+						.Key = k,
+						.Style = {
+							Width(px(w)),
+							Height(px(10)),
+						},
+					});
 				};
 
 				auto first = leaf(1, 20.0F);
@@ -355,8 +377,16 @@ namespace mtest
 				{
 					std::swap(first, second);
 				}
-				root.Children = {first, second};
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(300)),
+							Height(px(100)),
+							FlexDirection(FlexDirections::Row),
+							AlignItems(Alignment::FlexStart),
+						},
+					.Children = {first, second},
+				});
 			}
 		);
 
@@ -390,64 +420,68 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor row{};
-				row.Style.Width = {px(100.0F)};
-				row.Style.Height = {px(20.0F)};
-				row.Children = {
-					mocca::box(
-						BoxDescriptor{
-							.Key = 10,
+				return mocca::box({
+					.Style =
+						{
+							Width(px(300)),
+							Height(px(100)),
+							FlexDirection(FlexDirections::Row),
+							AlignItems(Alignment::FlexStart),
+						},
+					.Children = {
+						mocca::box({
 							.Style =
 								{
-									.Width = {px(10.0F)},
-									.Height = {px(10.0F)},
+									Width(px(100)),
+									Height(px(20)),
 								},
-						}
-					),
-					mocca::box(
-						BoxDescriptor{
-							.Key = 11,
-							.Style = {
-								.Width = {px(10.0F)},
-								.Height = {px(10.0F)},
-							},
-						}
-					),
-				};
-
-				BoxDescriptor root{};
-				root.Style.Width = {px(300.0F)};
-				root.Style.Height = {px(100.0F)};
-				root.Style.FlexDirection = FlexDirections::Row;
-				root.Style.AlignItems = Alignment::FlexStart;
-				root.Children = {
-					mocca::box(row),
-					mocca::component(
-						[](const Props& p) -> Element
-						{
-							BoxDescriptor c{};
-							c.Style.Width = {px(40.0F)};
-							c.Style.Height = {px(10.0F)};
-							c.Children = {
-								mocca::box(
-									BoxDescriptor{
-										.Style = {
-											.Width = {px(10.0F)},
-											.Height = {px(10.0F)},
+							.Children =
+								{
+									mocca::box({
+										.Key = 10,
+										.Style =
+											{
+												Width(px(10.0F)),
+												Height(px(10.0F)),
+											},
+									}),
+									mocca::box({
+										.Key = 11,
+										.Style =
+											{
+												Width(px(10.0F)),
+												Height(px(10.0F)),
+											},
+									}),
+								},
+						}),
+						mocca::component(
+							[](const Props& p) -> Element
+							{
+								(void)p;
+								return mocca::box({
+									.Style =
+										{
+											Width(px(40)),
+											Height(px(10)),
 										},
-									}
-								),
-							};
-							(void)p;
-							return mocca::box(c);
-						},
-						Props{.Index = 0},
-						ComponentDescriptor{
-							.Key = 20,
-						}
-					),
-				};
-				return mocca::box(root);
+									.Children = {
+										mocca::box({
+											.Style = {
+												Width(px(10.0F)),
+												Height(px(10.0F)),
+											},
+										}),
+									},
+								});
+							},
+							Props{.Index = 0},
+							{
+								.Key = 20,
+							}
+						),
+					},
+				});
 			}
 		);
 
@@ -480,37 +514,46 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(400.0F)};
-				root.Style.Height = {px(300.0F)};
-				root.Style.FlexDirection = FlexDirections::Column;
+				std::vector<Element> children;
+				children.reserve(4);
 
 				for (int i = 0; i < 4; ++i)
 				{
-					root.Children.push_back(
+					children.push_back(
 						mocca::component(
 							[](const Props& p) -> Element
 							{
 								(void)p;
-								BoxDescriptor c{};
-								c.Style.Height = {px(20.0F)};
-								c.Children = {
-									mocca::text(
-										TextDescriptor{
-											.Content = "row",
-										}
-									),
-								};
-								return mocca::box(c);
+								return mocca::box({
+									.Style =
+										{
+											Height(px(20)),
+										},
+									.Children = {
+										mocca::text(
+											TextDescriptor{
+												.Content = "row",
+											}
+										),
+									},
+								});
 							},
 							Props{.Index = i},
-							ComponentDescriptor{
-								.Key = static_cast<mocca::ElementKey>(i + 1),
+							{
+								.Key = i + 1,
 							}
 						)
 					);
 				}
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(400)),
+							Height(px(300)),
+							FlexDirection(FlexDirections::Column),
+						},
+					.Children = std::move(children),
+				});
 			}
 		);
 
@@ -538,22 +581,36 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(300.0F)};
-				root.Style.Height = {px(300.0F)};
-				root.Style.FlexDirection = FlexDirections::Column;
-
-				BoxDescriptor a{};
-				a.Key = 1;
-				a.Style.Height = {px(50.0F)};
-				BoxDescriptor b{};
-				b.Key = 2;
-				b.Style.Height = {px(70.0F)};
-				BoxDescriptor c{};
-				c.Key = 3;
-				c.Style.Height = {px(90.0F)};
-				root.Children = {mocca::box(a), mocca::box(b), mocca::box(c)};
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(300)),
+							Height(px(300)),
+							FlexDirection(FlexDirections::Column),
+						},
+					.Children = {
+						{
+							.Key = 1,
+							.Style =
+								{
+									Height(px(50)),
+								},
+						},
+						{
+							.Key = 2,
+							.Style =
+								{
+									Height(px(70)),
+								},
+						},
+						{
+							.Key = 3,
+							.Style = {
+								Height(px(90)),
+							},
+						},
+					},
+				});
 			}
 		);
 
@@ -598,25 +655,33 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(300.0F)};
-				root.Style.Height = {px(500.0F)};
-				root.Style.Padding = mocca::styles::padding(px(8.0F));
-				root.Style.AlignItems = Alignment::Stretch;
-
-				BoxDescriptor input{};
-				input.Key = 1;
-				input.Style.Width = {mocca::styles::percent(100.0F)};
-				input.Style.Height = {px(40.0F)};
-
-				BoxDescriptor list{};
-				list.Key = 2;
-				list.Style.Width = {mocca::styles::percent(100.0F)};
-				list.Style.Height = {px(400.0F)};
-				list.Style.Margin = mocca::styles::margin(px(5.0F));
-
-				root.Children = {mocca::box(input), mocca::box(list)};
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(300)),
+							Height(px(500)),
+							Padding(px(8)),
+							AlignItems(Alignment::Stretch),
+						},
+					.Children = {
+						{
+							.Key = 1,
+							.Style =
+								{
+									Width(percent(100)),
+									Height(px(40)),
+								},
+						},
+						{
+							.Key = 2,
+							.Style = {
+								Width(percent(100)),
+								Height(px(400)),
+								Margin(px(5)),
+							},
+						},
+					},
+				});
 			}
 		);
 
@@ -664,27 +729,31 @@ namespace mtest
 			},
 			[]() -> Element
 			{
-				BoxDescriptor root{};
-				root.Style.Width = {px(200.0F)};
-				root.Style.Height = {px(200.0F)};
-				root.Style.FlexDirection = FlexDirections::Column;
-
 				auto inner = [](const Props&) -> Element
 				{
-					BoxDescriptor leaf{};
-					leaf.Style.Width = {px(120.0F)};
-					leaf.Style.Height = {px(60.0F)};
-					return mocca::box(leaf);
+					return mocca::box({
+						.Style = {
+							Width(px(120)),
+							Height(px(60)),
+						},
+					});
 				};
 
 				ComponentDescriptor comp{};
 				comp.Key = 7;
 				comp.Style = {};
 
-				root.Children = {
-					mocca::component(inner, Props{}, comp),
-				};
-				return mocca::box(root);
+				return mocca::box({
+					.Style =
+						{
+							Width(px(200)),
+							Height(px(200)),
+							FlexDirection(FlexDirections::Column),
+						},
+					.Children = {
+						mocca::component(inner, Props(), comp),
+					},
+				});
 			}
 		);
 

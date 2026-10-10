@@ -2,7 +2,7 @@
 #include "core/Context.h"
 #include "core/Application.h"
 #include "core/Node.h"
-#include "style/Style.h"
+#include "style/StyleSparse.h"
 #include "yoga/YGNodeLayout.h"
 
 namespace mocca::detail
@@ -11,7 +11,7 @@ namespace mocca::detail
 	{
 		for (Node* n = node; n != nullptr; n = n->Parent)
 		{
-			if (n->IsBox() && n->Style.Overflow == OverflowType::Scroll)
+			if (n->IsBox() && n->Style.Get<styles::StyleProperty::Overflow>() == OverflowType::Scroll)
 			{
 				return n;
 			}
@@ -47,7 +47,9 @@ namespace mocca::detail
 			return;
 		}
 
-		if (n->IsBox() && n->Style.Overflow == OverflowType::Scroll &&
+		if (n->IsBox() &&
+			n->Style.Get<styles::StyleProperty::Overflow>() ==
+				OverflowType::Scroll &&
 			n->YogaNode != nullptr)
 		{
 			float maxX = 0.0F;

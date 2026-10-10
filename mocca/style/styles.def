@@ -18,12 +18,12 @@
 #define mc_layoutSpacingProps \
     mc_styleProperty(PaddingTop, Length, false, (Length{0})) \
     mc_styleProperty(PaddingLeft, Length, false, (Length{0})) \
-    mc_styleProperty(PaddingRight, Length, false, (Length{0})) \
     mc_styleProperty(PaddingBottom, Length, false, (Length{0})) \
+    mc_styleProperty(PaddingRight, Length, false, (Length{0})) \
     mc_styleProperty(BorderTop, Length, false, (Length{0})) \
     mc_styleProperty(BorderLeft, Length, false, (Length{0})) \
-    mc_styleProperty(BorderRight, Length, false, (Length{0})) \
     mc_styleProperty(BorderBottom, Length, false, (Length{0})) \
+    mc_styleProperty(BorderRight, Length, false, (Length{0})) \
     mc_styleProperty(MarginTop, AutoValue<Length>, false, (AutoValue<Length>{0})) \
     mc_styleProperty(MarginLeft, AutoValue<Length>, false, (AutoValue<Length>{0})) \
     mc_styleProperty(MarginBottom, AutoValue<Length>, false, (AutoValue<Length>{0})) \
