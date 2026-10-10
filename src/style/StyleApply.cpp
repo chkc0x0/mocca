@@ -1,4 +1,4 @@
-#include "style/Style.h"
+#include "style/StyleApply.h"
 #include "core/Logger.h"
 #include "yoga/YGConfig.h"
 #include "yoga/YGNodeStyle.h"
@@ -673,18 +673,5 @@ namespace mocca::styles::detail::applying::layout
 	void applyOverflow(YGNodeRef ref, OverflowType value)
 	{
 		YGNodeStyleSetOverflow(ref, (YGOverflow)((int)value));
-	}
-}
-
-namespace mocca
-{
-
-	namespace detail
-	{
-
-		void styleValuePrintEmptyError()
-		{
-			mc_error(ErrorCode::InvalidState, "no value stored here!");
-		}
 	}
 }

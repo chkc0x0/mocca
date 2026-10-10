@@ -7,7 +7,7 @@
 #include "input/Dispatch.h"
 #include "input/InputTypes.h"
 #include "core/Logger.h"
-#include "style/Style.h"
+#include "style/ComputedStyle.h"
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
 

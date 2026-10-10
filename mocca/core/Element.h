@@ -1,7 +1,8 @@
 #pragma once
 #include "input/InputTypes.h"
 #include "Identifiers.h"
-#include "style/StyleSparse.h"
+#include "style/StyleBuilder.h"
+#include "style/StyleList.h"
 #include <any>
 #include <cstdint>
 #include <functional>

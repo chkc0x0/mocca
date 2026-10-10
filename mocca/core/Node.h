@@ -2,7 +2,7 @@
 #include "Element.h"
 #include "gfx/Canvas.h"
 #include "yoga/YGNode.h"
-#include "style/Style.h"
+#include "style/ComputedStyle.h"
 #include <memory>
 #include <vector>
 

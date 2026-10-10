@@ -18,5 +18,7 @@
 #include <numbers>
 #include "Logger.h"
 #include "utils/Math.h"
-#include "style/Style.h"
+#include "style/StyleBuilder.h"
+#include "style/ComputedStyle.h"
+#include "style/StyleApply.h"
 #include "utils/Color.h"

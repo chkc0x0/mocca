@@ -8,14 +8,16 @@ sources = [
     'src/core/HookStore.cpp',
     'src/core/Context.cpp',
     'src/gfx/Canvas.cpp',
-    'src/style/Style.cpp',
+    'src/style/StyleApply.cpp',
     'src/core/Element.cpp',
     'src/core/HookFrame.cpp',
     'src/text/Measure.cpp',
     'src/text/Unicode.cpp',
     'src/core/Identifiers.cpp',
     'src/input/Scroll.cpp',
-    'src/style/StyleSparse.cpp'
+    'src/style/StyleList.cpp',
+    'src/style/StyleSet.cpp',
+    'src/style/ComputedStyle.cpp'
 ]
 
 cmake = import('cmake')

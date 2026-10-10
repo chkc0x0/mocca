@@ -2,7 +2,7 @@
 #include "core/Context.h"
 #include "core/Application.h"
 #include "core/Node.h"
-#include "style/StyleSparse.h"
+#include "style/ComputedStyle.h"
 #include "yoga/YGNodeLayout.h"
 
 namespace mocca::detail

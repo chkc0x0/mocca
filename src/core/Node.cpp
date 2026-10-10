@@ -1,6 +1,7 @@
 #include "core/Node.h"
 #include "core/HookStore.h"
 #include "text/Measure.h"
+#include "style/StyleApply.h"
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
 #include <iostream>
