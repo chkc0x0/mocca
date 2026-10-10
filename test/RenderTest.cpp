@@ -117,6 +117,102 @@ namespace mtest
 			<< "an idle frame must not lose or duplicate the content";
 	}
 
+	TEST_F(RenderTest, RoundedRectResolved)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 200,
+				.Height = 100,
+				.Title = "rounded",
+			},
+			[]() -> mocca::Element
+			{
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								mocca::styles::Width(mocca::styles::px(100)),
+								mocca::styles::Height(mocca::styles::px(40)),
+								mocca::styles::BackgroundColor(
+									mocca::colors::Red
+								),
+								mocca::styles::BorderRadius(
+									mocca::styles::percent(50)
+								),
+							},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		const auto* rect = firstRect(commandsOf(*s));
+		ASSERT_NE(rect, nullptr);
+		EXPECT_FLOAT_EQ(rect->Radius.TopLeft, 20.0F);
+		EXPECT_FLOAT_EQ(rect->Radius.TopRight, 20.0F);
+		EXPECT_FLOAT_EQ(rect->Radius.BottomRight, 20.0F);
+		EXPECT_FLOAT_EQ(rect->Radius.BottomLeft, 20.0F);
+	}
+
+	TEST_F(RenderTest, BorderResolved)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 200,
+				.Height = 100,
+				.Title = "bordered",
+			},
+			[]() -> mocca::Element
+			{
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								mocca::styles::Width(mocca::styles::px(50)),
+								mocca::styles::Height(mocca::styles::px(50)),
+								mocca::styles::BorderColor(
+									mocca::colors::Red
+								),
+								mocca::styles::Border(mocca::styles::px(3)),
+							},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		const auto* rect = firstRect(commandsOf(*s));
+		ASSERT_NE(rect, nullptr);
+		EXPECT_FLOAT_EQ(rect->Border.Top, 3.0F);
+		EXPECT_FLOAT_EQ(rect->Border.Right, 3.0F);
+		EXPECT_FLOAT_EQ(rect->Border.Bottom, 3.0F);
+		EXPECT_FLOAT_EQ(rect->Border.Left, 3.0F);
+		EXPECT_EQ(rect->BorderColor, mocca::colors::Red);
+	}
+
+	TEST_F(RenderTest, PlainBoxNoBorder)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 20,
+				.Height = 20,
+				.Title = "plain",
+			},
+			[]() -> mocca::Element
+			{ return box(20, 20, mocca::colors::Black); }
+		);
+
+		Tick();
+
+		const auto* rect = firstRect(commandsOf(*s));
+		ASSERT_NE(rect, nullptr);
+		EXPECT_FLOAT_EQ(rect->Border.Top, 0.0F);
+		EXPECT_FLOAT_EQ(rect->Radius.TopLeft, 0.0F);
+		EXPECT_EQ(rect->BorderColor, mocca::colors::Transparent);
+	}
+
 	TEST_F(RenderTest, SpliceIsBalancedAndFramed)
 	{
 		auto [parent, child] = makeParentChildTree(*this);

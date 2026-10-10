@@ -2,12 +2,22 @@
 
 namespace mocca
 {
-	void Canvas::DrawRect(float x, float y, float w, float h, Color color)
+	void Canvas::DrawRect(
+		float x,
+		float y,
+		float w,
+		float h,
+		Color color,
+		const RectStyle& style
+	)
 	{
 		_commands.emplace_back(
 			cmds::DrawRectCmd{
 				.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
-				.Color = color
+				.Radius = style.Radius,
+				.Border = style.Border,
+				.Color = color,
+				.BorderColor = style.BorderColor,
 			}
 		);
 	}
@@ -18,7 +28,7 @@ namespace mocca
 			cmds::DrawTextCmd{
 				.Position = {.X = x, .Y = y},
 				.Content = std::move(text),
-				.Color = color
+				.Color = color,
 			}
 		);
 	}
@@ -32,7 +42,7 @@ namespace mocca
 			.X = currentOffset.X + x,
 			.Y = currentOffset.Y + y,
 			.Width = w,
-			.Height = h
+			.Height = h,
 		};
 		if (!_clipStack.empty())
 		{
@@ -58,7 +68,7 @@ namespace mocca
 									: _transformStack.back();
 		Vector2 newOffset = {
 			.X = currentOffset.X + dx,
-			.Y = currentOffset.Y + dy
+			.Y = currentOffset.Y + dy,
 		};
 		_transformStack.push_back(newOffset);
 		_commands.emplace_back(

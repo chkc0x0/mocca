@@ -6,11 +6,32 @@
 
 namespace mocca::cmds
 {
+	struct CornerRadii
+	{
+	public:
+		float TopLeft;
+		float TopRight;
+		float BottomRight;
+		float BottomLeft;
+	};
+
+	struct EdgeSizes
+	{
+	public:
+		float Top;
+		float Right;
+		float Bottom;
+		float Left;
+	};
+
 	struct DrawRectCmd
 	{
 	public:
 		Rectangle Rect;
+		CornerRadii Radius;
+		EdgeSizes Border;
 		struct Color Color;
+		struct Color BorderColor;
 	};
 
 	struct DrawTextCmd

@@ -189,7 +189,7 @@ namespace mocca::styles
 			};
 		}
 
-		template <class T> auto encodeStyleEntry(T)->StyleEntry = delete;
+		template <class T> auto encodeStyleEntry(T) -> StyleEntry = delete;
 	}
 
 #undef mc_styleProperty
@@ -220,8 +220,28 @@ namespace mocca::styles
 		return detail::edges(StyleProperty::name##Top, t, l, b, r);            \
 	}
 
-	mc_propertyEdges
+		mc_propertyEdges
 #undef mc_stylePropertyEdge
+
+		constexpr auto BorderRadius(Length a)
+	{
+		return detail::edges(StyleProperty::BorderRadiusTopLeft, a, a, a, a);
+	}
+
+	constexpr auto BorderRadius(Length v, Length h)
+	{
+		return detail::edges(StyleProperty::BorderRadiusTopLeft, v, h, h, v);
+	}
+
+	constexpr auto BorderRadius(Length t, Length b, Length h)
+	{
+		return detail::edges(StyleProperty::BorderRadiusTopLeft, t, b, b, h);
+	}
+
+	constexpr auto BorderRadius(Length tl, Length tr, Length br, Length bl)
+	{
+		return detail::edges(StyleProperty::BorderRadiusTopLeft, tl, tr, bl, br);
+	}
 
 	// i somehow got the order wrong lol
 	// but i already applied it everywhere so i wont change it

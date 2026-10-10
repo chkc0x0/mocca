@@ -4,6 +4,7 @@
 #include "style/StyleApply.h"
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
+#include <algorithm>
 #include <iostream>
 #include <ranges>
 #include <vector>
@@ -219,7 +220,99 @@ namespace mocca::detail
 				canvas.PushClip(x, y, w, h);
 			}
 
-			canvas.DrawRect(x, y, w, h, Style.Get<styles::StyleProperty::BackgroundColor>());
+			auto resolveLength = [](const Length& length, float basis) -> float
+			{
+				return length.Unit == LengthUnit::Percent
+						   ? length.Value * basis / 100.0F
+						   : length.Value;
+			};
+
+			float radiusBasis = std::min(w, h);
+
+			cmds::CornerRadii radius{
+				.TopLeft = resolveLength(
+					Style.Get<styles::StyleProperty::BorderRadiusTopLeft>(),
+					radiusBasis
+				),
+				.TopRight = resolveLength(
+					Style.Get<styles::StyleProperty::BorderRadiusTopRight>(),
+					radiusBasis
+				),
+				.BottomRight = resolveLength(
+					Style.Get<styles::StyleProperty::BorderRadiusBottomRight>(),
+					radiusBasis
+				),
+				.BottomLeft = resolveLength(
+					Style.Get<styles::StyleProperty::BorderRadiusBottomLeft>(),
+					radiusBasis
+				),
+			};
+
+			float radiusScale = 1.0F;
+			if (radius.TopLeft + radius.TopRight > 0)
+			{
+				radiusScale = std::min(
+					radiusScale,
+					w / (radius.TopLeft + radius.TopRight)
+				);
+			}
+			if (radius.BottomLeft + radius.BottomRight > 0)
+			{
+				radiusScale = std::min(
+					radiusScale,
+					w / (radius.BottomLeft + radius.BottomRight)
+				);
+			}
+			if (radius.TopLeft + radius.BottomLeft > 0)
+			{
+				radiusScale = std::min(
+					radiusScale,
+					h / (radius.TopLeft + radius.BottomLeft)
+				);
+			}
+			if (radius.TopRight + radius.BottomRight > 0)
+			{
+				radiusScale = std::min(
+					radiusScale,
+					h / (radius.TopRight + radius.BottomRight)
+				);
+			}
+			if (radiusScale < 1.0F)
+			{
+				radius.TopLeft *= radiusScale;
+				radius.TopRight *= radiusScale;
+				radius.BottomRight *= radiusScale;
+				radius.BottomLeft *= radiusScale;
+			}
+
+			cmds::EdgeSizes border{
+				.Top =
+					resolveLength(Style.Get<styles::StyleProperty::BorderTop>(), h),
+				.Right = resolveLength(
+					Style.Get<styles::StyleProperty::BorderRight>(),
+					w
+				),
+				.Bottom = resolveLength(
+					Style.Get<styles::StyleProperty::BorderBottom>(),
+					h
+				),
+				.Left =
+					resolveLength(Style.Get<styles::StyleProperty::BorderLeft>(), w),
+			};
+
+			canvas.DrawRect(
+				x,
+				y,
+				w,
+				h,
+				Style.Get<styles::StyleProperty::BackgroundColor>(),
+				RectStyle{
+					.Radius = radius,
+					.Border = border,
+					.BorderColor =
+						Style.Get<styles::StyleProperty::BorderColor>(),
+				}
+			);
 
 			if (scrolls)
 			{

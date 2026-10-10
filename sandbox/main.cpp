@@ -38,6 +38,7 @@ auto TodoInput(const TodoInputProps& props) -> Element
 					BackgroundColor(
 						hovered ? colors::Red : colors::Transparent
 					),
+					BorderRadius(px(8)),
 				},
 			.Events = {
 				.OnPointerEnter = [setHovered](auto& ev) -> auto

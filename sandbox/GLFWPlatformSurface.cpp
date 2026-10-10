@@ -187,21 +187,63 @@ void GLFWPlatformSurface::Submit(
 				using T = std::decay_t<decltype(c)>;
 				if constexpr (std::is_same_v<T, mocca::cmds::DrawRectCmd>)
 				{
+					const auto& radius = c.Radius;
+					bool rounded = radius.TopLeft > 0 ||
+								   radius.TopRight > 0 ||
+								   radius.BottomRight > 0 ||
+								   radius.BottomLeft > 0;
+
 					nvgBeginPath(_vg);
-					nvgRect(
-						_vg,
-						c.Rect.X,
-						c.Rect.Y,
-						c.Rect.Width,
-						c.Rect.Height
-					);
+					if (rounded)
+					{
+						nvgRoundedRectVarying(
+							_vg,
+							c.Rect.X,
+							c.Rect.Y,
+							c.Rect.Width,
+							c.Rect.Height,
+							radius.TopLeft,
+							radius.TopRight,
+							radius.BottomRight,
+							radius.BottomLeft
+						);
+					}
+					else
+					{
+						nvgRect(
+							_vg,
+							c.Rect.X,
+							c.Rect.Y,
+							c.Rect.Width,
+							c.Rect.Height
+						);
+					}
 					nvgFillColor(
 						_vg,
 						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
 					);
 					nvgFill(_vg);
-					nvgStrokeColor(_vg, nvgRGB(255, 0, 0));
-					nvgStroke(_vg);
+
+					float borderWidth = std::max(
+						{c.Border.Top,
+						 c.Border.Right,
+						 c.Border.Bottom,
+						 c.Border.Left}
+					);
+					if (borderWidth > 0 && c.BorderColor.A > 0)
+					{
+						nvgStrokeColor(
+							_vg,
+							nvgRGBA(
+								c.BorderColor.R,
+								c.BorderColor.G,
+								c.BorderColor.B,
+								c.BorderColor.A
+							)
+						);
+						nvgStrokeWidth(_vg, borderWidth);
+						nvgStroke(_vg);
+					}
 				}
 				else if constexpr (std::is_same_v<T, mocca::cmds::DrawTextCmd>)
 				{

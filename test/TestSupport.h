@@ -34,6 +34,32 @@ namespace mtest
 		);
 	}
 
+	inline auto firstRect(const Commands& cmds)
+		-> const mocca::cmds::DrawRectCmd*
+	{
+		for (const auto& c : cmds)
+		{
+			if (const auto* r = std::get_if<mocca::cmds::DrawRectCmd>(&c))
+			{
+				return r;
+			}
+		}
+		return nullptr;
+	}
+
+	inline auto firstText(const Commands& cmds)
+		-> const mocca::cmds::DrawTextCmd*
+	{
+		for (const auto& c : cmds)
+		{
+			if (const auto* t = std::get_if<mocca::cmds::DrawTextCmd>(&c))
+			{
+				return t;
+			}
+		}
+		return nullptr;
+	}
+
 	inline auto textCount(const Commands& cmds) -> int
 	{
 		return countOf(

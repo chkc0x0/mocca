@@ -4,10 +4,24 @@
 
 namespace mocca
 {
+	struct RectStyle
+	{
+		cmds::CornerRadii Radius{};
+		cmds::EdgeSizes Border{};
+		Color BorderColor = colors::Transparent;
+	};
+
 	class Canvas
 	{
 	public:
-		void DrawRect(float x, float y, float w, float h, Color color);
+		void DrawRect(
+			float x,
+			float y,
+			float w,
+			float h,
+			Color color,
+			const RectStyle& style = {}
+		);
 		void DrawText(float x, float y, std::string text, Color color);
 		void PushClip(float x, float y, float w, float h);
 		void PopClip();

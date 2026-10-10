@@ -60,7 +60,12 @@
     mc_styleProperty(LayoutDirection, LayoutDirections, true, LayoutDirections::LTR)
 
 #define mc_renderPropertiesReset \
-    mc_styleProperty(BackgroundColor, Color, false, mocca::colors::Transparent)
+    mc_styleProperty(BackgroundColor, Color, false, mocca::colors::Transparent) \
+    mc_styleProperty(BorderColor, Color, false, mocca::colors::Transparent) \
+    mc_styleProperty(BorderRadiusTopLeft, Length, false, (Length{0})) \
+    mc_styleProperty(BorderRadiusTopRight, Length, false, (Length{0})) \
+    mc_styleProperty(BorderRadiusBottomLeft, Length, false, (Length{0})) \
+    mc_styleProperty(BorderRadiusBottomRight, Length, false, (Length{0}))
 
 #define mc_renderPropertiesInh \
     mc_styleProperty(TextColor, Color, true, mocca::colors::AlmostBlack)
@@ -73,4 +78,3 @@
     mc_stylePropertyEdge(Padding, Length) \
     mc_stylePropertyEdge(Margin, AutoValue<Length>) \
     mc_stylePropertyEdge(Border, Length)
-    
