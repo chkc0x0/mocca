@@ -2,7 +2,8 @@
 #include "Context.h"
 #include "Logger.h"
 #include "Surface.h"
-#include <cctype>
+#include <chrono>
+#include <cstddef>
 #include <string>
 
 namespace mocca
@@ -23,7 +24,7 @@ namespace mocca
 
 		// surface.destroyed (data = Surface*)
 		// called on ~Surface
-		SurfaceDestroyed = 0xf9580567ec3be68b
+		SurfaceDestroyed = 0xf9580567ec3be68b,
 	};
 
 	class Application
@@ -35,6 +36,7 @@ namespace mocca
 		~Application();
 
 		void Tick(double dt);
+		void Tick();
 		void DumpTree();
 
 		static auto GetAppID() -> const ApplicationID&
@@ -72,7 +74,7 @@ namespace mocca
 		void Print() const;
 		auto IsRunning() -> bool
 		{
-			return _surfaces.size() != 0;
+			return !_surfaces.empty();
 		}
 
 	private:
@@ -94,6 +96,10 @@ namespace mocca
 		bool _inTick = false;
 		uint32_t _stateOnEffectStreak = 0;
 		bool _stateOnEffectWarned = false;
+
+		std::chrono::steady_clock::time_point _last;
+		bool _hasLast = false;
+		std::size_t _animationsActive = 0;
 
 		struct
 		{

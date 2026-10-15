@@ -1,6 +1,7 @@
 #include "core/Application.h"
 #include "core/HookStore.h"
 #include "core/Logger.h"
+#include <algorithm>
 #include <utility>
 
 namespace
@@ -73,6 +74,20 @@ namespace mocca
 		{
 			main = nullptr;
 		}
+	}
+
+	void Application::Tick()
+	{
+		auto now = std::chrono::steady_clock::now();
+		double dt = 0.0;
+		if (_hasLast)
+		{
+			dt = std::chrono::duration<double>(now - _last).count();
+			dt = std::min(dt, 0.1);
+		}
+		_last = now;
+		_hasLast = true;
+		Tick(dt);
 	}
 
 	void Application::Tick(double dt)
