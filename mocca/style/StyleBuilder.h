@@ -2,10 +2,13 @@
 #include "StyleEntry.h"
 #include "StyleProperty.h"
 #include "StyleValue.h"
+#include "Transition.h"
 #include "StyleEnums.h"
 #include "Length.h"
 #include "utils/Color.h"
 #include <cassert>
+#include <cstdint>
+#include <initializer_list>
 #include <type_traits>
 #include <variant>
 
@@ -189,6 +192,24 @@ namespace mocca::styles
 			};
 		}
 
+		constexpr auto encodeStyleEntry(StyleProperty prop, std::uint32_t ref)
+			-> StyleEntry
+		{
+			return {
+				.Prop = prop,
+				.Type = StyleValueType::Transition,
+				.Payload = {.Transition = ref},
+			};
+		}
+
+		inline auto makeTransition(const TransitionType& type) -> StyleEntry
+		{
+			return encodeStyleEntry(
+				StyleProperty::Transition,
+				internTransition(type)
+			);
+		}
+
 		template <class T> auto encodeStyleEntry(T) -> StyleEntry = delete;
 	}
 
@@ -223,7 +244,76 @@ namespace mocca::styles
 		mc_propertyEdges
 #undef mc_stylePropertyEdge
 
-		constexpr auto BorderRadius(Length a)
+		constexpr auto ms(float milliseconds) -> float
+	{
+		return milliseconds / 1000.0F;
+	}
+
+	inline auto Transition(
+		StyleProperty prop,
+		float duration,
+		anim::Curve curve = anim::EaseInOut
+	) -> StyleEntry
+	{
+		return detail::makeTransition(
+			TransitionType{
+				.Props = animatableBit(prop),
+				.Duration = duration,
+				.Curve = curve,
+			}
+		);
+	}
+
+	inline auto Transition(StyleProperty prop, anim::Curve curve)
+		-> StyleEntry
+	{
+		return Transition(prop, TransitionType{}.Duration, curve);
+	}
+
+	inline auto Transition(
+		std::initializer_list<StyleProperty> props,
+		float duration,
+		anim::Curve curve = anim::EaseInOut
+	) -> StyleEntry
+	{
+		std::uint32_t mask = 0;
+		for (StyleProperty prop : props)
+		{
+			mask |= animatableBit(prop);
+		}
+		return detail::makeTransition(
+			TransitionType{.Props = mask, .Duration = duration, .Curve = curve}
+		);
+	}
+
+	inline auto Transition(
+		std::initializer_list<StyleProperty> props,
+		anim::Curve curve
+	) -> StyleEntry
+	{
+		return Transition(props, TransitionType{}.Duration, curve);
+	}
+
+	inline auto Transition(
+		float duration,
+		anim::Curve curve = anim::EaseInOut
+	) -> StyleEntry
+	{
+		return detail::makeTransition(
+			TransitionType{
+				.Props = AllProperties,
+				.Duration = duration,
+				.Curve = curve,
+			}
+		);
+	}
+
+	inline auto Transition(anim::Curve curve) -> StyleEntry
+	{
+		return Transition(TransitionType{}.Duration, curve);
+	}
+
+	constexpr auto BorderRadius(Length a)
 	{
 		return detail::edges(StyleProperty::BorderRadiusTopLeft, a, a, a, a);
 	}
@@ -240,7 +330,13 @@ namespace mocca::styles
 
 	constexpr auto BorderRadius(Length tl, Length tr, Length br, Length bl)
 	{
-		return detail::edges(StyleProperty::BorderRadiusTopLeft, tl, tr, bl, br);
+		return detail::edges(
+			StyleProperty::BorderRadiusTopLeft,
+			tl,
+			tr,
+			bl,
+			br
+		);
 	}
 
 	// i somehow got the order wrong lol

@@ -5,6 +5,7 @@
 #include <iostream>
 #include "GLFW/glfw3.h"
 #include "style/StyleHelpers.h"
+#include "utils/Color.h"
 
 using namespace mocca;
 
@@ -25,6 +26,8 @@ auto TodoInput(const TodoInputProps& props) -> Element
 	using namespace mocca::styles;
 	auto [draft, setDraft] = useState(std::string{});
 	auto [hovered, setHovered] = useState(false);
+	auto [radii, setRadii] =
+		useAnimation(hovered ? 1.0F : 0.0F, anim::spring(200.0F, 18.0F));
 
 	return box(
 		BoxDescriptor{
@@ -38,7 +41,11 @@ auto TodoInput(const TodoInputProps& props) -> Element
 					BackgroundColor(
 						hovered ? colors::Red : colors::Transparent
 					),
-					BorderRadius(px(8)),
+					BorderRadius(px(8.0F + (radii * 16.0F))),
+					Transition(
+						StyleProperty::BackgroundColor,
+						anim::spring(400, 18, 1.8)
+					),
 				},
 			.Events = {
 				.OnPointerEnter = [setHovered](auto& ev) -> auto
@@ -286,7 +293,7 @@ auto main(int argc, const char** argv) -> int
 
 	while (app.IsRunning())
 	{
-		app.Tick(0);
+		app.Tick();
 	}
 
 	return 0;
