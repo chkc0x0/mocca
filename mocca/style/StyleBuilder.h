@@ -249,6 +249,7 @@ namespace mocca::styles
 		return milliseconds / 1000.0F;
 	}
 
+	// TODO: make it per property properly later
 	inline auto Transition(
 		StyleProperty prop,
 		float duration,
