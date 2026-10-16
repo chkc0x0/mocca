@@ -1,6 +1,7 @@
 #pragma once
 #include "style/Length.h"
 #include "utils/Color.h"
+#include <algorithm>
 #include <type_traits>
 
 namespace mocca::anim
@@ -12,12 +13,13 @@ namespace mocca::anim
 
 	inline auto lerp(const Color& a, const Color& b, float t) -> Color
 	{
-		return Color::MixOklab(a, b, t);
+		return Color::MixOklab(a, b, std::clamp(t, 0.0F, 1.0F));
 	}
 
 	inline auto lerp(const Length& a, const Length& b, float t) -> Length
 	{
-		return {a.Unit, a.Value + ((b.Value - a.Value) * t)};
+		float value = a.Value + ((b.Value - a.Value) * t);
+		return {a.Unit, value < 0.0F ? 0.0F : value};
 	}
 
 	template <typename T>

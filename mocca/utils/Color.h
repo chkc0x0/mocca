@@ -497,6 +497,8 @@ namespace mocca
 		constexpr static auto
 		Oklab(double l, double a, double b, double alpha = 1.0) -> Color
 		{
+			alpha = std::clamp(alpha, 0.0, 1.0);
+
 			double ll = l + (0.3963377774 * a) + (0.2158037573 * b);
 			double mm = l - (0.1055613458 * a) - (0.0638541728 * b);
 			double ss = l - (0.0894841775 * a) - (1.2914855480 * b);
@@ -609,7 +611,13 @@ namespace mocca
 
 		[[nodiscard]] constexpr auto WithAlpha(double a) const -> Color
 		{
-			return {R, G, B, static_cast<uint8_t>(floor((a * 255.0) + 0.5))};
+			double clamped = std::clamp(a, 0.0, 1.0);
+			return {
+				R,
+				G,
+				B,
+				static_cast<uint8_t>(floor((clamped * 255.0) + 0.5))
+			};
 		}
 
 		[[nodiscard]] constexpr auto WithAlpha8(uint8_t a) const -> Color
