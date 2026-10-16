@@ -110,6 +110,8 @@ namespace mocca
 
 		EmitEvent(ApplicationEvent::Poll, nullptr);
 
+		_animationsActive = _context._store->FlushAnimations(dt);
+
 		for (auto& surface : _surfaces)
 		{
 			surface->Tick(dt);
@@ -120,7 +122,7 @@ namespace mocca
 		_context._store->FlushLayoutEffects(nullptr);
 		_context._store->FlushEffects();
 
-		if (_context._store->DirtyCount() != 0)
+		if (_context._store->DirtyCount() != 0 && _animationsActive == 0)
 		{
 			if (++_stateOnEffectStreak > 16 && !_stateOnEffectWarned)
 			{

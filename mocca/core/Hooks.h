@@ -1,9 +1,37 @@
 #pragma once
 #include "HookStore.h"
 #include "HookFrame.h"
+#include "anim/AnimatedValue.h"
+#include "anim/Curve.h"
 
 namespace mocca
 {
+	template <typename T> struct AnimationControl
+	{
+	private:
+		detail::HookStore* _store;
+		detail::NodeId _id;
+		std::uint32_t _hook;
+
+	public:
+		AnimationControl(
+			detail::HookStore* store,
+			detail::NodeId id,
+			std::uint32_t hook
+		)
+			: _store(store), _id(id), _hook(hook) {};
+
+		void operator()(T target) const
+		{
+			_store->Mutate<anim::AnimatedValue<T>>(
+				_id,
+				_hook,
+				[&](anim::AnimatedValue<T>& a) -> auto
+				{ a.Start(target, a.Duration, a.Easing); }
+			);
+		}
+	};
+
 	template <typename T> struct StateSetter
 	{
 	private:
@@ -147,7 +175,12 @@ namespace mocca
 
 		return {
 			value,
-			StateDispatch<T, U>{&store, f.Component, hook, std::move(reducer)}
+			StateDispatch<T, U>{
+				&store,
+				f.Component,
+				hook,
+				std::move(reducer),
+			},
 		};
 	}
 
@@ -244,5 +277,65 @@ namespace mocca
 		-> const Fn&
 	{
 		return useMemo<Fn>(std::function<Fn()>{[fn] { return fn; }}, deps);
+	}
+
+	template <typename T>
+	auto useAnimation(
+		T target,
+		anim::Curve curve = anim::EaseInOut,
+		float duration = 0.2F
+	) -> std::pair<T&, AnimationControl<T>>
+	{
+		auto& f = detail::currentFrame();
+		std::uint32_t hook = f.NextHook++;
+
+		anim::AnimatedValue<T>& a =
+			f.Store->GetOrCreate<anim::AnimatedValue<T>>(
+				f.Component,
+				hook,
+				anim::AnimatedValue<T>{}
+			);
+
+		a.Duration = duration;
+		a.Easing = curve;
+
+		if (!a.Initialized)
+		{
+			a.Jump(target);
+		}
+		else if (a.Target != target)
+		{
+			a.Start(target, duration, curve);
+		}
+
+		detail::HookStore* store = f.Store;
+		detail::NodeId id = f.Component;
+
+		if (a.Active)
+		{
+			store->PushAnimation(
+				id,
+				hook,
+				[store, id, hook, duration, curve](double dt) -> bool
+				{
+					bool active = false;
+
+					store->Mutate<anim::AnimatedValue<T>>(
+						id,
+						hook,
+						[&](anim::AnimatedValue<T>& s) -> auto
+						{
+							s.Duration = duration;
+							s.Easing = curve;
+							s.Advance(static_cast<float>(dt));
+							active = s.Active;
+						}
+					);
+					return active;
+				}
+			);
+		}
+
+		return {a.Value, AnimationControl<T>{store, id, hook}};
 	}
 }

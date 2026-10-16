@@ -95,8 +95,75 @@ namespace mocca::detail
 		_effectQueue = std::move(kept);
 	}
 
+	void HookStore::PushAnimation(
+		NodeId id,
+		std::uint32_t hook,
+		AnimationFn fn
+	)
+	{
+		for (auto& anim : _animations)
+		{
+			if (anim.Id == id && anim.Hook == hook)
+			{
+				anim.Callback = std::move(fn);
+				return;
+			}
+		}
+		_animations.push_back(
+			{.Id = id, .Hook = hook, .Callback = std::move(fn)}
+		);
+	}
+
+	auto HookStore::FlushAnimations(double dt) -> std::size_t
+	{
+		if (_animations.empty())
+		{
+			return 0;
+		}
+
+		std::vector<AnimationFunction> kept;
+		kept.reserve(_animations.size());
+		for (auto& anim : _animations)
+		{
+			bool keep = false;
+			try
+			{
+				keep = anim.Callback(dt);
+			}
+			catch (const std::exception& e)
+			{
+				mc_error(
+					ErrorCode::UserSide,
+					"animation threw an exception: {}",
+					e.what()
+				);
+			}
+			catch (...)
+			{
+				mc_error(ErrorCode::UserSide, "animation threw a non-std exception");
+			}
+
+			if (keep)
+			{
+				kept.push_back(std::move(anim));
+			}
+		}
+		_animations = std::move(kept);
+		return _animations.size();
+	}
+
+	auto HookStore::ActiveAnimationCount() const -> std::size_t
+	{
+		return _animations.size();
+	}
+
 	void HookStore::RemoveComponent(NodeId id)
 	{
+		std::erase_if(
+			_animations,
+			[id](const AnimationFunction& a) -> auto { return a.Id == id; }
+		);
+
 		for (auto it = _slots.begin(); it != _slots.end();)
 		{
 			if (it->first.Id == id)

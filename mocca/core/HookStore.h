@@ -100,6 +100,15 @@ namespace mocca::detail
 		Surface* OwningSurface = nullptr;
 	};
 
+	using AnimationFn = std::function<bool(double dt)>;
+
+	struct AnimationFunction
+	{
+		NodeId Id = 0;
+		std::uint32_t Hook = 0;
+		AnimationFn Callback;
+	};
+
 	class HookStore
 	{
 	public:
@@ -158,10 +167,25 @@ namespace mocca::detail
 			}
 		}
 
+		template <typename T, typename Fn>
+		void Mutate(NodeId id, std::uint32_t hook, Fn fn)
+		{
+			auto it = _slots.find(HookKey{.Id = id, .Hook = hook});
+			mc_assert(it != _slots.end(), "expected an existent hook slot");
+			fn(any_cast<T&>(it->second));
+			if (_markDirty)
+			{
+				_markDirty(id);
+			}
+		}
+
 		auto Has(NodeId id, std::uint32_t hook) -> bool;
 		auto GetEffectSlot(NodeId id, std::uint32_t hook) -> EffectSlot&;
 		auto GetMemoSlot(NodeId id, std::uint32_t hook) -> MemoSlot&;
 		void FlushEffects();
+		void PushAnimation(NodeId id, std::uint32_t hook, AnimationFn fn);
+		auto FlushAnimations(double dt) -> std::size_t;
+		[[nodiscard]] auto ActiveAnimationCount() const -> std::size_t;
 		void FlushLayoutEffects(Surface* surface);
 		void RemoveComponent(NodeId id);
 		void PushEffect(const CleanupFn& fn);
@@ -175,6 +199,7 @@ namespace mocca::detail
 	private:
 		std::unordered_map<HookKey, std::any, HookKeyHash> _slots;
 		std::vector<EffectFunction> _effectQueue;
+		std::vector<AnimationFunction> _animations;
 
 		std::unordered_set<NodeId> _dirtySet;
 		std::function<void(NodeId)> _markDirty;
