@@ -75,6 +75,7 @@ if get_option('tests')
         'mocca_tests',
         dependencies: [mocca_dep, dependency('gtest', main: true)],
         sources: files(
+            'test/AnimationTest.cpp',
             'test/ApplicationIdTest.cpp',
             'test/EventBusTest.cpp',
             'test/HookTest.cpp',

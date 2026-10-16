@@ -175,6 +175,14 @@ namespace mtest
 			}
 		}
 
+		auto Tick(double dt, int n = 1) -> void
+		{
+			for (int i = 0; i < n; ++i)
+			{
+				_app.Tick(dt);
+			}
+		}
+
 	protected:
 		void SetUp() override
 		{
