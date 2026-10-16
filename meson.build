@@ -25,20 +25,17 @@ cmake = import('cmake')
 cmake_options = cmake.subproject_options()
 cmake_options.add_cmake_defines({'WITH_PIC': true})
 
-glfw_dep = dependency('', required: false)
-kurva_dep = dependency('', required: false)
-
-if get_option('sandbox')
-    glfw_dep = cmake.subproject('glfw', options: cmake_options).dependency('glfw')
-    kurva_dep = subproject('kurva').get_variable('nanovg_dep')
-endif
-
 yoga_dep = cmake.subproject('yoga', options: cmake_options).dependency('yogacore')
 
-dependencies = [yoga_dep]
-if get_option('sandbox')
-    dependencies += [glfw_dep]
-endif
+dependencies = [
+    yoga_dep, 
+    dependency('freetype2'), 
+    dependency('harfbuzz'), 
+    subproject('SheenBidi').get_variable('sheenbidi_dep'),
+    dependency('libunibreak'),
+    dependency('libutf8proc'),
+    dependency('simdutf')
+]
 
 if get_option('debug')
     add_project_arguments('-DDEBUG', language: 'cpp')
@@ -61,7 +58,7 @@ mocca_dep = declare_dependency(
 if get_option('sandbox')
     executable(
         'sandbox',
-        dependencies: [mocca_dep, glfw_dep, kurva_dep, dependency('glew')],
+        dependencies: [mocca_dep, dependency('glfw3'), subproject('kurva').get_variable('nanovg_dep'), dependency('glew')],
         sources: [
             'sandbox/main.cpp',
             'sandbox/GLFWPlatformSurface.cpp',

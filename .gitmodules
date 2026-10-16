@@ -7,3 +7,6 @@
 [submodule "subprojects/glfw"]
 	path = subprojects/glfw
 	url = https://github.com/glfw/glfw
+[submodule "subprojects/SheenBidi"]
+	path = subprojects/SheenBidi
+	url = https://github.com/Tehreer/SheenBidi
