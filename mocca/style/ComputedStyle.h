@@ -2,6 +2,7 @@
 #include "StyleSet.h"
 #include "StyleProperty.h"
 #include "StyleValue.h"
+#include "StyleEntry.h"
 #include "Length.h"
 #include "utils/Color.h"
 
@@ -55,6 +56,18 @@ namespace mocca::styles
 
 		template <StyleProperty P>
 		[[nodiscard]] auto Get() const -> const PropTraits<P>::Value&;
+
+		template <StyleProperty P> void Set(const PropTraits<P>::Value& value)
+		{
+			_ref<P>() = value;
+		}
+		
+		void Blend(
+			StyleProperty prop,
+			const StyleEntry& from,
+			const StyleEntry& goal,
+			float t
+		);
 
 	private:
 		template <StyleProperty P> auto _ref() -> PropTraits<P>::Value&;

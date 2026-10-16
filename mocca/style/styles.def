@@ -65,7 +65,8 @@
     mc_styleProperty(BorderRadiusTopLeft, Length, false, (Length{0})) \
     mc_styleProperty(BorderRadiusTopRight, Length, false, (Length{0})) \
     mc_styleProperty(BorderRadiusBottomLeft, Length, false, (Length{0})) \
-    mc_styleProperty(BorderRadiusBottomRight, Length, false, (Length{0}))
+    mc_styleProperty(BorderRadiusBottomRight, Length, false, (Length{0})) \
+    mc_styleProperty(Transition, uint32_t, false, 0U)
 
 #define mc_renderPropertiesInh \
     mc_styleProperty(TextColor, Color, true, mocca::colors::AlmostBlack)
@@ -78,3 +79,15 @@
     mc_stylePropertyEdge(Padding, Length) \
     mc_stylePropertyEdge(Margin, AutoValue<Length>) \
     mc_stylePropertyEdge(Border, Length)
+
+#define mc_animatableProperties \
+    mc_animatable(BackgroundColor) \
+    mc_animatable(BorderColor) \
+    mc_animatable(BorderRadiusTopLeft) \
+    mc_animatable(BorderRadiusTopRight) \
+    mc_animatable(BorderRadiusBottomLeft) \
+    mc_animatable(BorderRadiusBottomRight) \
+    mc_animatable(BorderTop) \
+    mc_animatable(BorderRight) \
+    mc_animatable(BorderBottom) \
+    mc_animatable(BorderLeft)

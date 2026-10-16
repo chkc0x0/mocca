@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <vector>
 
 namespace mocca::styles
 {
@@ -59,5 +60,40 @@ namespace mocca::styles
 			}
 		}
 		return 0U;
+	}
+
+	namespace detail
+	{
+		inline auto transitionTable() -> std::vector<TransitionType>&
+		{
+			static std::vector<TransitionType> table;
+			return table;
+		}
+
+		inline auto internTransition(const TransitionType& type) -> std::uint32_t
+		{
+			auto& table = transitionTable();
+			for (std::size_t i = 0; i < table.size(); ++i)
+			{
+				if (table[i] == type)
+				{
+					return static_cast<std::uint32_t>(i + 1);
+				}
+			}
+			table.push_back(type);
+			return static_cast<std::uint32_t>(table.size());
+		}
+
+		inline auto resolveTransition(std::uint32_t ref)
+			-> const TransitionType&
+		{
+			static const TransitionType None{};
+			auto& table = transitionTable();
+			if (ref == 0 || ref > table.size())
+			{
+				return None;
+			}
+			return table[ref - 1];
+		}
 	}
 }

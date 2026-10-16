@@ -9,6 +9,7 @@
 #include <ranges>
 #include <vector>
 #include "core/Context.h"
+#include "core/Surface.h"
 
 namespace mocca::detail
 {
@@ -107,17 +108,69 @@ namespace mocca::detail
 #undef mc_styleProperty
 	}
 
-	void Node::ComputeStyle(styles::ComputedStyle& parentComputed)
+	void Node::ComputeStyle(styles::ComputedStyle& parentComputed, double dt)
 	{
-		Style = styles::ComputedStyle::Cascade(Declared, parentComputed);
+		styles::ComputedStyle target =
+			styles::ComputedStyle::Cascade(Declared, parentComputed);
+
+		if (!Styled)
+		{
+			Style = target;
+			Styled = true;
+		}
+		else
+		{
+			AdvanceTransitions(target, dt);
+		}
 
 		for (auto& child : Children)
 		{
 			if (child)
 			{
-				child->ComputeStyle(Style);
+				child->ComputeStyle(Style, dt);
 			}
 		}
+	}
+
+	void Node::AdvanceTransitions(styles::ComputedStyle& target, double dt)
+	{
+		bool anyActive = false;
+
+#define mc_animatable(name)                                                    \
+		StepTransition<styles::StyleProperty::name>(target, dt, anyActive);
+		mc_animatableProperties
+#undef mc_animatable
+
+		Style = target;
+
+		if (anyActive)
+		{
+			if (auto* ctx = getCtx(); ctx->_currentSurface != nullptr)
+			{
+				ctx->_currentSurface->MarkAnimating();
+			}
+		}
+	}
+
+	auto Node::FindTransition(styles::StyleProperty prop) -> ActiveTransition*
+	{
+		for (auto& transition : Transitions)
+		{
+			if (transition.Prop == prop)
+			{
+				return &transition;
+			}
+		}
+		return nullptr;
+	}
+
+	void Node::RemoveTransition(styles::StyleProperty prop)
+	{
+		std::erase_if(
+			Transitions,
+			[prop](const ActiveTransition& t) -> auto
+			{ return t.Prop == prop; }
+		);
 	}
 
 	auto Node::BuildNodeTree(const Element& element) -> std::unique_ptr<Node>

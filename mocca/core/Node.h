@@ -3,12 +3,28 @@
 #include "gfx/Canvas.h"
 #include "yoga/YGNode.h"
 #include "style/ComputedStyle.h"
+#include "anim/Curve.h"
+#include "anim/Spring.h"
+#include <algorithm>
 #include <memory>
 #include <vector>
 
 namespace mocca::detail
 {
 	inline NodeId nextNodeId = 1;
+
+	struct ActiveTransition
+	{
+	public:
+		styles::StyleProperty Prop = styles::StyleProperty::None;
+		styles::StyleEntry From;
+		styles::StyleEntry Goal;
+		float Elapsed = 0.0F;
+		float Duration = 0.0F;
+		float Progress = 0.0F;
+		anim::Curve Curve{};
+		anim::SpringState Spring{};
+	};
 
 	struct Node
 	{
@@ -23,11 +39,13 @@ namespace mocca::detail
 
 		styles::StyleSet Declared;
 		styles::ComputedStyle Style;
+		std::vector<ActiveTransition> Transitions;
+		bool Styled = false;
 
 		Vector2 ScrollOffset{.X = 0, .Y = 0};
 		std::vector<std::unique_ptr<Node>> Children;
 		std::variant<std::monostate, TextElement, ComponentElement> Kind;
-		
+
 		EventHandlers Events;
 
 		[[nodiscard]] auto IsBox() const -> bool
@@ -66,7 +84,97 @@ namespace mocca::detail
 			-> std::unique_ptr<Node>;
 		void BuildYogaTree();
 		void ApplyLayoutStyles() const;
-		void ComputeStyle(styles::ComputedStyle& parentComputed);
+		void ComputeStyle(styles::ComputedStyle& parentComputed, double dt);
+		void AdvanceTransitions(styles::ComputedStyle& target, double dt);
+		auto FindTransition(styles::StyleProperty prop) -> ActiveTransition*;
+		void RemoveTransition(styles::StyleProperty prop);
+
+		template <styles::StyleProperty P>
+		void StepTransition(
+			styles::ComputedStyle& target,
+			double dt,
+			bool& anyActive
+		)
+		{
+			using Value = styles::PropTraits<P>::Value;
+
+			const styles::TransitionType& trans = styles::detail::resolveTransition(
+				target.Get<styles::StyleProperty::Transition>()
+			);
+
+			if ((trans.Props & styles::propertyBit<P>()) == 0)
+			{
+				RemoveTransition(P);
+				return;
+			}
+
+			Value goal = target.Get<P>();
+			ActiveTransition* tr = FindTransition(P);
+
+			if (tr == nullptr)
+			{
+				Value present = Style.Get<P>();
+				if (present == goal)
+				{
+					return;
+				}
+
+				ActiveTransition fresh;
+				fresh.Prop = P;
+				fresh.From = styles::detail::encodeStyleEntry(P, present);
+				fresh.Goal = styles::detail::encodeStyleEntry(P, goal);
+				fresh.Duration = trans.Duration;
+				fresh.Curve = trans.Curve;
+				Transitions.push_back(fresh);
+				tr = &Transitions.back();
+			}
+			else if (styles::getStyleEntryValue<Value>(tr->Goal) != goal)
+			{
+				tr->From = styles::detail::encodeStyleEntry(P, Style.Get<P>());
+				tr->Goal = styles::detail::encodeStyleEntry(P, goal);
+				tr->Elapsed = 0.0F;
+				tr->Progress = 0.0F;
+				tr->Spring = {};
+				tr->Duration = trans.Duration;
+				tr->Curve = trans.Curve;
+			}
+
+			float t = 1.0F;
+			bool settled = false;
+			if (tr->Curve.Kind == anim::CurveKind::Spring)
+			{
+				tr->Progress = anim::springStep(
+					tr->Progress,
+					1.0F,
+					tr->Spring,
+					tr->Curve,
+					static_cast<float>(dt)
+				);
+				t = tr->Progress;
+				settled = anim::springSettled(tr->Progress, 1.0F, tr->Spring);
+			}
+			else
+			{
+				tr->Elapsed += static_cast<float>(dt);
+				float p = tr->Duration > 0.0F
+							  ? std::min(tr->Elapsed / tr->Duration, 1.0F)
+							  : 1.0F;
+				t = anim::sample(tr->Curve, p);
+				settled = tr->Elapsed >= tr->Duration;
+			}
+
+			target.Blend(P, tr->From, tr->Goal, t);
+
+			if (settled)
+			{
+				target.Set<P>(goal);
+				RemoveTransition(P);
+			}
+			else
+			{
+				anyActive = true;
+			}
+		}
 
 		[[nodiscard]] auto GetX() const -> float;
 		[[nodiscard]] auto GetY() const -> float;

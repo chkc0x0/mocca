@@ -55,7 +55,7 @@ namespace mocca
 			_capturedNode = 0;
 		}
 
-		_root->ComputeStyle(styles::getDefaultStyle());
+		_root->ComputeStyle(styles::getDefaultStyle(), dt);
 
 		_root->BuildYogaTree();
 		YGNodeCalculateLayout(
@@ -138,16 +138,20 @@ namespace mocca
 			}
 		}
 
-		if (IsDirty())
+		if (IsDirty() || _animating)
 		{
 			auto* ctx = getCtx();
 			ctx->_currentSurface = this;
+
+			_animating = false;
 
 			int settle = 0;
 			do
 			{
 				_dirty = false;
-				Update(dt);
+				// only the first pass advances animations; re-entrant passes from
+				// the settle loop must not step them again
+				Update(settle == 0 ? dt : 0.0);
 				ctx->_store->FlushLayoutEffects(this);
 			} while (_dirty && ++settle < 16);
 

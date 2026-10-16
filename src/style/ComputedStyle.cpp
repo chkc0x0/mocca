@@ -1,8 +1,34 @@
 #include "style/ComputedStyle.h"
 #include "core/Logger.h"
+#include "anim/Interpolate.h"
 
 namespace mocca::styles
 {
+	void ComputedStyle::Blend(
+		StyleProperty prop,
+		const StyleEntry& from,
+		const StyleEntry& goal,
+		float t
+	)
+	{
+		switch (prop)
+		{
+#undef mc_animatable
+#define mc_animatable(name)                                                    \
+	case StyleProperty::name:                                                  \
+		_ref<StyleProperty::name>() = anim::interpolate(                       \
+			getStyleEntryValue<PropTraits<StyleProperty::name>::Value>(from),  \
+			getStyleEntryValue<PropTraits<StyleProperty::name>::Value>(goal),  \
+			t                                                                  \
+		);                                                                     \
+		break;
+			mc_animatableProperties
+#undef mc_animatable
+		default:
+			break;
+		}
+	}
+
 	void ComputedStyle::Apply(const StyleEntry& e, ComputedStyle& parent)
 	{
 #undef mc_styleProperty

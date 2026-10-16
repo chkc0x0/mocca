@@ -24,7 +24,7 @@ namespace mocca
 	{
 		Alive,
 		Zombie,
-		Dead
+		Dead,
 	};
 
 	struct SurfaceDesc
@@ -61,6 +61,11 @@ namespace mocca
 			{
 				_desc.Parent->MarkDirty();
 			}
+		}
+
+		void MarkAnimating()
+		{
+			_animating = true;
 		}
 
 		auto DetachChild(Surface* which) -> std::unique_ptr<Surface>;
@@ -194,6 +199,7 @@ namespace mocca
 		std::unique_ptr<detail::Node> _root = nullptr;
 		SurfaceState _state = SurfaceState::Alive;
 		bool _dirty = true;
+		bool _animating = false;
 
 		int _zombieTimeout = 0;
 		int _zombieRemaining = 0;

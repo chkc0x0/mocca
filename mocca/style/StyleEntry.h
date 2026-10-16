@@ -1,6 +1,7 @@
 #pragma once
 #include "StyleProperty.h"
 #include "StyleValue.h"
+#include "Transition.h"
 #include "Length.h"
 #include "style/StyleEnums.h"
 #include "utils/Color.h"
@@ -21,6 +22,7 @@ namespace mocca::styles
 		AuxKeyword,
 		Length,
 		Color,
+		Transition,
 	};
 
 	struct StyleEntry;
@@ -53,6 +55,7 @@ namespace mocca::styles
 			uint8_t Enum;
 			struct Length Length;
 			struct Color Color;
+			uint32_t Transition;
 		} Payload;
 
 		[[nodiscard]] auto IsValue() const -> bool
@@ -106,6 +109,14 @@ namespace mocca::styles
 		static auto Read(const StyleEntry& s) -> float
 		{
 			return s.Payload.Float;
+		}
+	};
+
+	template <> struct StyleEntryReader<std::uint32_t>
+	{
+		static auto Read(const StyleEntry& s) -> std::uint32_t
+		{
+			return s.Payload.Transition;
 		}
 	};
 
