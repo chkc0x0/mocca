@@ -1,5 +1,5 @@
 #pragma once
-#include "input/InputTypes.h"
+#include "core/ElementEvents.h"
 #include "Identifiers.h"
 #include "style/StyleList.h"
 #include <any>
@@ -18,23 +18,6 @@ namespace mocca
 
 	using ComponentFn = std::function<Element()>;
 	using ComponentPropsFn = std::function<Element(const std::any&)>;
-
-	using PointerCallback = std::function<void(PointerEvent&)>;
-	using KeyCallback = std::function<void(KeyEvent&)>;
-	using TextCallback = std::function<void(TextEvent&)>;
-
-	struct EventHandlers
-	{
-		PointerCallback OnPointerEnter;
-		PointerCallback OnPointerLeave;
-		PointerCallback OnPointerDown;
-		PointerCallback OnPointerUp;
-		PointerCallback OnPointerMove;
-		KeyCallback OnKeyDown;
-		KeyCallback OnKeyUp;
-		KeyCallback OnKeyRepeat;
-		TextCallback OnTextInput;
-	};
 
 	struct BoxElement
 	{
@@ -57,7 +40,7 @@ namespace mocca
 		std::variant<BoxElement, TextElement, ComponentElement> Node;
 		ElementKey Key = mc_keyNone;
 		styles::StyleList Style;
-		EventHandlers Events;
+		std::shared_ptr<EventView> Events = nullptr;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -113,7 +96,7 @@ namespace mocca
 			.Node = BoxElement{.Children = std::move(desc.Children)},
 			.Key = desc.Key,
 			.Style = desc.Style,
-			.Events = std::move(desc.Events),
+			.Events = EventView::From(std::move(desc.Events)),
 		};
 	}
 
@@ -132,7 +115,7 @@ namespace mocca
 			.Node = TextElement{.Content = std::move(desc.Content)},
 			.Key = desc.Key,
 			.Style = desc.Style,
-			.Events = std::move(desc.Events),
+			.Events = EventView::From(std::move(desc.Events)),
 		};
 	}
 
@@ -145,7 +128,7 @@ namespace mocca
 		};
 	}
 
-	inline auto component(const ComponentDescriptor& desc) -> Element
+	inline auto component(ComponentDescriptor& desc) -> Element
 	{
 		ComponentPropsFn erased = [desc](const std::any&) -> auto
 		{ return desc.Fn(); };

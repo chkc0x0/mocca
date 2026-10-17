@@ -302,20 +302,18 @@ namespace mocca
 		auto emit = [&](detail::NodeId id, PointerEvent::Type type) -> void
 		{
 			auto* node = detail::Node::FindNodeById(_root.get(), id);
-			if (node == nullptr)
+			if (node == nullptr || node->Events == nullptr)
 			{
 				return;
 			}
 
-			auto& cb = type == PointerEvent::Type::Enter
-						   ? node->Events.OnPointerEnter
-						   : node->Events.OnPointerLeave;
-			if (cb)
-			{
-				PointerEvent synth = ev;
-				synth.EventType = type;
-				cb(synth);
-			}
+			PointerEvent synth = ev;
+			synth.EventType = type;
+
+			node->Events->Call(
+				type == PointerEvent::Type::Enter ? EventType::PointerEnter : EventType::PointerLeave,
+				synth
+			);
 		};
 
 		for (auto id : prev)
@@ -442,45 +440,34 @@ namespace mocca
 			ev,
 			[](detail::Node* n, PointerEvent& e) -> void
 			{
-				if (e.StopPropagation)
+				if (n->Events == nullptr || e.StopPropagation)
 				{
 					return;
 				}
+
+				EventType type = EventType::PointerDown;
 				switch (e.EventType)
 				{
-				case PointerEvent::Type::Down:
-					if (n->Events.OnPointerDown)
-					{
-						n->Events.OnPointerDown(e);
-					}
-					break;
-				case PointerEvent::Type::Up:
-					if (n->Events.OnPointerUp)
-					{
-						n->Events.OnPointerUp(e);
-					}
-					break;
-				case PointerEvent::Type::Move:
-					if (n->Events.OnPointerMove)
-					{
-						n->Events.OnPointerMove(e);
-					}
-					break;
 				case PointerEvent::Type::Enter:
-					if (n->Events.OnPointerEnter)
-					{
-						n->Events.OnPointerEnter(e);
-					}
+					type = EventType::PointerEnter;
 					break;
 				case PointerEvent::Type::Leave:
-					if (n->Events.OnPointerLeave)
-					{
-						n->Events.OnPointerLeave(e);
-					}
+					type = EventType::PointerLeave;
 					break;
-				default:
+				case PointerEvent::Type::Down:
+					type = EventType::PointerDown;
 					break;
+				case PointerEvent::Type::Up:
+					type = EventType::PointerUp;
+					break;
+				case PointerEvent::Type::Move:
+					type = EventType::PointerMove;
+					break;
+				case PointerEvent::Type::Scroll:
+					return;
 				}
+
+				n->Events->Call(type, e);
 			}
 		);
 
@@ -511,31 +498,26 @@ namespace mocca
 			ev,
 			[](detail::Node* n, KeyEvent& e) -> void
 			{
-				if (e.StopPropagation)
+				if (n->Events == nullptr || e.StopPropagation)
 				{
 					return;
 				}
+
+				EventType type = EventType::KeyDown;
 				switch (e.EventType)
 				{
 				case KeyEvent::Type::Down:
-					if (n->Events.OnKeyDown)
-					{
-						n->Events.OnKeyDown(e);
-					}
-					break;
-				case KeyEvent::Type::Up:
-					if (n->Events.OnKeyUp)
-					{
-						n->Events.OnKeyUp(e);
-					}
+					type = EventType::KeyDown;
 					break;
 				case KeyEvent::Type::Repeat:
-					if (n->Events.OnKeyRepeat)
-					{
-						n->Events.OnKeyRepeat(e);
-					}
+					type = EventType::KeyRepeat;
+					break;
+				case KeyEvent::Type::Up:
+					type = EventType::KeyUp;
 					break;
 				}
+
+				n->Events->Call(type, e);
 			}
 		);
 	}
@@ -554,14 +536,11 @@ namespace mocca
 			ev,
 			[](detail::Node* n, TextEvent& e) -> void
 			{
-				if (e.StopPropagation)
+				if (n->Events == nullptr || e.StopPropagation)
 				{
 					return;
 				}
-				if (n->Events.OnTextInput)
-				{
-					n->Events.OnTextInput(e);
-				}
+				n->Events->Call(EventType::TextInput, e);
 			}
 		);
 	}

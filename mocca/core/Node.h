@@ -47,7 +47,7 @@ namespace mocca::detail
 		std::vector<std::unique_ptr<Node>> Children;
 		std::variant<std::monostate, TextElement, ComponentElement> Kind;
 
-		EventHandlers Events;
+		std::shared_ptr<EventView> Events;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
