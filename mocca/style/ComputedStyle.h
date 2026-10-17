@@ -46,7 +46,7 @@ namespace mocca::styles
 		// if it's a problem
 		struct InheritedProps
 		{
-			mc_layoutPropertiesInh mc_renderPropertiesInh
+			mc_layoutPropertiesInh mc_textPropertiesInh
 		} Inherited;
 #undef mc_styleProperty
 

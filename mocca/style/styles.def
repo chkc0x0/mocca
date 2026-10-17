@@ -68,12 +68,13 @@
     mc_styleProperty(BorderRadiusBottomRight, Length, false, (Length{0})) \
     mc_styleProperty(Transition, uint32_t, false, 0U)
 
-#define mc_renderPropertiesInh \
+#define mc_textPropertiesInh \
     mc_styleProperty(TextColor, Color, true, mocca::colors::AlmostBlack)
 
 #define mc_layoutProperties mc_layoutPropertiesReset mc_layoutPropertiesInh
-#define mc_renderProperties mc_renderPropertiesReset mc_renderPropertiesInh
-#define mc_inheritProperties mc_layoutPropertiesInh mc_renderPropertiesInh
+#define mc_renderProperties mc_renderPropertiesReset
+#define mc_textProperties mc_textPropertiesInh
+#define mc_inheritProperties mc_layoutPropertiesInh mc_textPropertiesInh
     
 #define mc_propertyEdges \
     mc_stylePropertyEdge(Padding, Length) \
