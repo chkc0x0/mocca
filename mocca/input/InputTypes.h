@@ -71,7 +71,7 @@ namespace mocca
 			Move,
 			Enter,
 			Leave,
-			Scroll
+			Scroll,
 		};
 
 		Type EventType = Type::Down;
@@ -90,7 +90,7 @@ namespace mocca
 		{
 			Down,
 			Repeat,
-			Up
+			Up,
 		};
 
 		Type EventType = Type::Down;
@@ -104,7 +104,7 @@ namespace mocca
 		enum class Type : char
 		{
 			Commit,
-			Preedit
+			Preedit,
 		};
 
 		Type EventType = Type::Commit;
@@ -123,7 +123,7 @@ namespace mocca
 			Close,
 			FocusGained,
 			FocusLost,
-			DPIChange
+			DPIChange,
 		};
 
 		Type EventType = Type::Resize;
