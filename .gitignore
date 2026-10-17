@@ -8,3 +8,4 @@ subprojects/*-*
 packagecache
 AGENTS.md
 graphify-out
+.clangd

@@ -1,6 +1,5 @@
 #pragma once
 #include "StyleProperty.h"
-#include "TransitionType.h"
 #include "styles.def"
 #include <cstddef>
 #include <cstdint>
@@ -49,11 +48,5 @@ namespace mocca::styles
 			}
 		}
 		return 0U;
-	}
-
-	namespace detail
-	{
-		auto internTransition(const TransitionType& type) -> uint32_t;
-		auto resolveTransition(uint32_t ref) -> const TransitionType&;
 	}
 }

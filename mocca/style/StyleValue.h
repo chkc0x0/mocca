@@ -1,5 +1,6 @@
 #pragma once
 #include "Length.h"
+#include "style/TransitionType.h"
 #include <cstdint>
 #include <variant>
 
@@ -18,4 +19,10 @@ namespace mocca::styles
 
 	using SizingValue = EnumValue<Length>;
 	using LineHeightType = std::variant<Length, float, uint8_t>;
+
+	namespace detail
+	{
+		auto internTransition(const TransitionType& type) -> uint32_t;
+		auto resolveTransition(uint32_t ref) -> const TransitionType&;
+	}
 }

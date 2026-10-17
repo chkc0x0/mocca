@@ -52,10 +52,7 @@ namespace mocca::mtext
 	{
 		if (data.empty())
 		{
-			mc_error(
-				ErrorCode::InvalidArgument,
-				"font memory buffer is empty"
-			);
+			mc_error(ErrorCode::InvalidArgument, "font memory buffer is empty");
 			return;
 		}
 
@@ -198,24 +195,24 @@ namespace mocca::mtext
 		return out;
 	}
 
-	auto FontRegistry::Match(std::string_view family, const FontRequest& q) const
-		-> FontMatch
+	auto FontRegistry::Match(
+		std::string_view family,
+		const FontRequest& q
+	) const -> FontMatch
 	{
 		std::string one(family);
 		auto stack = MatchStack(std::span<const std::string>(&one, 1), q);
 		return stack.Entries[0].Match;
 	}
 
-	void FontRegistry::SetAlias(
-		std::string_view alias,
-		std::string_view family
-	)
+	void FontRegistry::SetAlias(std::string_view alias, std::string_view family)
 	{
 		_aliases[Normalize(alias)] = Normalize(family);
 	}
 
 	void FontRegistry::DumpStack(const FontStack& s) const
 	{
+#ifdef DEBUG
 		for (const auto& e : s.Entries)
 		{
 			if (!e.Match)
@@ -237,5 +234,8 @@ namespace mocca::mtext
 				e.ViaAlias ? "  (alias)" : ""
 			);
 		}
+#else
+		mc_error(ErrorCode::InvalidState, "DumpStack is debug only");
+#endif
 	}
 }
