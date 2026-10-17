@@ -1,8 +1,10 @@
 #pragma once
-#include "text/FontManager.h"
+#include "text/FontTypes.h"
 #include <hb.h>
 #include <hb-ot.h>
 #include <memory>
+#include <string_view>
+#include <vector>
 
 namespace mocca::mtext::detail
 {
@@ -63,4 +65,10 @@ namespace mocca::mtext::detail
 	auto
 	sniffFace(hb_blob_t* blob, uint32_t index, std::string_view fallbackFamily)
 		-> FontDescriptor;
+
+	auto loadFaces(
+		const FontSource& source,
+		int32_t requestedIndex,
+		std::string_view fallbackFamily
+	) -> std::vector<FontDescriptor>;
 }

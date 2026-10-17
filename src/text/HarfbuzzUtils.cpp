@@ -1,6 +1,9 @@
 #include "HarfbuzzUtils.h"
 #include "utils/Overloaded.h"
 #include <algorithm>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace mocca::mtext::detail
 {
@@ -140,5 +143,40 @@ namespace mocca::mtext::detail
 		static constexpr float T[] =
 			{50, 62.5F, 75, 87.5F, 100, 112.5F, 125, 150, 200};
 		return (c >= 1 && c <= 9) ? T[c - 1] : 100.0F;
+	}
+
+	auto loadFaces(
+		const FontSource& source,
+		int32_t requestedIndex,
+		std::string_view fallbackFamily
+	) -> std::vector<FontDescriptor>
+	{
+		BlobPtr blob = makeBlob(source);
+		if (hb_blob_get_length(blob.get()) == 0)
+		{
+			return {};
+		}
+
+		unsigned count = hb_face_count(blob.get());
+		if (count == 0 || std::cmp_greater_equal(requestedIndex, count))
+		{
+			return {};
+		}
+
+		std::vector<FontDescriptor> out;
+		if (requestedIndex >= 0)
+		{
+			out.push_back(
+				sniffFace(blob.get(), requestedIndex, fallbackFamily)
+			);
+		}
+		else
+		{
+			for (unsigned i = 0; i < count; i++)
+			{
+				out.push_back(sniffFace(blob.get(), i, fallbackFamily));
+			}
+		}
+		return out;
 	}
 }

@@ -1,12 +1,12 @@
 #pragma once
 #include "utils/Range.h"
+#include "style/StyleEnums.h"
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <ranges>
 #include <span>
-#include "style/StyleEnums.h"
 #include <string>
-#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -18,8 +18,7 @@ namespace mocca::mtext
 	mc_fontProperty(Weight, Range<float>)                                      \
 		mc_fontProperty(Stretch, Range<float>)                                 \
 			mc_fontProperty(Style, FontStyleEnum)                              \
-				mc_fontProperty(Slant, Range<float>)                           \
-					mc_fontProperty(FaceIndex, uint32_t)
+				mc_fontProperty(Slant, Range<float>)
 
 	struct FaceProps
 	{
@@ -32,12 +31,14 @@ namespace mocca::mtext
 	struct FontDescriptor : FaceProps
 	{
 		std::string Family;
+		uint32_t FaceIndex = 0;
 
 		auto operator==(const FontDescriptor& b) const -> bool
 		{
 #undef mc_fontProperty
 #define mc_fontProperty(name, type) name == b.name&&
-			return mc_fontProperties Family == b.Family;
+			return mc_fontProperties Family == b.Family &&
+				   FaceIndex == b.FaceIndex;
 #undef mc_fontProperty
 		}
 	};
@@ -45,6 +46,7 @@ namespace mocca::mtext
 	struct FontDescriptorOverrides
 	{
 		std::optional<std::string> Family;
+		std::optional<uint32_t> FaceSelector;
 #undef mc_fontProperty
 #define mc_fontProperty(name, type) std::optional<type> name;
 		mc_fontProperties
@@ -94,49 +96,5 @@ namespace mocca::mtext
 								 [](auto& e) -> auto { return bool(e.Match); }
 							 );
 		}
-	};
-
-	class FontManager
-	{
-	public:
-		struct FontEntry
-		{
-			FontFaceId Id;
-			FontDescriptor Desc;
-			FontSource Source;
-		};
-
-		void RegisterFile(
-			const std::string& path,
-			FontDescriptorOverrides overrides = {}
-		);
-
-		auto MatchIn(
-			const std::vector<FontFaceId>& ids,
-			const FontRequest& q
-		) const -> FontMatch;
-
-		auto MatchStack(
-			const std::vector<std::string>& families,
-			const FontRequest& q
-		) const -> FontStack;
-
-		auto Match(std::string_view family, const FontRequest& q) const
-			-> FontMatch;
-
-		void
-		SetAlias(const std::string_view& alias, const std::string_view& family);
-		void Inspect(const FontStack& s) const;
-
-	private:
-		static auto LoadFontFaces(
-			const FontSource& source,
-			int32_t requestedIndex,
-			std::string_view fallbackFamily
-		) -> std::vector<FontDescriptor>;
-
-		std::vector<FontEntry> _entries;
-		std::unordered_map<std::string, std::vector<FontFaceId>> _families;
-		std::unordered_map<std::string, std::string> _aliases;
 	};
 }
