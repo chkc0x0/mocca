@@ -2,14 +2,18 @@
 #include "StyleEntry.h"
 #include "StyleProperty.h"
 #include "StyleValue.h"
+#include "FontFamilyType.h"
 #include "Transition.h"
 #include "StyleEnums.h"
 #include "Length.h"
 #include "utils/Color.h"
 #include <cassert>
+#include <concepts>
 #include <cstdint>
 #include <initializer_list>
+#include <string_view>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
 namespace mocca::styles
@@ -281,6 +285,14 @@ namespace mocca::styles
 			);
 		}
 
+		inline auto makeFontFamily(FontFamilyType family) -> StyleEntry
+		{
+			return encodeStyleEntry(
+				StyleProperty::FontFamily,
+				detail::internFontFamily(family)
+			);
+		}
+
 		template <class T> auto encodeStyleEntry(T) -> StyleEntry = delete;
 	}
 
@@ -318,6 +330,17 @@ namespace mocca::styles
 		constexpr auto ms(float milliseconds) -> float
 	{
 		return milliseconds / 1000.0F;
+	}
+
+	template <class... Names>
+		requires(sizeof...(Names) > 0) &&
+				(std::convertible_to<Names, std::string_view> && ...)
+	inline auto FontFamily(Names&&... names) -> StyleEntry
+	{
+		FontFamilyType family;
+		family.Families.reserve(sizeof...(Names));
+		(family.Families.emplace_back(std::forward<Names>(names)), ...);
+		return detail::makeFontFamily(std::move(family));
 	}
 
 	// TODO: make it per property properly later

@@ -1,5 +1,6 @@
 #pragma once
 #include "Length.h"
+#include "style/FontFamilyType.h"
 #include "style/TransitionType.h"
 #include <cstdint>
 #include <variant>
@@ -24,5 +25,8 @@ namespace mocca::styles
 	{
 		auto internTransition(const TransitionType& type) -> uint32_t;
 		auto resolveTransition(uint32_t ref) -> const TransitionType&;
+
+		auto internFontFamily(const FontFamilyType& family) -> uint32_t;
+		auto resolveFontFamily(uint32_t ref) -> const FontFamilyType&;
 	}
 }

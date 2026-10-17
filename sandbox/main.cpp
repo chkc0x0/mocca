@@ -71,9 +71,7 @@ auto Editor() -> Element
 {
 	using namespace mocca::styles;
 
-	auto [draft, setDraft] = useState(
-		std::string(placeholder)
-	);
+	auto [draft, setDraft] = useState(std::string(placeholder));
 
 	auto edit = [setDraft](const KeyEvent& keys) -> void
 	{
@@ -107,6 +105,7 @@ auto Editor() -> Element
 			{
 				BackgroundColor(Color::Oklch(0.7, 0.1036, 171)),
 				Padding(px(16)),
+				FontFamily("Inter", "sans-serif"),
 			},
 		.Children = {
 			box({
