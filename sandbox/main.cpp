@@ -244,8 +244,7 @@ auto main(int argc, const char** argv) -> int
 		"../sandbox/Inter.ttf",
 		{
 			.Family = "Inter",
-			.Weight = {100, 900},
-			.FaceIndex = 0,
+			.Weight = Range<float>{100, 900},
 		}
 	);
 

@@ -20,7 +20,8 @@ sources = [
     'src/style/ComputedStyle.cpp',
     'src/anim/Curve.cpp',
     'src/style/Transition.cpp',
-    'src/text/FontManager.cpp'
+    'src/text/FontManager.cpp',
+    'src/text/HarfbuzzUtils.cpp'
 ]
 
 cmake = import('cmake')

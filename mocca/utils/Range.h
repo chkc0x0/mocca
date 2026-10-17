@@ -20,5 +20,7 @@ namespace mocca
 		{
 			return Lo != Hi;
 		}
+
+		auto operator==(const Range<T>& b) const -> bool = default;
 	};
 }
