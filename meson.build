@@ -20,7 +20,8 @@ sources = [
     'src/style/ComputedStyle.cpp',
     'src/anim/Curve.cpp',
     'src/style/Transition.cpp',
-    'src/text/FontManager.cpp',
+    'src/text/FontRegistry.cpp',
+    'src/text/FontMatcher.cpp',
     'src/text/HarfbuzzUtils.cpp'
 ]
 
