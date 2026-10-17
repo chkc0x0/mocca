@@ -19,7 +19,8 @@ sources = [
     'src/style/StyleSet.cpp',
     'src/style/ComputedStyle.cpp',
     'src/anim/Curve.cpp',
-    'src/style/Transition.cpp'
+    'src/style/Transition.cpp',
+    'src/text/FontManager.cpp'
 ]
 
 cmake = import('cmake')

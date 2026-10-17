@@ -240,6 +240,15 @@ auto main(int argc, const char** argv) -> int
 	auto app = Application("com.mocca.sandbox");
 	mocca::Logger::SetLogCallback(logCallback);
 
+	app.Fonts().RegisterFile(
+		"../sandbox/Inter.ttf",
+		{
+			.Family = "Inter",
+			.Weight = {100, 900},
+			.FaceIndex = 0,
+		}
+	);
+
 	app.On(
 		ApplicationEvent::SurfaceCreated,
 		[](auto* data, auto* user) -> auto

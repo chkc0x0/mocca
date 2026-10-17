@@ -2,6 +2,7 @@
 #include "Context.h"
 #include "Logger.h"
 #include "Surface.h"
+#include "text/FontManager.h"
 #include <chrono>
 #include <cstddef>
 #include <string>
@@ -87,6 +88,11 @@ namespace mocca
 			return _interners.get();
 		}
 
+		auto Fonts() -> mtext::FontManager&
+		{
+			return _fntMgr;
+		}
+
 	private:
 		ApplicationID _id;
 
@@ -112,6 +118,7 @@ namespace mocca
 		std::size_t _animationsActive = 0;
 
 		std::unique_ptr<detail::TypeInterners> _interners;
+		mtext::FontManager _fntMgr;
 
 		struct
 		{
