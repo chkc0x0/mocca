@@ -26,6 +26,16 @@ namespace mocca::styles
 			};
 		}
 
+		constexpr auto encodeStyleEntry(StyleProperty prop, uint8_t d)
+			-> StyleEntry
+		{
+			return {
+				.Prop = prop,
+				.Type = StyleValueType::AuxKeyword,
+				.Aux = d,
+			};
+		};
+
 		constexpr auto encodeStyleEntry(StyleProperty prop, Length l)
 			-> StyleEntry
 		{
@@ -61,7 +71,7 @@ namespace mocca::styles
 		{
 			return {
 				.Prop = prop,
-				.Type = StyleValueType::AuxKeyword,
+				.Type = StyleValueType::Enum,
 				.Payload = {.Enum = static_cast<uint8_t>(a)},
 			};
 		}
@@ -71,7 +81,7 @@ namespace mocca::styles
 		{
 			return {
 				.Prop = prop,
-				.Type = StyleValueType::AuxKeyword,
+				.Type = StyleValueType::Enum,
 				.Payload = {.Enum = static_cast<uint8_t>(f)},
 			};
 		}
@@ -81,7 +91,7 @@ namespace mocca::styles
 		{
 			return {
 				.Prop = prop,
-				.Type = StyleValueType::AuxKeyword,
+				.Type = StyleValueType::Enum,
 				.Payload = {.Enum = static_cast<uint8_t>(w)},
 			};
 		}
@@ -91,7 +101,7 @@ namespace mocca::styles
 		{
 			return {
 				.Prop = prop,
-				.Type = StyleValueType::AuxKeyword,
+				.Type = StyleValueType::Enum,
 				.Payload = {.Enum = static_cast<uint8_t>(j)},
 			};
 		}
@@ -101,7 +111,7 @@ namespace mocca::styles
 		{
 			return {
 				.Prop = prop,
-				.Type = StyleValueType::AuxKeyword,
+				.Type = StyleValueType::Enum,
 				.Payload = {.Enum = static_cast<uint8_t>(l)},
 			};
 		}
@@ -111,7 +121,7 @@ namespace mocca::styles
 		{
 			return {
 				.Prop = prop,
-				.Type = StyleValueType::AuxKeyword,
+				.Type = StyleValueType::Enum,
 				.Payload = {.Enum = static_cast<uint8_t>(o)},
 			};
 		}
@@ -121,7 +131,17 @@ namespace mocca::styles
 		{
 			return {
 				.Prop = prop,
-				.Type = StyleValueType::AuxKeyword,
+				.Type = StyleValueType::Enum,
+				.Payload = {.Enum = static_cast<uint8_t>(d)},
+			};
+		}
+
+		constexpr auto encodeStyleEntry(StyleProperty prop, TextAlignment d)
+			-> StyleEntry
+		{
+			return {
+				.Prop = prop,
+				.Type = StyleValueType::Enum,
 				.Payload = {.Enum = static_cast<uint8_t>(d)},
 			};
 		}
@@ -185,9 +205,24 @@ namespace mocca::styles
 			return {
 				{
 					encodeStyleEntry(prop, t),
-					encodeStyleEntry((StyleProperty)((uint8_t)prop + 1), r),
-					encodeStyleEntry((StyleProperty)((uint8_t)prop + 2), b),
-					encodeStyleEntry((StyleProperty)((uint8_t)prop + 3), l),
+					encodeStyleEntry(
+						static_cast<StyleProperty>(
+							static_cast<uint8_t>(prop) + 1
+						),
+						r
+					),
+					encodeStyleEntry(
+						static_cast<StyleProperty>(
+							static_cast<uint8_t>(prop) + 2
+						),
+						b
+					),
+					encodeStyleEntry(
+						static_cast<StyleProperty>(
+							static_cast<uint8_t>(prop) + 3
+						),
+						l
+					),
 				},
 			};
 		}
@@ -202,11 +237,47 @@ namespace mocca::styles
 			};
 		}
 
+		constexpr auto encodeStyleEntry(StyleProperty prop, FontStyleType style)
+			-> StyleEntry
+		{
+			return {
+				.Prop = prop,
+				.Type = StyleValueType::FontStyle,
+				.Payload = {.FontStyle = style},
+			};
+		}
+
+		constexpr auto encodeStyleEntry(StyleProperty prop, LineHeightType k)
+			-> StyleEntry
+		{
+			return std::visit(
+				[prop](auto&& arg) -> StyleEntry
+				{
+					using V = std::decay_t<decltype(arg)>;
+
+					if constexpr (std::is_same_v<V, uint8_t>)
+					{
+						assert(arg == 0);
+						return {
+							.Prop = prop,
+							.Type = StyleValueType::AuxKeyword,
+							.Aux = 0,
+						};
+					}
+					else
+					{
+						return encodeStyleEntry(prop, arg);
+					}
+				},
+				k
+			);
+		}
+
 		inline auto makeTransition(const TransitionType& type) -> StyleEntry
 		{
 			return encodeStyleEntry(
 				StyleProperty::Transition,
-				internTransition(type)
+				detail::internTransition(type)
 			);
 		}
 
@@ -219,7 +290,7 @@ namespace mocca::styles
 	{                                                                          \
 		return detail::encodeStyleEntry(StyleProperty::name, val);             \
 	}
-	mc_layoutProperties mc_renderProperties
+	mc_layoutProperties mc_renderProperties mc_textProperties
 #undef mc_styleProperty
 
 #undef mc_stylePropertyEdge

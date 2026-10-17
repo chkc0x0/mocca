@@ -19,9 +19,11 @@ namespace mocca::styles
 		Keyword,
 		Value,
 		AuxKeyword,
+		Enum,
 		Length,
 		Color,
 		Handle,
+		FontStyle,
 	};
 
 	struct StyleEntry;
@@ -55,6 +57,7 @@ namespace mocca::styles
 			struct Length Length;
 			struct Color Color;
 			uint32_t Handle;
+			FontStyleType FontStyle;
 		} Payload;
 
 		[[nodiscard]] auto IsValue() const -> bool

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <variant>
 
-namespace mocca
+namespace mocca::styles
 {
 	namespace
 	{

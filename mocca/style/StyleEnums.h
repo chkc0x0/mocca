@@ -94,5 +94,8 @@ namespace mocca
 	{
 		FontStyleEnum Style;
 		float Angle = 0;
+
+		FontStyleType(FontStyleEnum style) : Style(style) {};
+		FontStyleType(FontStyleEnum style, float angle) : Style(style), Angle(angle) {};
 	};
 }
