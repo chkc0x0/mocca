@@ -1,0 +1,27 @@
+[latin wrap]      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+[kerning]         AVATAR To Ty Wa Yo
+[ligatures]       office affinity fluffy
+[tabular nums]    1111.11  8888.88  0123456789
+[long word]       Pneumonoultramicroscopicsilicovolcanoconiosis_and_a_very_long_snake_case_identifier_with_no_spaces
+[url]             https://example.com/a/very/long/path/with/no/break/opportunities?query=string&another=value
+[soft hyphen]     in­ter­na­tion­al­i­za­tion          (U+00AD between syllables)
+[nbsp / zwsp]     100 km/h · a​b​c            (U+00A0 after 100, U+200B between a b c)
+[tabs]            a	b		c
+[arabic]          مرحبا بالعالم
+[arabic marks]    السَّلَامُ عَلَيْكُمْ
+[lam-alef]        لا
+[hebrew]          שלום עולם
+[bidi mix]        The word سلام means "peace" and v2.0 עברית 123 mixed.
+[bidi numbers]    الإصدار 2.0 من 100
+[emoji basic]     😀 🎉 ❤️
+[emoji zwj]       👨‍👩‍👧‍👦 🏳️‍🌈
+[emoji modifier]  👍 👍🏽 👍🏿
+[flags]           🇯🇵 🇧🇷 🇩🇪
+[keycaps]         1️⃣ #️⃣ *️⃣
+[combining]       é (U+00E9)  vs  é (e + U+0301)  vs  Z͎͍a̷l̶g̵o̸
+[cjk]             你好，世界。日本語のテキスト、折り返しのテスト。
+[hangul]          안녕하세요 세계
+[devanagari]      नमस्ते दुनिया
+[thai]            สวัสดีชาวโลก
+[cyrillic/greek]  Привет, мир   Γειά σου Κόσμε
+[newlines]        line one⏎line two⏎⏎line four after a blank line

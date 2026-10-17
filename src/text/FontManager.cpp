@@ -65,7 +65,12 @@ namespace mocca::mtext
 			mc_fontProperties
 #undef mc_fontProperty
 
-				descr.FaceIndex = sniffedIndex;
+				if (overrides.Family)
+			{
+				descr.Family = overrides.Family.value();
+			}
+
+			descr.FaceIndex = sniffedIndex;
 
 			auto& family = _families[NormalizeFamily(descr.Family)];
 
@@ -209,9 +214,9 @@ namespace mocca::mtext
 		auto styleRank(const FaceProps& p, const FontRequest& q) -> Rank
 		{
 			static constexpr uint8_t Order[3][3] = {
-			{0, 2, 1}, // normal
-			{2, 0, 1}, // italic
-			{2, 1, 0}, // oblique
+				{0, 2, 1}, // normal
+				{2, 0, 1}, // italic
+				{2, 1, 0}, // oblique
 			};
 
 			uint8_t tier = Order[int(q.Style)][int(p.Style)];
