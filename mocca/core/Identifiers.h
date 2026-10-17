@@ -15,7 +15,12 @@ namespace mocca
 		}
 		return hash;
 	}
-	
+
+	constexpr void hashCombine(size_t& seed, size_t h)
+	{
+		seed ^= h + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+	}
+
 	struct ApplicationID
 	{
 	public:

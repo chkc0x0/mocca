@@ -1,6 +1,7 @@
 #include "core/Application.h"
 #include "core/HookStore.h"
 #include "core/Logger.h"
+#include "utils/TypeInterners.h"
 #include <algorithm>
 #include <utility>
 
@@ -60,6 +61,8 @@ namespace mocca
 				}
 			}
 		);
+
+		_interners = std::make_unique<detail::TypeInterners>();
 	}
 
 	Application::~Application()
@@ -206,11 +209,11 @@ namespace mocca
 		auto hash = hashString(event);
 		if (_events.EmitDepth > 0)
 		{
-			_events.PendingEvents.push_back(
-				{.Hash = hash,
-				 .Clear = false,
-				 .Cb = {.Callback = std::move(cb), .User = userData}}
-			);
+			_events.PendingEvents.push_back({
+				.Hash = hash,
+				.Clear = false,
+				.Cb = {.Callback = std::move(cb), .User = userData},
+			});
 			return;
 		}
 
@@ -228,14 +231,14 @@ namespace mocca
 		auto hash = (uint64_t)event;
 		if (_events.EmitDepth > 0)
 		{
-			_events.PendingEvents.push_back(
-				{.Hash = hash,
-				 .Clear = false,
-				 .Cb = {
-					 .Callback = std::move(cb),
-					 .User = userData,
-				 }}
-			);
+			_events.PendingEvents.push_back({
+				.Hash = hash,
+				.Clear = false,
+				.Cb = {
+					.Callback = std::move(cb),
+					.User = userData,
+				},
+			});
 			return;
 		}
 

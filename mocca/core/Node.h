@@ -1,6 +1,7 @@
 #pragma once
 #include "Element.h"
 #include "gfx/Canvas.h"
+#include "style/StyleBuilder.h"
 #include "yoga/YGNode.h"
 #include "style/ComputedStyle.h"
 #include "anim/Curve.h"
@@ -96,11 +97,17 @@ namespace mocca::detail
 			bool& anyActive
 		)
 		{
+			if (target.Get<styles::StyleProperty::Transition>() == 0)
+			{
+				return;
+			}
+			
 			using Value = styles::PropTraits<P>::Value;
 
-			const styles::TransitionType& trans = styles::detail::resolveTransition(
-				target.Get<styles::StyleProperty::Transition>()
-			);
+			const styles::TransitionType& trans =
+				styles::detail::resolveTransition(
+					target.Get<styles::StyleProperty::Transition>()
+				);
 
 			if ((trans.Props & styles::propertyBit<P>()) == 0)
 			{

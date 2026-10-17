@@ -8,6 +8,11 @@
 
 namespace mocca
 {
+	namespace detail
+	{
+		struct TypeInterners;
+	}
+
 	enum class ApplicationEvent : uint64_t
 	{
 		// app.poll (data = nullptr)
@@ -77,6 +82,11 @@ namespace mocca
 			return !_surfaces.empty();
 		}
 
+		auto GetInterners() -> detail::TypeInterners*
+		{
+			return _interners.get();
+		}
+
 	private:
 		ApplicationID _id;
 
@@ -100,6 +110,8 @@ namespace mocca
 		std::chrono::steady_clock::time_point _last;
 		bool _hasLast = false;
 		std::size_t _animationsActive = 0;
+
+		std::unique_ptr<detail::TypeInterners> _interners;
 
 		struct
 		{

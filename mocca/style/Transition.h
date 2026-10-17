@@ -1,6 +1,6 @@
 #pragma once
 #include "StyleProperty.h"
-#include "anim/Curve.h"
+#include "TransitionType.h"
 #include "styles.def"
 #include <cstddef>
 #include <cstdint>
@@ -9,17 +9,6 @@
 
 namespace mocca::styles
 {
-	struct TransitionType
-	{
-	public:
-		std::uint32_t Props = 0;
-		float Duration = 0.2F;
-		anim::Curve Curve{};
-
-		constexpr auto operator==(const TransitionType&) const
-			-> bool = default;
-	};
-
 	inline constexpr std::uint32_t AllProperties = 0xFFFFFFFFU;
 
 	inline constexpr StyleProperty AnimatablePropertyList[] = {
@@ -64,36 +53,7 @@ namespace mocca::styles
 
 	namespace detail
 	{
-		inline auto transitionTable() -> std::vector<TransitionType>&
-		{
-			static std::vector<TransitionType> table;
-			return table;
-		}
-
-		inline auto internTransition(const TransitionType& type) -> std::uint32_t
-		{
-			auto& table = transitionTable();
-			for (std::size_t i = 0; i < table.size(); ++i)
-			{
-				if (table[i] == type)
-				{
-					return static_cast<std::uint32_t>(i + 1);
-				}
-			}
-			table.push_back(type);
-			return static_cast<std::uint32_t>(table.size());
-		}
-
-		inline auto resolveTransition(std::uint32_t ref)
-			-> const TransitionType&
-		{
-			static const TransitionType None{};
-			auto& table = transitionTable();
-			if (ref == 0 || ref > table.size())
-			{
-				return None;
-			}
-			return table[ref - 1];
-		}
+		auto internTransition(const TransitionType& type) -> uint32_t;
+		auto resolveTransition(uint32_t ref) -> const TransitionType&;
 	}
 }

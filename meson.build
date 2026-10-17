@@ -17,7 +17,9 @@ sources = [
     'src/input/Scroll.cpp',
     'src/style/StyleList.cpp',
     'src/style/StyleSet.cpp',
-    'src/style/ComputedStyle.cpp'
+    'src/style/ComputedStyle.cpp',
+    'src/anim/Curve.cpp',
+    'src/style/Transition.cpp'
 ]
 
 cmake = import('cmake')

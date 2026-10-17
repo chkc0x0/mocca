@@ -197,8 +197,8 @@ namespace mocca::styles
 		{
 			return {
 				.Prop = prop,
-				.Type = StyleValueType::Transition,
-				.Payload = {.Transition = ref},
+				.Type = StyleValueType::Handle,
+				.Payload = {.Handle = ref},
 			};
 		}
 
