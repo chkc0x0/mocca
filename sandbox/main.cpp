@@ -248,6 +248,8 @@ auto main(int argc, const char** argv) -> int
 		}
 	);
 
+	app.Fonts().Inspect(app.Fonts().MatchStack({"Inter"}, {.Weight = 600}));
+
 	app.On(
 		ApplicationEvent::SurfaceCreated,
 		[](auto* data, auto* user) -> auto
