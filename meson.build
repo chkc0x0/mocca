@@ -84,6 +84,7 @@ if get_option('tests')
             'test/LayoutTest.cpp',
             'test/RenderTest.cpp',
             'test/SurfaceLifecycleTest.cpp',
+            'test/FontTest.cpp'
         ),
         include_directories: include_directories('test'),
         override_options: ['unity=on', 'unity_size=8'],
