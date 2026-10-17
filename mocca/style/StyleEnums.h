@@ -71,4 +71,28 @@ namespace mocca
 		Hidden,
 		Scroll,
 	};
+
+	enum class TextAlignment : char
+	{
+		Start,
+		End,
+		Left,
+		Right,
+		Center,
+		Justify,
+        MatchParent,
+	};
+
+	enum class FontStyleEnum : char
+	{
+		Normal,
+		Italic,
+		Oblique,
+	};
+
+	struct FontStyleType
+	{
+		FontStyleEnum Style;
+		float Angle = 0;
+	};
 }

@@ -4,6 +4,7 @@
 #include <optional>
 #include <ranges>
 #include <span>
+#include "style/StyleEnums.h"
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -11,19 +12,12 @@
 
 namespace mocca::mtext
 {
-	enum class FontStyle : uint8_t
-	{
-		Normal,
-		Italic,
-		Oblique,
-	};
-
 	// x macros!
 #define mc_fontProperty(name, type)
 #define mc_fontProperties                                                      \
 	mc_fontProperty(Weight, Range<float>)                                      \
 		mc_fontProperty(Stretch, Range<float>)                                 \
-			mc_fontProperty(Style, FontStyle)                                  \
+			mc_fontProperty(Style, FontStyleEnum)                              \
 				mc_fontProperty(Slant, Range<float>)                           \
 					mc_fontProperty(FaceIndex, uint32_t)
 
@@ -64,7 +58,7 @@ namespace mocca::mtext
 	{
 		float Weight = 400.0F;
 		float Stretch = 100.0F;
-		FontStyle Style = FontStyle::Normal;
+		FontStyleEnum Style = FontStyleEnum::Normal;
 		float Slant = 14.0F;
 	};
 

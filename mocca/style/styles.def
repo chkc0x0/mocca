@@ -24,15 +24,15 @@
     mc_styleProperty(BorderLeft, Length, false, (Length{0})) \
     mc_styleProperty(BorderBottom, Length, false, (Length{0})) \
     mc_styleProperty(BorderRight, Length, false, (Length{0})) \
-    mc_styleProperty(MarginTop, AutoValue<Length>, false, (AutoValue<Length>{0})) \
-    mc_styleProperty(MarginLeft, AutoValue<Length>, false, (AutoValue<Length>{0})) \
-    mc_styleProperty(MarginBottom, AutoValue<Length>, false, (AutoValue<Length>{0})) \
-    mc_styleProperty(MarginRight, AutoValue<Length>, false, (AutoValue<Length>{0})) 
+    mc_styleProperty(MarginTop, EnumValue<Length>, false, (EnumValue<Length>{0})) \
+    mc_styleProperty(MarginLeft, EnumValue<Length>, false, (EnumValue<Length>{0})) \
+    mc_styleProperty(MarginBottom, EnumValue<Length>, false, (EnumValue<Length>{0})) \
+    mc_styleProperty(MarginRight, EnumValue<Length>, false, (EnumValue<Length>{0})) 
 
 #define mc_layoutFlexProps \
     mc_styleProperty(AlignContent, Alignment, false, Alignment::FlexStart) \
     mc_styleProperty(AlignItems, Alignment, false, Alignment::Stretch) \
-    mc_styleProperty(AlignSelf, AutoValue<Alignment>, false, Auto) \
+    mc_styleProperty(AlignSelf, EnumValue<Alignment>, false, Auto) \
     mc_styleProperty(Display, DisplayType, false, DisplayType::Flex) \
     mc_styleProperty(FlexBasis, SizingValue, false, (SizingValue{Auto})) \
     mc_styleProperty(FlexGrow, float, false, 0.0F) \
@@ -44,13 +44,13 @@
     mc_styleProperty(GapVertical, Length, false, (Length{0}))
 
 #define mc_layoutPosProps \
-    mc_styleProperty(Top, AutoValue<Length>, false, (AutoValue<Length>{0})) \
-    mc_styleProperty(Left, AutoValue<Length>, false, (AutoValue<Length>{0})) \
-    mc_styleProperty(Bottom, AutoValue<Length>, false, (AutoValue<Length>{0})) \
-    mc_styleProperty(Right, AutoValue<Length>, false, (AutoValue<Length>{0})) \
+    mc_styleProperty(Top, EnumValue<Length>, false, (EnumValue<Length>{0})) \
+    mc_styleProperty(Left, EnumValue<Length>, false, (EnumValue<Length>{0})) \
+    mc_styleProperty(Bottom, EnumValue<Length>, false, (EnumValue<Length>{0})) \
+    mc_styleProperty(Right, EnumValue<Length>, false, (EnumValue<Length>{0})) \
     mc_styleProperty(JustifyContent, Justification, false, Justification::FlexStart) \
     mc_styleProperty(JustifyItems, Justification, false, Justification::Stretch) \
-    mc_styleProperty(JustifySelf, AutoValue<Justification>, false, Auto) \
+    mc_styleProperty(JustifySelf, EnumValue<Justification>, false, Auto) \
     mc_styleProperty(Overflow, OverflowType, false, OverflowType::Visible)
 
 #define mc_layoutPropertiesReset \
@@ -69,7 +69,18 @@
     mc_styleProperty(Transition, uint32_t, false, 0U)
 
 #define mc_textPropertiesInh \
-    mc_styleProperty(TextColor, Color, true, mocca::colors::AlmostBlack)
+    mc_styleProperty(TextColor, Color, true, mocca::colors::AlmostBlack) \
+    mc_styleProperty(FontFamily, uint32_t, true, 0U) \
+    mc_styleProperty(FontSize, Length, true, (Length{16})) \
+    mc_styleProperty(FontWeight, float, true, 400.0F) \
+    mc_styleProperty(FontStretch, float, true, 100.0F) \
+    mc_styleProperty(FontStyle, FontStyleType, true, (FontStyleType{FontStyleEnum::Normal})) \
+    mc_styleProperty(FontVariationSettings, uint32_t, true, 0U) \
+    mc_styleProperty(FontFeatureSettings, uint32_t, true, 0U) \
+    mc_styleProperty(LineHeight, LineHeightType, true, (LineHeightType{Normal})) \
+    mc_styleProperty(LetterSpacing, EnumValue<Length>, true, (EnumValue<Length>{Normal})) \
+    mc_styleProperty(WordSpacing, EnumValue<Length>, true, (EnumValue<Length>{Normal})) \
+    mc_styleProperty(TextAlign, TextAlignment, true, TextAlignment::Start)
 
 #define mc_layoutProperties mc_layoutPropertiesReset mc_layoutPropertiesInh
 #define mc_renderProperties mc_renderPropertiesReset
@@ -78,7 +89,7 @@
     
 #define mc_propertyEdges \
     mc_stylePropertyEdge(Padding, Length) \
-    mc_stylePropertyEdge(Margin, AutoValue<Length>) \
+    mc_stylePropertyEdge(Margin, EnumValue<Length>) \
     mc_stylePropertyEdge(Border, Length)
 
 #define mc_animatableProperties \

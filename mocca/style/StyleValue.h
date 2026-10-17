@@ -11,9 +11,11 @@ namespace mocca
 		inline constexpr uint8_t MaxContent = 1;
 		inline constexpr uint8_t FitContent = 2;
 		inline constexpr uint8_t Stretch = 3;
+		inline constexpr uint8_t Normal = 4;
 	}
 
-	template <typename T> using AutoValue = std::variant<T, uint8_t>;
+	template <typename T> using EnumValue = std::variant<T, uint8_t>;
 
-	using SizingValue = std::variant<Length, uint8_t>;
+	using SizingValue = EnumValue<Length>;
+	using LineHeightType = std::variant<Length, float, uint8_t>;
 }

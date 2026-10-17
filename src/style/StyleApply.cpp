@@ -361,7 +361,7 @@ namespace mocca::styles::detail::applying::layout
 		applyPadding(ref, value, YGEdgeLeft);
 	}
 
-	void applyMargin(YGNodeRef ref, AutoValue<Length> v, YGEdge edge)
+	void applyMargin(YGNodeRef ref, EnumValue<Length> v, YGEdge edge)
 	{
 		std::visit(
 			[ref, edge](auto&& arg) -> void
@@ -388,22 +388,22 @@ namespace mocca::styles::detail::applying::layout
 		);
 	}
 
-	void applyMarginTop(YGNodeRef ref, AutoValue<Length> value)
+	void applyMarginTop(YGNodeRef ref, EnumValue<Length> value)
 	{
 		applyMargin(ref, value, YGEdgeTop);
 	}
 
-	void applyMarginRight(YGNodeRef ref, AutoValue<Length> value)
+	void applyMarginRight(YGNodeRef ref, EnumValue<Length> value)
 	{
 		applyMargin(ref, value, YGEdgeRight);
 	}
 
-	void applyMarginBottom(YGNodeRef ref, AutoValue<Length> value)
+	void applyMarginBottom(YGNodeRef ref, EnumValue<Length> value)
 	{
 		applyMargin(ref, value, YGEdgeBottom);
 	}
 
-	void applyMarginLeft(YGNodeRef ref, AutoValue<Length> value)
+	void applyMarginLeft(YGNodeRef ref, EnumValue<Length> value)
 	{
 		applyMargin(ref, value, YGEdgeLeft);
 	}
@@ -426,7 +426,7 @@ namespace mocca::styles::detail::applying::layout
 		YGNodeStyleSetAlignItems(ref, (YGAlign)((int)value + 1));
 	}
 
-	void applyAlignSelf(YGNodeRef ref, AutoValue<Alignment> value)
+	void applyAlignSelf(YGNodeRef ref, EnumValue<Alignment> value)
 	{
 		if (value.index() != 0)
 		{
@@ -593,7 +593,7 @@ namespace mocca::styles::detail::applying::layout
 		applyGap(ref, value, YGGutterColumn);
 	}
 
-	void applyPositionEdge(YGNodeRef ref, AutoValue<Length> v, YGEdge edge)
+	void applyPositionEdge(YGNodeRef ref, EnumValue<Length> v, YGEdge edge)
 	{
 		std::visit(
 			[ref, edge](auto&& arg) -> void
@@ -620,22 +620,22 @@ namespace mocca::styles::detail::applying::layout
 		);
 	}
 
-	void applyTop(YGNodeRef ref, AutoValue<Length> value)
+	void applyTop(YGNodeRef ref, EnumValue<Length> value)
 	{
 		applyPositionEdge(ref, value, YGEdgeTop);
 	}
 
-	void applyLeft(YGNodeRef ref, AutoValue<Length> value)
+	void applyLeft(YGNodeRef ref, EnumValue<Length> value)
 	{
 		applyPositionEdge(ref, value, YGEdgeLeft);
 	}
 
-	void applyRight(YGNodeRef ref, AutoValue<Length> value)
+	void applyRight(YGNodeRef ref, EnumValue<Length> value)
 	{
 		applyPositionEdge(ref, value, YGEdgeRight);
 	}
 
-	void applyBottom(YGNodeRef ref, AutoValue<Length> value)
+	void applyBottom(YGNodeRef ref, EnumValue<Length> value)
 	{
 		applyPositionEdge(ref, value, YGEdgeBottom);
 	}
@@ -650,7 +650,7 @@ namespace mocca::styles::detail::applying::layout
 		YGNodeStyleSetJustifyItems(ref, (YGJustify)((int)value + 1));
 	}
 
-	void applyJustifySelf(YGNodeRef ref, AutoValue<Justification> value)
+	void applyJustifySelf(YGNodeRef ref, EnumValue<Justification> value)
 	{
 		if (value.index() != 0)
 		{

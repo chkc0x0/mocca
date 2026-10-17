@@ -127,7 +127,7 @@ namespace mocca::styles
 		}
 
 		template <class T>
-		constexpr auto encodeStyleEntry(StyleProperty prop, AutoValue<T> k)
+		constexpr auto encodeStyleEntry(StyleProperty prop, EnumValue<T> k)
 			-> StyleEntry
 		{
 			return std::visit(
@@ -265,8 +265,7 @@ namespace mocca::styles
 		);
 	}
 
-	inline auto Transition(StyleProperty prop, anim::Curve curve)
-		-> StyleEntry
+	inline auto Transition(StyleProperty prop, anim::Curve curve) -> StyleEntry
 	{
 		return Transition(prop, TransitionType{}.Duration, curve);
 	}
@@ -295,10 +294,8 @@ namespace mocca::styles
 		return Transition(props, TransitionType{}.Duration, curve);
 	}
 
-	inline auto Transition(
-		float duration,
-		anim::Curve curve = anim::EaseInOut
-	) -> StyleEntry
+	inline auto Transition(float duration, anim::Curve curve = anim::EaseInOut)
+		-> StyleEntry
 	{
 		return detail::makeTransition(
 			TransitionType{

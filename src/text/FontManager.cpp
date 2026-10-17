@@ -215,7 +215,7 @@ namespace mocca::mtext
 			};
 
 			uint8_t tier = Order[int(q.Style)][int(p.Style)];
-			float dist = (p.Style == FontStyle::Oblique)
+			float dist = (p.Style == FontStyleEnum::Oblique)
 							 ? std::abs(nearest(p.Slant, q.Slant) - q.Slant)
 							 : 0.0F;
 			return {.Tier = tier, .Dist = dist};
@@ -269,8 +269,8 @@ namespace mocca::mtext
 			m.Id = id;
 			m.Weight = detail::nearest(d.Weight, q.Weight);
 			m.Stretch = detail::nearest(d.Stretch, q.Stretch);
-			m.Slant = (d.Style == FontStyle::Oblique &&
-					   q.Style == FontStyle::Oblique)
+			m.Slant = (d.Style == FontStyleEnum::Oblique &&
+					   q.Style == FontStyleEnum::Oblique)
 						  ? detail::nearest(d.Slant, q.Slant)
 						  : 0.0F;
 			return m;
@@ -342,9 +342,9 @@ namespace mocca::mtext
 				d.Family,
 				e.Match.Weight,
 				e.Match.Stretch,
-				d.Style == FontStyle::Normal   ? "normal"
-				: d.Style == FontStyle::Italic ? "italic"
-											   : "oblique",
+				d.Style == FontStyleEnum::Normal   ? "normal"
+				: d.Style == FontStyleEnum::Italic ? "italic"
+												   : "oblique",
 				e.ViaAlias ? "  (alias)" : ""
 			);
 		}
