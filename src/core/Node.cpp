@@ -1,5 +1,6 @@
 #include "core/Node.h"
 #include "core/HookStore.h"
+#include "style/StyleProperty.h"
 #include "text/Measure.h"
 #include "style/StyleApply.h"
 #include "yoga/YGNode.h"
@@ -393,7 +394,8 @@ namespace mocca::detail
 				x,
 				y,
 				std::get<TextElement>(Kind).Content,
-				Style.Get<styles::StyleProperty::TextColor>()
+				Style.Get<styles::StyleProperty::TextColor>(),
+				Style.Get<styles::StyleProperty::FontSize>().Value
 			);
 		}
 		else

@@ -122,6 +122,14 @@ namespace mocca::styles
 		}
 	};
 
+	template <> struct StyleEntryReader<FontStyleType>
+	{
+		static auto Read(const StyleEntry& s) -> FontStyleType
+		{
+			return s.Payload.FontStyle;
+		}
+	};
+
 	template <> struct StyleEntryReader<int>
 	{
 		static auto Read(const StyleEntry& s) -> int
@@ -144,11 +152,29 @@ namespace mocca::styles
 	{
 		static auto Read(const StyleEntry& s) -> std::variant<T, uint8_t>
 		{
-			if (s.Type == StyleValueType::AuxKeyword && s.Aux == Auto)
+			if (s.Type == StyleValueType::AuxKeyword)
 			{
-				return Auto;
+				return s.Aux;
 			}
 			return StyleEntryReader<T>::Read(s);
+		}
+	};
+
+	template <> struct StyleEntryReader<LineHeightType>
+	{
+		static auto Read(const StyleEntry& s) -> LineHeightType
+		{
+			if (s.Type == StyleValueType::AuxKeyword)
+			{
+				return s.Aux;
+			}
+			
+			if (s.Type == StyleValueType::Value)
+			{
+				return s.Payload.Float;
+			}
+
+			return s.Payload.Length;
 		}
 	};
 

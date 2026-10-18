@@ -285,7 +285,7 @@ namespace mocca::styles
 			);
 		}
 
-		inline auto makeFontFamily(FontFamilyType family) -> StyleEntry
+		inline auto makeFontFamily(const FontFamilyType& family) -> StyleEntry
 		{
 			return encodeStyleEntry(
 				StyleProperty::FontFamily,
@@ -340,7 +340,7 @@ namespace mocca::styles
 		FontFamilyType family;
 		family.Families.reserve(sizeof...(Names));
 		(family.Families.emplace_back(std::forward<Names>(names)), ...);
-		return detail::makeFontFamily(std::move(family));
+		return detail::makeFontFamily(family);
 	}
 
 	// TODO: make it per property properly later

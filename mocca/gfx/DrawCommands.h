@@ -40,6 +40,7 @@ namespace mocca::cmds
 		Vector2 Position;
 		std::string Content;
 		struct Color Color;
+		float Size;
 	};
 
 	struct PushClipCmd

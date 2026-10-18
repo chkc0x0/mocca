@@ -188,8 +188,7 @@ void GLFWPlatformSurface::Submit(
 				if constexpr (std::is_same_v<T, mocca::cmds::DrawRectCmd>)
 				{
 					const auto& radius = c.Radius;
-					bool rounded = radius.TopLeft > 0 ||
-								   radius.TopRight > 0 ||
+					bool rounded = radius.TopLeft > 0 || radius.TopRight > 0 ||
 								   radius.BottomRight > 0 ||
 								   radius.BottomLeft > 0;
 
@@ -224,12 +223,12 @@ void GLFWPlatformSurface::Submit(
 					);
 					nvgFill(_vg);
 
-					float borderWidth = std::max(
-						{c.Border.Top,
-						 c.Border.Right,
-						 c.Border.Bottom,
-						 c.Border.Left}
-					);
+					float borderWidth = std::max({
+						c.Border.Top,
+						c.Border.Right,
+						c.Border.Bottom,
+						c.Border.Left,
+					});
 					if (borderWidth > 0 && c.BorderColor.A > 0)
 					{
 						nvgStrokeColor(
@@ -248,12 +247,11 @@ void GLFWPlatformSurface::Submit(
 				else if constexpr (std::is_same_v<T, mocca::cmds::DrawTextCmd>)
 				{
 					nvgFontFace(_vg, "sans");
-					nvgFontSize(_vg, 16);
 					nvgFillColor(
 						_vg,
 						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
 					);
-					nvgFontSize(_vg, 16);
+					nvgFontSize(_vg, c.Size);
 					nvgText(
 						_vg,
 						c.Position.X,

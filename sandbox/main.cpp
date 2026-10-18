@@ -9,7 +9,7 @@
 
 using namespace mocca;
 
-const char placeholder[] = {
+const char Placeholder[] = {
 	"[latin wrap]      Lorem ipsum dolor sit amet, consectetur adipiscing "
 	"elit, sed do eiusmod tempor incididunt ut labore et dolore magna "
 	"aliqua.\n[kerning]         AVATAR To Ty Wa Yo\n[ligatures]       office "
@@ -63,7 +63,7 @@ const char placeholder[] = {
 	"\320\274\320\270\321\200   \316\223\316\265\316\271\316\254 "
 	"\317\203\316\277\317\205 "
 	"\316\232\317\214\317\203\316\274\316\265\n[newlines]        line "
-	"one\342\217\216line two\342\217\216\342\217\216line four after a blank "
+	"one\nline two\n\nline four after a blank "
 	"line",
 };
 
@@ -71,7 +71,7 @@ auto Editor() -> Element
 {
 	using namespace mocca::styles;
 
-	auto [draft, setDraft] = useState(std::string(placeholder));
+	auto [draft, setDraft] = useState(std::string(Placeholder));
 
 	auto edit = [setDraft](const KeyEvent& keys) -> void
 	{
@@ -106,6 +106,7 @@ auto Editor() -> Element
 				BackgroundColor(Color::Oklch(0.7, 0.1036, 171)),
 				Padding(px(16)),
 				FontFamily("Inter", "sans-serif"),
+				FontSize(px(24)),
 			},
 		.Children = {
 			box({
@@ -138,7 +139,6 @@ auto Editor() -> Element
 						TextDescriptor{
 							.Style =
 								{
-									FontSize(px(18)),
 									FontWeight(500.0F),
 									LineHeight(px(26)),
 									LetterSpacing(px(0.25F)),

@@ -22,7 +22,8 @@ namespace mocca
 			Color color,
 			const RectStyle& style = {}
 		);
-		void DrawText(float x, float y, std::string text, Color color);
+		void
+		DrawText(float x, float y, std::string text, Color color, float size);
 		void PushClip(float x, float y, float w, float h);
 		void PopClip();
 		void PushTransform(float dx, float dy);
