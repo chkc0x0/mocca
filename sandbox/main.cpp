@@ -171,6 +171,8 @@ auto main(int argc, const char** argv) -> int
 		}
 	);
 
+	app.Fonts().RegisterFile("../sandbox/NotoSansTC.ttf");
+
 	app.On(
 		ApplicationEvent::SurfaceCreated,
 		[](auto* data, auto* user) -> auto
