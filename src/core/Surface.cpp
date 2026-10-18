@@ -8,6 +8,7 @@
 #include "input/InputTypes.h"
 #include "core/Logger.h"
 #include "style/ComputedStyle.h"
+#include "utils/ScopedProfiler.h"
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
 
@@ -25,6 +26,7 @@ namespace mocca
 
 	void Surface::Update(double dt)
 	{
+		mc_profileFunction();
 		if (_root == nullptr)
 		{
 			_rootId = detail::nextNodeId;
@@ -58,17 +60,21 @@ namespace mocca
 		_root->ComputeStyle(styles::getDefaultStyle(), dt);
 
 		_root->BuildYogaTree();
-		YGNodeCalculateLayout(
-			_root->YogaNode,
-			_desc.Width,
-			_desc.Height,
-			static_cast<YGDirection>(
-				static_cast<int>(
-					_root->Style.Get<styles::StyleProperty::LayoutDirection>()
-				) +
-				1
-			)
-		);
+		{
+			mc_profileScope("YGNodeCalculateLayout");
+			YGNodeCalculateLayout(
+				_root->YogaNode,
+				_desc.Width,
+				_desc.Height,
+				static_cast<YGDirection>(
+					static_cast<int>(
+						_root->Style
+							.Get<styles::StyleProperty::LayoutDirection>()
+					) +
+					1
+				)
+			);
+		}
 
 		if (IsAutomaticSize())
 		{
@@ -81,6 +87,7 @@ namespace mocca
 
 	void Surface::Tick(double dt)
 	{
+		mc_profileFunction();
 		if (GetState() == SurfaceState::Dead)
 		{
 			return;
@@ -179,12 +186,14 @@ namespace mocca
 
 		if (IsPlatformBacked())
 		{
+			mc_profileScope("Surface::Submit");
 			GetPlatform()->Submit(GetDrawData());
 		}
 	}
 
 	void Surface::Paint()
 	{
+		mc_profileFunction();
 		if (!_root)
 		{
 			return;
@@ -235,6 +244,7 @@ namespace mocca
 
 	void Surface::ProcessInput(const InputBatch& batch)
 	{
+		mc_profileFunction();
 		if (!_root)
 		{
 			return;

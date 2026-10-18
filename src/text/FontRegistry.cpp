@@ -2,6 +2,7 @@
 #include "text/FontMatcher.h"
 #include "core/Logger.h"
 #include "HarfbuzzUtils.h"
+#include "utils/ScopedProfiler.h"
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -132,6 +133,7 @@ namespace mocca::mtext
 		const FontDescriptorOverrides& overrides
 	)
 	{
+		mc_profileFunction();
 		auto faces = detail::loadFaces(
 			source,
 			static_cast<int32_t>(overrides.FaceSelector.value_or(-1)),
@@ -211,6 +213,7 @@ namespace mocca::mtext
 		const FontRequest& q
 	) const -> FontMatch
 	{
+		mc_profileFunction();
 		std::vector<const FontDescriptor*> candidates;
 		candidates.reserve(ids.size());
 		for (auto id : ids)
@@ -237,6 +240,8 @@ namespace mocca::mtext
 		const FontRequest& q
 	) const -> FontStack
 	{
+		mc_profileFunction();
+		
 		FontStack out;
 		out.Request = q;
 		out.Entries.reserve(families.size());

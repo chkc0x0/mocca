@@ -1,12 +1,14 @@
 #include "core/Element.h"
 #include "core/Context.h"
 #include "core/HookFrame.h"
+#include "utils/ScopedProfiler.h"
 
 namespace mocca
 {
     // for the surface
 	auto Element::Render(const ComponentFn& fn, std::uint64_t id) -> Element
 	{
+		mc_profileFunction();
 		auto scope = getCtx()->_beginComponent(id);
 		auto produced = fn();
 		return produced;

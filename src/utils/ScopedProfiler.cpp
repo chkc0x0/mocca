@@ -23,7 +23,7 @@ namespace mocca::detail
 		uint64_t Calls = 0;
 		uint64_t Total = 0;
 		uint64_t Self = 0;
-		uint64_t Max = 0;
+		uint64_t MaxSelf = 0;
 		uint64_t Pending = 0;
 
 		Node(const Profiler::Slot* s, Node* p) : Slot(s), Parent(p)
@@ -102,7 +102,7 @@ namespace mocca::detail
 		uint64_t Calls = 0;
 		uint64_t Total = 0;
 		uint64_t Self = 0;
-		uint64_t Max = 0;
+		uint64_t MaxSelf = 0;
 		std::vector<std::unique_ptr<MNode>> Kids;
 	};
 
@@ -128,7 +128,7 @@ namespace mocca::detail
 			m->Calls += c->Calls;
 			m->Total += c->Total;
 			m->Self += c->Self;
-			m->Max = std::max(m->Max, c->Max);
+			m->MaxSelf = std::max(m->MaxSelf, c->MaxSelf);
 			mergeInto(*m, *c);
 		}
 	}
@@ -151,10 +151,9 @@ namespace mocca::detail
 	{
 		const Profiler::Slot* Slot = nullptr;
 		uint64_t Calls = 0;
-		uint64_t Outer = 0;
 		uint64_t Total = 0;
 		uint64_t Self = 0;
-		uint64_t Max = 0;
+		uint64_t MaxSelf = 0;
 	};
 
 	void collectFlat(
@@ -169,11 +168,10 @@ namespace mocca::detail
 			r.Slot = k->Slot;
 			r.Calls += k->Calls;
 			r.Self += k->Self;
-			r.Max = std::max(r.Max, k->Max);
+			r.MaxSelf = std::max(r.MaxSelf, k->MaxSelf);
 			if (std::find(path.begin(), path.end(), k->Slot) == path.end())
 			{
 				r.Total += k->Total;
-				r.Outer += k->Calls;
 			}
 			path.push_back(k->Slot);
 			collectFlat(*k, path, out);
@@ -241,8 +239,8 @@ namespace mocca::detail
 				k->Total / 1e6,
 				k->Self / 1e6,
 				k->Calls,
-				static_cast<double>(k->Total) / k->Calls / 1e3,
-				k->Max / 1e3,
+				static_cast<double>(k->Self) / k->Calls / 1e3,
+				k->MaxSelf / 1e3,
 				frames,
 				(frames != 0U) ? k->Total / 1e6 / static_cast<double>(frames)
 							   : 0.0,
@@ -284,10 +282,11 @@ namespace mocca::detail
 		}
 		Node* n = static_cast<Node*>(_node);
 		uint64_t dt = nowNs() - _start;
+		uint64_t self = dt - n->Pending;
 		n->Calls++;
 		n->Total += dt;
-		n->Self += dt - n->Pending;
-		n->Max = std::max(dt, n->Max);
+		n->Self += self;
+		n->MaxSelf = std::max(self, n->MaxSelf);
 		n->Pending = 0;
 		if (n->Parent != nullptr)
 		{
@@ -378,9 +377,8 @@ namespace mocca::detail
 				r.Self / 1e6,
 				r.Total / 1e6,
 				r.Calls,
-				static_cast<double>(r.Total) / static_cast<double>(r.Outer) /
-					1e3,
-				r.Max / 1e3,
+				static_cast<double>(r.Self) / static_cast<double>(r.Calls) / 1e3,
+				r.MaxSelf / 1e3,
 				frames,
 				(frames != 0U) ? r.Self / 1e6 / static_cast<double>(frames)
 							   : 0.0,

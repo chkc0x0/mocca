@@ -4,6 +4,7 @@
 #include "hb-ot.h"
 #include "style/StyleValue.h"
 #include "text/FontRegistry.h"
+#include "utils/ScopedProfiler.h"
 #include <algorithm>
 #include <functional>
 #include <optional>
@@ -81,6 +82,7 @@ namespace mocca::mtext::detail
 		const TextLayoutStyle& style
 	) -> std::shared_ptr<const ShapedText>
 	{
+		mc_profileFunction();
 		stats.ShapeCalls++;
 
 		auto& registry = Application::main->Fonts();

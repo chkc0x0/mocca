@@ -3,6 +3,7 @@
 #include "style/StyleProperty.h"
 #include "text/Measure.h"
 #include "style/StyleApply.h"
+#include "utils/ScopedProfiler.h"
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
 #include <algorithm>
@@ -44,6 +45,7 @@ namespace mocca::detail
 
 	void Node::SyncYogaChildren()
 	{
+		mc_profileFunction();
 		if (YogaNode != nullptr)
 		{
 			ApplyLayoutStyles();
@@ -86,12 +88,13 @@ namespace mocca::detail
 
 	void Node::ApplyLayoutStyles() const
 	{
+		mc_profileFunction();
 #define mc_styleGroup LayoutSizing
 
 #define mc_styleProperty(name, ...)                                            \
 	styles::detail::applying::layout::apply##name(                             \
 		YogaNode,                                                              \
-		Style.mc_styleGroup.name                                                    \
+		Style.mc_styleGroup.name                                               \
 	);
 		mc_layoutSizingProps
 #undef mc_styleGroup
@@ -111,6 +114,7 @@ namespace mocca::detail
 
 	void Node::ComputeStyle(styles::ComputedStyle& parentComputed, double dt)
 	{
+		mc_profileFunction();
 		styles::ComputedStyle target =
 			styles::ComputedStyle::Cascade(Declared, parentComputed);
 
@@ -138,11 +142,11 @@ namespace mocca::detail
 		bool anyActive = false;
 
 #define mc_animatable(name)                                                    \
-		StepTransition<styles::StyleProperty::name>(target, dt, anyActive);
+	StepTransition<styles::StyleProperty::name>(target, dt, anyActive);
 		mc_animatableProperties
 #undef mc_animatable
 
-		Style = target;
+			Style = target;
 
 		if (anyActive)
 		{
@@ -169,8 +173,7 @@ namespace mocca::detail
 	{
 		std::erase_if(
 			Transitions,
-			[prop](const ActiveTransition& t) -> auto
-			{ return t.Prop == prop; }
+			[prop](const ActiveTransition& t) -> auto { return t.Prop == prop; }
 		);
 	}
 
@@ -220,6 +223,7 @@ namespace mocca::detail
 
 	auto Node::GetX() const -> float
 	{
+		mc_profileFunction();
 		float pos = 0.0F;
 		if (YogaNode != nullptr)
 		{
@@ -234,6 +238,7 @@ namespace mocca::detail
 
 	auto Node::GetY() const -> float
 	{
+		mc_profileFunction();
 		float pos = 0.0F;
 		if (YogaNode != nullptr)
 		{
@@ -248,6 +253,8 @@ namespace mocca::detail
 
 	void Node::Paint(Canvas& canvas)
 	{
+		mc_profileFunction();
+		
 		if (IsComponent())
 		{
 			for (auto& child : Children)
@@ -340,8 +347,10 @@ namespace mocca::detail
 			}
 
 			cmds::EdgeSizes border{
-				.Top =
-					resolveLength(Style.Get<styles::StyleProperty::BorderTop>(), h),
+				.Top = resolveLength(
+					Style.Get<styles::StyleProperty::BorderTop>(),
+					h
+				),
 				.Right = resolveLength(
 					Style.Get<styles::StyleProperty::BorderRight>(),
 					w
@@ -350,8 +359,10 @@ namespace mocca::detail
 					Style.Get<styles::StyleProperty::BorderBottom>(),
 					h
 				),
-				.Left =
-					resolveLength(Style.Get<styles::StyleProperty::BorderLeft>(), w),
+				.Left = resolveLength(
+					Style.Get<styles::StyleProperty::BorderLeft>(),
+					w
+				),
 			};
 
 			canvas.DrawRect(
@@ -399,7 +410,7 @@ namespace mocca::detail
 				Style.Get<styles::StyleProperty::BackgroundColor>(),
 				RectStyle{}
 			);
-			
+
 			canvas.DrawText(
 				x,
 				y,
@@ -484,6 +495,8 @@ namespace mocca::detail
 		Node* parent
 	) -> std::vector<std::unique_ptr<Node>>
 	{
+		mc_profileFunction();
+		
 		std::unordered_map<ElementKey, std::unique_ptr<Node>> oldKeyed;
 		std::vector<std::unique_ptr<Node>> oldUnkeyed;
 		for (auto& child : oldChildren)
@@ -546,6 +559,7 @@ namespace mocca::detail
 		const Element* newElement
 	) -> std::unique_ptr<Node>
 	{
+		mc_profileFunction();
 		if (newElement == nullptr && oldNode == nullptr)
 		{
 			return nullptr;
@@ -614,9 +628,8 @@ namespace mocca::detail
 
 	auto clipsChildren(const Node& n) -> bool
 	{
-		return n.IsBox() &&
-			   n.Style.Get<styles::StyleProperty::Overflow>() !=
-				   OverflowType::Visible;
+		return n.IsBox() && n.Style.Get<styles::StyleProperty::Overflow>() !=
+								OverflowType::Visible;
 	}
 
 	auto hitTestImpl(Node* node, float x, float y, Vector2 scroll) -> Node*
@@ -663,11 +676,13 @@ namespace mocca::detail
 
 	auto Node::FindNodeById(Node* root, NodeId id) -> Node*
 	{
+		mc_profileFunction();
+		
 		if (id == 0)
 		{
 			return nullptr;
 		}
-		
+
 		if (root == nullptr)
 		{
 			return nullptr;

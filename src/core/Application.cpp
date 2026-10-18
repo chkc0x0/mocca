@@ -1,6 +1,7 @@
 #include "core/Application.h"
 #include "core/HookStore.h"
 #include "core/Logger.h"
+#include "utils/ScopedProfiler.h"
 #include "utils/TypeInterners.h"
 #include <algorithm>
 #include <utility>
@@ -95,6 +96,8 @@ namespace mocca
 
 	void Application::Tick(double dt)
 	{
+		mc_profileFunction();
+		
 		_inTick = true;
 
 		std::erase_if(
@@ -198,6 +201,8 @@ namespace mocca
 			((target != nullptr) ? target : child)->MarkDirty();
 		}
 		_pendingReparents.clear();
+
+		mc_profileFrame();
 	}
 
 	void Application::On(
