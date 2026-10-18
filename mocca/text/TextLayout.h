@@ -41,6 +41,9 @@ namespace mocca::mtext
 		float Baseline = 0;
 		uint32_t RunBegin = 0;
 		uint32_t RunEnd = 0;
+
+		[[nodiscard]] auto XOffset(float boxWidth, TextAlignment align) const
+			-> float;
 	};
 
 	struct TextLayout
@@ -52,7 +55,7 @@ namespace mocca::mtext
 		float LineHeight = 0;
 		std::vector<ShapedRun> Runs;
 		std::vector<TextLine> Lines;
-		Vector2 Size{.X=0, .Y=0};
+		Vector2 Size{.X = 0, .Y = 0};
 	};
 
 	struct TextLayoutStyle

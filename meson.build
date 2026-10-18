@@ -23,7 +23,9 @@ sources = [
     'src/text/FontRegistry.cpp',
     'src/text/FontMatcher.cpp',
     'src/text/HarfbuzzUtils.cpp',
-    'src/text/TextResolve.cpp'
+    'src/text/TextResolve.cpp',
+    'src/text/TextShaper.cpp',
+    'src/text/ShapeCache.cpp'
 ]
 
 cmake = import('cmake')
@@ -85,9 +87,15 @@ if get_option('tests')
             'test/LayoutTest.cpp',
             'test/RenderTest.cpp',
             'test/SurfaceLifecycleTest.cpp',
-            'test/FontTest.cpp'
+            'test/FontTest.cpp',
+            'test/TextLayoutTest.cpp'
         ),
         include_directories: include_directories('test'),
+        cpp_args: [
+            '-Dmc_testFont="@0@"'.format(
+                meson.project_source_root() / 'sandbox' / 'Inter.ttf'
+            )
+        ],
         override_options: ['unity=on', 'unity_size=8'],
     )
 
