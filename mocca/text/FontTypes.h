@@ -53,7 +53,13 @@ namespace mocca::mtext
 #undef mc_fontProperty
 	};
 
-	using FontSource = std::variant<std::string, std::span<const std::byte>>;
+	struct FontMemorySource
+	{
+		std::span<const std::byte> Data;
+		bool Copy = false;
+	};
+
+	using FontSource = std::variant<std::string, FontMemorySource>;
 	using FontFaceId = size_t;
 
 	struct FontRequest

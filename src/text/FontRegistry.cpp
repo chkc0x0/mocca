@@ -10,15 +10,9 @@
 
 namespace mocca::mtext
 {
-	struct LoadedFace
-	{
-		detail::BlobPtr Blob{nullptr, hb_blob_destroy};
-		detail::FacePtr Face{nullptr, hb_face_destroy};
-	};
-
 	struct FontRegistry::LoadedFaces
 	{
-		std::unordered_map<FontFaceId, LoadedFace> Faces;
+		std::unordered_map<FontFaceId, detail::FacePtr> Faces;
 	};
 
 	FontRegistry::FontRegistry() : _loaded(std::make_unique<LoadedFaces>())
@@ -38,18 +32,16 @@ namespace mocca::mtext
 			);
 			return nullptr;
 		}
-
+		
 		if (auto it = _loaded->Faces.find(id); it != _loaded->Faces.end())
 		{
-			return it->second.Face.get();
+			return it->second.get();
 		}
 
 		const auto& entry = _entries[id];
 
-		LoadedFace loaded;
-		loaded.Blob = detail::makeBlob(entry.Source, HB_MEMORY_MODE_DUPLICATE);
-		if ((loaded.Blob == nullptr) ||
-			(hb_blob_get_length(loaded.Blob.get()) == 0))
+		detail::BlobPtr blob = detail::makeBlob(entry.Source);
+		if ((blob == nullptr) || (hb_blob_get_length(blob.get()) == 0))
 		{
 			mc_error(
 				ErrorCode::InvalidArgument,
@@ -59,10 +51,11 @@ namespace mocca::mtext
 			return nullptr;
 		}
 
-		loaded.Face.reset(
-			hb_face_create(loaded.Blob.get(), entry.Desc.FaceIndex)
-		);
-		if (loaded.Face == nullptr)
+		auto face = detail::FacePtr{
+			hb_face_create(blob.get(), entry.Desc.FaceIndex),
+			hb_face_destroy
+		};
+		if (face == nullptr)
 		{
 			mc_error(
 				ErrorCode::InvalidArgument,
@@ -73,8 +66,8 @@ namespace mocca::mtext
 			return nullptr;
 		}
 
-		auto it = _loaded->Faces.emplace(id, std::move(loaded)).first;
-		return it->second.Face.get();
+		auto it = _loaded->Faces.emplace(id, std::move(face)).first;
+		return it->second.get();
 	}
 
 	auto FontRegistry::Normalize(std::string_view s) -> std::string
@@ -114,6 +107,7 @@ namespace mocca::mtext
 
 	void FontRegistry::RegisterMemory(
 		std::span<const std::byte> data,
+		bool copy,
 		const FontDescriptorOverrides& overrides
 	)
 	{
@@ -124,7 +118,7 @@ namespace mocca::mtext
 		}
 
 		_registerSource(
-			FontSource{data},
+			FontSource{FontMemorySource{.Data = data, .Copy = copy}},
 			overrides.Family.value_or("<memory>"),
 			"<memory>",
 			overrides
@@ -154,8 +148,10 @@ namespace mocca::mtext
 			return;
 		}
 
-		for (FontDescriptor& descr : faces)
+		for (auto& loaded : faces)
 		{
+			FontDescriptor& descr = loaded.Desc;
+
 #undef mc_fontProperty
 #define mc_fontProperty(name, type)                                            \
 	if (overrides.name)                                                        \
@@ -196,6 +192,11 @@ namespace mocca::mtext
 
 			family.push_back(entry.Id);
 			_entries.push_back(std::move(entry));
+
+			_loaded->Faces.emplace(
+				_entries.back().Id,
+				std::move(loaded.Face)
+			);
 
 			mc_debug(
 				"added entry ({}) to font family {} from file",

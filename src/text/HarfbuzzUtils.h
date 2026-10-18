@@ -10,11 +10,14 @@ namespace mocca::mtext::detail
 {
 	using BlobPtr = std::unique_ptr<hb_blob_t, decltype(&hb_blob_destroy)>;
 	using FacePtr = std::unique_ptr<hb_face_t, decltype(&hb_face_destroy)>;
+	
+	struct LoadedFace
+	{
+		FontDescriptor Desc;
+		FacePtr Face{nullptr, hb_face_destroy};
+	};
 
-	auto makeBlob(
-		const FontSource& source,
-		hb_memory_mode_t memoryMode = HB_MEMORY_MODE_READONLY
-	) -> BlobPtr;
+	auto makeBlob(const FontSource& source) -> BlobPtr;
 
 	class Table
 	{
@@ -65,13 +68,15 @@ namespace mocca::mtext::detail
 
 	auto widthClassToPercent(uint16_t c) -> float;
 
-	auto
-	sniffFace(hb_blob_t* blob, uint32_t index, std::string_view fallbackFamily)
-		-> FontDescriptor;
+	auto sniffFace(
+		hb_blob_t* blob,
+		uint32_t index,
+		std::string_view fallbackFamily
+	) -> LoadedFace;
 
 	auto loadFaces(
 		const FontSource& source,
 		int32_t requestedIndex,
 		std::string_view fallbackFamily
-	) -> std::vector<FontDescriptor>;
+	) -> std::vector<LoadedFace>;
 }

@@ -7,7 +7,7 @@
 
 namespace mocca::mtext::detail
 {
-	auto makeBlob(const FontSource& source, hb_memory_mode_t memoryMode) -> BlobPtr
+	auto makeBlob(const FontSource& source) -> BlobPtr
 	{
 		return std::visit(
 			overloaded{
@@ -18,13 +18,14 @@ namespace mocca::mtext::detail
 						hb_blob_destroy
 					};
 				},
-				[memoryMode](std::span<const std::byte> data) -> BlobPtr
+				[](const FontMemorySource& src) -> BlobPtr
 				{
 					return {
 						hb_blob_create(
-							reinterpret_cast<const char*>(data.data()),
-							static_cast<unsigned>(data.size()),
-							memoryMode,
+							reinterpret_cast<const char*>(src.Data.data()),
+							static_cast<unsigned>(src.Data.size()),
+							src.Copy ? HB_MEMORY_MODE_DUPLICATE
+									 : HB_MEMORY_MODE_READONLY,
 							nullptr,
 							nullptr
 						),
@@ -58,23 +59,26 @@ namespace mocca::mtext::detail
 
 	auto
 	sniffFace(hb_blob_t* blob, uint32_t index, std::string_view fallbackFamily)
-		-> FontDescriptor
+		-> LoadedFace
 	{
-		FacePtr face{hb_face_create(blob, index), hb_face_destroy};
-		FontDescriptor d;
-		d.FaceIndex = static_cast<int32_t>(index);
+		LoadedFace out;
+		out.Face.reset(hb_face_create(blob, index));
 
-		d.Family = getName(face.get(), HB_OT_NAME_ID_TYPOGRAPHIC_FAMILY);
+		hb_face_t* face = out.Face.get();
+		FontDescriptor& d = out.Desc;
+		d.FaceIndex = index;
+
+		d.Family = getName(face, HB_OT_NAME_ID_TYPOGRAPHIC_FAMILY);
 		if (d.Family.empty())
 		{
-			d.Family = getName(face.get(), HB_OT_NAME_ID_FONT_FAMILY);
+			d.Family = getName(face, HB_OT_NAME_ID_FONT_FAMILY);
 		}
 		if (d.Family.empty())
 		{
 			d.Family = std::string(fallbackFamily);
 		}
 
-		Table os2(face.get(), HB_TAG('O', 'S', '/', '2'));
+		Table os2(face, HB_TAG('O', 'S', '/', '2'));
 		bool italic = false;
 		bool oblique = false;
 		if (os2.Present())
@@ -94,7 +98,7 @@ namespace mocca::mtext::detail
 		}
 		else
 		{
-			Table head(face.get(), HB_TAG('h', 'e', 'a', 'd'));
+			Table head(face, HB_TAG('h', 'e', 'a', 'd'));
 			italic = ((head.U16(44).value_or(0) & 2) != 0);
 		}
 
@@ -105,17 +109,17 @@ namespace mocca::mtext::detail
 		// css obliques are positive so we negate
 		if (d.Style == FontStyleEnum::Oblique)
 		{
-			Table post(face.get(), HB_TAG('p', 'o', 's', 't'));
+			Table post(face, HB_TAG('p', 'o', 's', 't'));
 			float angle = -static_cast<float>(post.I32(4).value_or(0)) /
 						  65536.0F;
 			d.Slant = Range<float>(angle != 0.0F ? angle : 14.0F);
 		}
 
-		if (hb_ot_var_has_data(face.get()) != 0)
+		if (hb_ot_var_has_data(face) != 0)
 		{
 			hb_ot_var_axis_info_t axes[16];
 			unsigned count = 16;
-			hb_ot_var_get_axis_infos(face.get(), 0, &count, axes);
+			hb_ot_var_get_axis_infos(face, 0, &count, axes);
 			for (unsigned i = 0; i < count; i++)
 			{
 				const auto& a = axes[i];
@@ -135,7 +139,7 @@ namespace mocca::mtext::detail
 				}
 			}
 		}
-		return d;
+		return out;
 	}
 
 	auto widthClassToPercent(uint16_t c) -> float
@@ -149,7 +153,7 @@ namespace mocca::mtext::detail
 		const FontSource& source,
 		int32_t requestedIndex,
 		std::string_view fallbackFamily
-	) -> std::vector<FontDescriptor>
+	) -> std::vector<LoadedFace>
 	{
 		BlobPtr blob = makeBlob(source);
 		if (hb_blob_get_length(blob.get()) == 0)
@@ -163,7 +167,7 @@ namespace mocca::mtext::detail
 			return {};
 		}
 
-		std::vector<FontDescriptor> out;
+		std::vector<LoadedFace> out;
 		if (requestedIndex >= 0)
 		{
 			out.push_back(

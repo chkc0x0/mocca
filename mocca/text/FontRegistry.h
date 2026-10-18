@@ -32,6 +32,7 @@ namespace mocca::mtext
 
 		void RegisterMemory(
 			std::span<const std::byte> data,
+			bool copy = false,
 			const FontDescriptorOverrides& overrides = {}
 		);
 
