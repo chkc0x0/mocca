@@ -3,6 +3,8 @@
 
 namespace mocca::styles
 {
+	inline constexpr float RootFontSize = 16.0F;
+
 	inline auto px(float value) -> Length
 	{
 		return {value};

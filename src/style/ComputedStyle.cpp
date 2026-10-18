@@ -1,9 +1,64 @@
 #include "style/ComputedStyle.h"
 #include "core/Logger.h"
 #include "anim/Interpolate.h"
+#include "style/StyleHelpers.h"
+#include <variant>
 
 namespace mocca::styles
 {
+	namespace
+	{
+		auto LengthToPx(const Length& l, float emBasis) -> float
+		{
+			switch (l.Unit)
+			{
+			case LengthUnit::Percent:
+				return l.Value / 100.0F * emBasis;
+			case LengthUnit::Em:
+				return l.Value * emBasis;
+			case LengthUnit::Rem:
+				return l.Value * RootFontSize;
+			case LengthUnit::Pixels:
+				break;
+			}
+
+			return l.Value;
+		}
+
+		void ResolveRelativeLengths(
+			ComputedStyle& out,
+			const ComputedStyle& parent
+		)
+		{
+			float parentSize = parent.Inherited.FontSize.Value;
+
+			Length& size = out.Inherited.FontSize;
+			if (size.Unit != LengthUnit::Pixels)
+			{
+				size = Length{LengthToPx(size, parentSize)};
+			}
+
+			float ownSize = out.Inherited.FontSize.Value;
+
+			auto& lineHeight = out.Inherited.LineHeight;
+			if (auto* l = std::get_if<Length>(&lineHeight);
+				l != nullptr && l->Unit != LengthUnit::Pixels)
+			{
+				lineHeight = Length{LengthToPx(*l, ownSize)};
+			}
+
+			for (EnumValue<Length>* spacing :
+				 {&out.Inherited.LetterSpacing, &out.Inherited.WordSpacing})
+			{
+				if (auto* l = std::get_if<Length>(spacing);
+					l != nullptr && l->Unit != LengthUnit::Pixels)
+				{
+					*spacing = Length{LengthToPx(*l, ownSize)};
+				}
+			}
+		}
+	}
+
 	void ComputedStyle::Blend(
 		StyleProperty prop,
 		const StyleEntry& from,
@@ -62,6 +117,8 @@ namespace mocca::styles
 		{
 			out.Apply(e, parent);
 		}
+
+		ResolveRelativeLengths(out, parent);
 
 		return out;
 	}
