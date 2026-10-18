@@ -1,6 +1,7 @@
 #pragma once
 #include "text/FontTypes.h"
 #include "style/StyleEnums.h"
+#include "utils/Math.h"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -12,6 +13,46 @@ namespace mocca::mtext
 		Normal,
 		Number,
 		Px,
+	};
+
+	struct ShapedGlyph
+	{
+		uint32_t GlyphId = 0;
+		float X = 0;
+		float XAdvance = 0;
+		float XOffset = 0;
+		float YOffset = 0;
+		uint32_t Cluster = 0;
+	};
+
+	struct ShapedRun
+	{
+		FontFaceId Face = SIZE_MAX;
+		float Size = 0;
+		std::vector<ShapedGlyph> Glyphs;
+		float Width = 0;
+	};
+
+	struct TextLine
+	{
+		uint32_t Start = 0;
+		uint32_t End = 0;
+		float Width = 0;
+		float Baseline = 0;
+		uint32_t RunBegin = 0;
+		uint32_t RunEnd = 0;
+	};
+
+	struct TextLayout
+	{
+		FontFaceId Face = SIZE_MAX;
+		float FontSize = 0;
+		float Ascent = 0;
+		float Descent = 0;
+		float LineHeight = 0;
+		std::vector<ShapedRun> Runs;
+		std::vector<TextLine> Lines;
+		Vector2 Size{.X=0, .Y=0};
 	};
 
 	struct TextLayoutStyle

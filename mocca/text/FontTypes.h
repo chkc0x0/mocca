@@ -103,4 +103,37 @@ namespace mocca::mtext
 							 );
 		}
 	};
+
+	namespace detail
+	{
+		struct ShapeGlyph
+		{
+			uint32_t GlyphId = 0;
+			int32_t XAdvance = 0;
+			int32_t YAdvance = 0;
+			int32_t XOffset = 0;
+			int32_t YOffset = 0;
+			uint32_t Cluster = 0;
+		};
+
+		struct ShapedText
+		{
+			uint64_t Id = 0;
+			FontFaceId Face = SIZE_MAX;
+			uint32_t Upem = 1000;
+			uint32_t Variations = 0;
+			uint32_t Features = 0;
+			int32_t Ascender = 0;
+			int32_t Descender = 0;
+			int32_t LineGap = 0;
+			std::string Content;
+			std::vector<ShapeGlyph> Glyphs;
+		};
+
+		struct TextShaperStats
+		{
+			uint64_t ShapeCalls = 0;
+			uint64_t ShapeHits = 0;
+		};
+	}
 }
