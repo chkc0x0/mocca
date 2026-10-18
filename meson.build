@@ -49,6 +49,12 @@ if get_option('debug')
     add_project_arguments('-DDEBUG', language: 'cpp')
 endif
 
+if get_option('profile')
+    add_project_arguments('-DMC_PROFILER', language: 'cpp')
+    sources += ['src/utils/ScopedProfiler.cpp']
+endif
+
+
 mocca_lib = library(
     'mocca',
     sources: sources,
