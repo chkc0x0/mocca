@@ -1,17 +1,23 @@
 #pragma once
 #include "text/FontTypes.h"
 #include <cstddef>
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
+struct hb_face_t;
+
 namespace mocca::mtext
 {
 	class FontRegistry
 	{
 	public:
+		FontRegistry();
+		~FontRegistry();
+
 		struct FontEntry
 		{
 			FontFaceId Id;
@@ -46,6 +52,8 @@ namespace mocca::mtext
 
 		void DumpStack(const FontStack& s) const;
 
+		[[nodiscard]] auto Face(FontFaceId id) -> hb_face_t*;
+
 		[[nodiscard]] auto Entry(FontFaceId id) const -> const FontEntry&
 		{
 			return _entries[id];
@@ -61,8 +69,11 @@ namespace mocca::mtext
 			const FontDescriptorOverrides& overrides
 		);
 
+		struct LoadedFaces;
+
 		std::vector<FontEntry> _entries;
 		std::unordered_map<std::string, std::vector<FontFaceId>> _families;
 		std::unordered_map<std::string, std::string> _aliases;
+		std::unique_ptr<LoadedFaces> _loaded;
 	};
 }

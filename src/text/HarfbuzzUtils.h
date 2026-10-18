@@ -11,7 +11,10 @@ namespace mocca::mtext::detail
 	using BlobPtr = std::unique_ptr<hb_blob_t, decltype(&hb_blob_destroy)>;
 	using FacePtr = std::unique_ptr<hb_face_t, decltype(&hb_face_destroy)>;
 
-	auto makeBlob(const FontSource& source) -> BlobPtr;
+	auto makeBlob(
+		const FontSource& source,
+		hb_memory_mode_t memoryMode = HB_MEMORY_MODE_READONLY
+	) -> BlobPtr;
 
 	class Table
 	{

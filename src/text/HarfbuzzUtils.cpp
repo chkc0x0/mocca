@@ -7,7 +7,7 @@
 
 namespace mocca::mtext::detail
 {
-	auto makeBlob(const FontSource& source) -> BlobPtr
+	auto makeBlob(const FontSource& source, hb_memory_mode_t memoryMode) -> BlobPtr
 	{
 		return std::visit(
 			overloaded{
@@ -18,13 +18,13 @@ namespace mocca::mtext::detail
 						hb_blob_destroy
 					};
 				},
-				[](std::span<const std::byte> data) -> BlobPtr
+				[memoryMode](std::span<const std::byte> data) -> BlobPtr
 				{
 					return {
 						hb_blob_create(
 							reinterpret_cast<const char*>(data.data()),
 							static_cast<unsigned>(data.size()),
-							HB_MEMORY_MODE_READONLY,
+							memoryMode,
 							nullptr,
 							nullptr
 						),

@@ -10,6 +10,73 @@
 
 namespace mocca::mtext
 {
+	struct LoadedFace
+	{
+		detail::BlobPtr Blob{nullptr, hb_blob_destroy};
+		detail::FacePtr Face{nullptr, hb_face_destroy};
+	};
+
+	struct FontRegistry::LoadedFaces
+	{
+		std::unordered_map<FontFaceId, LoadedFace> Faces;
+	};
+
+	FontRegistry::FontRegistry() : _loaded(std::make_unique<LoadedFaces>())
+	{
+	}
+
+	FontRegistry::~FontRegistry() = default;
+
+	auto FontRegistry::Face(FontFaceId id) -> hb_face_t*
+	{
+		if (id >= _entries.size())
+		{
+			mc_error(
+				ErrorCode::InvalidArgument,
+				"font face id {} is not registered",
+				id
+			);
+			return nullptr;
+		}
+
+		if (auto it = _loaded->Faces.find(id); it != _loaded->Faces.end())
+		{
+			return it->second.Face.get();
+		}
+
+		const auto& entry = _entries[id];
+
+		LoadedFace loaded;
+		loaded.Blob = detail::makeBlob(entry.Source, HB_MEMORY_MODE_DUPLICATE);
+		if ((loaded.Blob == nullptr) ||
+			(hb_blob_get_length(loaded.Blob.get()) == 0))
+		{
+			mc_error(
+				ErrorCode::InvalidArgument,
+				"font {} contains no readable data",
+				entry.Desc.Family
+			);
+			return nullptr;
+		}
+
+		loaded.Face.reset(
+			hb_face_create(loaded.Blob.get(), entry.Desc.FaceIndex)
+		);
+		if (loaded.Face == nullptr)
+		{
+			mc_error(
+				ErrorCode::InvalidArgument,
+				"could not create face {} (index {})",
+				entry.Desc.Family,
+				entry.Desc.FaceIndex
+			);
+			return nullptr;
+		}
+
+		auto it = _loaded->Faces.emplace(id, std::move(loaded)).first;
+		return it->second.Face.get();
+	}
+
 	auto FontRegistry::Normalize(std::string_view s) -> std::string
 	{
 		std::string out(s);
