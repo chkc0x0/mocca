@@ -2,7 +2,8 @@
 #include "StyleEntry.h"
 #include "StyleProperty.h"
 #include "StyleValue.h"
-#include "FontFamilyType.h"
+#include "FontStyleTypes.h"
+#include "FontVariants.h"
 #include "Transition.h"
 #include "StyleEnums.h"
 #include "Length.h"
@@ -15,6 +16,7 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include <vector>
 
 namespace mocca::styles
 {
@@ -293,6 +295,48 @@ namespace mocca::styles
 			);
 		}
 
+		inline auto makeFontVariations(const FontVariationsType& variations)
+			-> StyleEntry
+		{
+			return encodeStyleEntry(
+				StyleProperty::FontVariationSettings,
+				detail::internFontVariations(variations)
+			);
+		}
+
+		inline auto makeFontFeatures(const FontFeaturesType& features)
+			-> StyleEntry
+		{
+			return encodeStyleEntry(
+				StyleProperty::FontFeatureSettings,
+				detail::internFontFeatures(features)
+			);
+		}
+
+		inline void appendFontFeatures(
+			std::vector<FontFeaturesType::Value>& out,
+			const FontFeaturesType& features
+		)
+		{
+			out.insert(out.end(), features.Axes.begin(), features.Axes.end());
+		}
+
+		inline void appendFontFeatures(
+			std::vector<FontFeaturesType::Value>& out,
+			const FontFeaturesType::Value& value
+		)
+		{
+			out.push_back(value);
+		}
+
+		inline void appendFontFeatures(
+			std::vector<FontFeaturesType::Value>& out,
+			std::initializer_list<FontFeaturesType::Value> values
+		)
+		{
+			out.insert(out.end(), values.begin(), values.end());
+		}
+
 		template <class T> auto encodeStyleEntry(T) -> StyleEntry = delete;
 	}
 
@@ -341,6 +385,32 @@ namespace mocca::styles
 		family.Families.reserve(sizeof...(Names));
 		(family.Families.emplace_back(std::forward<Names>(names)), ...);
 		return detail::makeFontFamily(family);
+	}
+
+	inline auto FontVariationSettings(
+		std::initializer_list<FontVariationsType::Value> axes
+	) -> StyleEntry
+	{
+		return detail::makeFontVariations(FontVariationsType{axes});
+	}
+
+	inline auto FontFeatureSettings(
+		std::initializer_list<FontFeaturesType::Value> axes
+	) -> StyleEntry
+	{
+		return detail::makeFontFeatures(FontFeaturesType{axes});
+	}
+
+	// merge partial feature sets (raw pairs, variant shorthand groups, or
+	// whole lists) into one interned FontFeatureSettings entry. later
+	// sources override earlier ones tag-by-tag.
+	template <class... Sets>
+		requires(sizeof...(Sets) > 0)
+	inline auto FontFeatureSettings(const Sets&... sets) -> StyleEntry
+	{
+		std::vector<FontFeaturesType::Value> merged;
+		(detail::appendFontFeatures(merged, sets), ...);
+		return detail::makeFontFeatures(FontFeaturesType{merged});
 	}
 
 	// TODO: make it per property properly later

@@ -1,5 +1,5 @@
 #pragma once
-#include "style/FontFamilyType.h"
+#include "style/FontStyleTypes.h"
 #include "style/TransitionType.h"
 #include "utils/Interner.h"
 
@@ -10,5 +10,7 @@ namespace mocca::detail
 	public:
 		Interner<styles::TransitionType> Transitions;
 		Interner<styles::FontFamilyType> FontFamilies;
+		Interner<styles::FontVariationsType> FontVariations;
+		Interner<styles::FontFeaturesType> FontFeatures;
 	};
 }
