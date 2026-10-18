@@ -22,7 +22,8 @@ sources = [
     'src/style/StyleValue.cpp',
     'src/text/FontRegistry.cpp',
     'src/text/FontMatcher.cpp',
-    'src/text/HarfbuzzUtils.cpp'
+    'src/text/HarfbuzzUtils.cpp',
+    'src/text/TextResolve.cpp'
 ]
 
 cmake = import('cmake')
