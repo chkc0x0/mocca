@@ -1,5 +1,6 @@
 #include "text/Measure.h"
 #include "core/Element.h"
+#include "core/Logger.h"
 #include "core/Node.h"
 #include <string>
 
@@ -25,10 +26,11 @@ namespace mocca::mtext::detail
 		constexpr int fontSize = 16;
 
 		auto textWidth = static_cast<float>(content.size() * 8);
+		mc_debug("{}", content.size());
 
 		return YGSize{
 			.width = textWidth,
-			.height = static_cast<float>(fontSize)
+			.height = static_cast<float>(fontSize),
 		};
 	}
 }

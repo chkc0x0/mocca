@@ -144,6 +144,7 @@ auto Editor() -> Element
 						TextDescriptor{
 							.Style =
 								{
+									BackgroundColor(Color(255, 255, 255)),
 									FontWeight(500.0F),
 									LineHeight(px(26)),
 									LetterSpacing(px(0.25F)),

@@ -390,6 +390,16 @@ namespace mocca::detail
 		}
 		else if (IsText())
 		{
+			// ts a mess brah
+			canvas.DrawRect(
+				x,
+				y,
+				w,
+				h,
+				Style.Get<styles::StyleProperty::BackgroundColor>(),
+				RectStyle{}
+			);
+			
 			canvas.DrawText(
 				x,
 				y,
