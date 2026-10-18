@@ -42,10 +42,11 @@ namespace mocca::styles
 
 		switch (e.Prop)
 		{
-			mc_layoutProperties mc_renderProperties mc_textProperties default
+			mc_textProperties mc_layoutProperties mc_renderProperties default
 				: mc_error(
 					  ErrorCode::InvalidArgument,
-					  "how did we get to this style? ({})", (int)e.Prop
+					  "how did we get to this style? ({})",
+					  (int)e.Prop
 				  );
 			break;
 		}

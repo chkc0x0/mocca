@@ -69,9 +69,9 @@
     mc_styleProperty(Transition, uint32_t, false, 0U)
 
 #define mc_textPropertiesInh \
+    mc_styleProperty(FontSize, Length, true, (Length{16})) \
     mc_styleProperty(TextColor, Color, true, mocca::colors::AlmostBlack) \
     mc_styleProperty(FontFamily, uint32_t, true, 0U) \
-    mc_styleProperty(FontSize, Length, true, (Length{16})) \
     mc_styleProperty(FontWeight, float, true, 400.0F) \
     mc_styleProperty(FontStretch, float, true, 100.0F) \
     mc_styleProperty(FontStyle, FontStyleType, true, (FontStyleType{FontStyleEnum::Normal})) \
@@ -85,7 +85,7 @@
 #define mc_layoutProperties mc_layoutPropertiesReset mc_layoutPropertiesInh
 #define mc_renderProperties mc_renderPropertiesReset
 #define mc_textProperties mc_textPropertiesInh
-#define mc_inheritProperties mc_layoutPropertiesInh mc_textPropertiesInh
+#define mc_inheritProperties mc_textPropertiesInh mc_layoutPropertiesInh
     
 #define mc_propertyEdges \
     mc_stylePropertyEdge(Padding, Length) \

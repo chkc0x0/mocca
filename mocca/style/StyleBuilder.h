@@ -302,7 +302,7 @@ namespace mocca::styles
 	{                                                                          \
 		return detail::encodeStyleEntry(StyleProperty::name, val);             \
 	}
-	mc_layoutProperties mc_renderProperties mc_textProperties
+	mc_textProperties mc_layoutProperties mc_renderProperties
 #undef mc_styleProperty
 
 #undef mc_stylePropertyEdge

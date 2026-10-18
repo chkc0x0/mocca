@@ -12,4 +12,14 @@ namespace mocca::styles
 	{
 		return {LengthUnit::Percent, value};
 	}
+
+	inline auto em(float value) -> Length
+	{
+		return {LengthUnit::Em, value};
+	}
+
+	inline auto rem(float value) -> Length
+	{
+		return {LengthUnit::Rem, value};
+	}
 }

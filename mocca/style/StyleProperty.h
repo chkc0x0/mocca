@@ -8,7 +8,7 @@ namespace mocca::styles
 		None,
 #undef mc_styleProperty
 #define mc_styleProperty(name, ...) name,
-		mc_layoutProperties mc_renderProperties mc_textProperties
+		mc_textProperties mc_layoutProperties mc_renderProperties
 #undef mc_styleProperty
 			StylePropertyCount,
 	};

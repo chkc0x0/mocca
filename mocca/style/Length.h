@@ -6,6 +6,8 @@ namespace mocca
 	{
 		Pixels,
 		Percent,
+		Em,
+		Rem,
 	};
 
 	struct Length

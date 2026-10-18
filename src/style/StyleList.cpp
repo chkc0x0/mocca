@@ -16,7 +16,12 @@ namespace mocca::styles
 		}
 		else
 		{
-			_entries.insert(it, e);
+			auto r = _entries.insert(it, e);
+
+			if (e.Prop == StyleProperty::FontSize)
+			{
+				std::iter_swap(_entries.begin(), r);
+			}
 		}
 	}
 
