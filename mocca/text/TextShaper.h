@@ -31,6 +31,12 @@ namespace mocca::mtext::detail
 		}
 	};
 
+	struct TextShaperStats
+	{
+		uint64_t ShapeCalls = 0;
+		uint64_t ShapeHits = 0;
+	};
+
 	class TextShaper
 	{
 	public:

@@ -129,11 +129,5 @@ namespace mocca::mtext
 			std::string Content;
 			std::vector<ShapeGlyph> Glyphs;
 		};
-
-		struct TextShaperStats
-		{
-			uint64_t ShapeCalls = 0;
-			uint64_t ShapeHits = 0;
-		};
 	}
 }
