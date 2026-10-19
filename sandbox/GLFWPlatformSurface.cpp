@@ -5,6 +5,7 @@
 #include "text/TextLayout.h"
 #include "text/Unicode.h"
 #include "utils/Math.h"
+#include <cstdlib>
 #include <string>
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
@@ -14,6 +15,8 @@
 #include "nanovg_gl.h"
 
 static int glfwInitialized = 0;
+
+static constexpr bool DebugRunBoxes = true;
 
 GLFWPlatformSurface::GLFWPlatformSurface(
 	mocca::Surface* surface,
@@ -263,6 +266,49 @@ void GLFWPlatformSurface::Submit(
 							c.Content.data() + line.Start,
 							c.Content.data() + line.End
 						);
+					}
+
+					if constexpr (DebugRunBoxes)
+					{
+						size_t count = std::min(
+							c.Layout->Runs.size(),
+							c.Layout->Lines.size()
+						);
+						for (size_t i = 0; i < count; i++)
+						{
+							const auto& run = c.Layout->Runs[i];
+							const auto& line = c.Layout->Lines[i];
+
+							float left =
+								c.Position.X +
+								line.XOffset(c.BoxWidth, c.Align);
+							float halfLeading =
+								(c.Layout->LineHeight -
+								 (c.Layout->Ascent + c.Layout->Descent)) *
+								0.5F;
+							float emTop =
+								c.Position.Y + line.Baseline -
+								c.Layout->Ascent;
+
+							nvgBeginPath(_vg);
+							nvgRect(
+								_vg,
+								left,
+								emTop - halfLeading,
+								run.Width,
+								c.Layout->LineHeight
+							);
+							nvgFillColor(
+								_vg,
+								nvgRGBA(
+									static_cast<unsigned char>(rand() % 256),
+									static_cast<unsigned char>(rand() % 256),
+									static_cast<unsigned char>(rand() % 256),
+									110
+								)
+							);
+							nvgFill(_vg);
+						}
 					}
 				}
 				else if constexpr (std::is_same_v<T, mocca::cmds::PushClipCmd>)
