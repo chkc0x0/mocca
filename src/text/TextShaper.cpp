@@ -83,7 +83,6 @@ namespace mocca::mtext::detail
 	) -> std::shared_ptr<const ShapedText>
 	{
 		mc_profileFunction();
-		stats.ShapeCalls++;
 
 		auto& registry = Application::main->Fonts();
 		auto stack = registry.MatchStack(style.Families, style.Request);
@@ -124,6 +123,8 @@ namespace mocca::mtext::detail
 			stats.ShapeHits++;
 			return hit;
 		}
+
+		stats.ShapeCalls++;
 
 		hb_font_t* font = FontFor(face, faceId, variations);
 		auto features = buildFeatures(style.Features);

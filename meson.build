@@ -27,6 +27,7 @@ sources = [
     'src/text/TextShaper.cpp',
     'src/text/ShapeCache.cpp',
     'src/text/LineBreak.cpp',
+    'src/text/TextLayoutBuilder.cpp'
 ]
 
 cmake = import('cmake')

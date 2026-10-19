@@ -35,7 +35,7 @@ namespace mocca::mtext::detail
 			bool wrap
 		) -> std::shared_ptr<const TextLayout>;
 
-		auto ResolveTextLayout(
+		static auto ResolveTextLayout(
 			const styles::ComputedStyle& style,
 			std::string_view content,
 			float maxWidth,

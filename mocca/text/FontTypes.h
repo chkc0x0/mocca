@@ -130,4 +130,21 @@ namespace mocca::mtext
 			std::vector<ShapeGlyph> Glyphs;
 		};
 	}
+
+	struct Cluster
+	{
+		uint32_t StartGlyph = 0;
+		uint32_t EndGlyph = 0;
+		uint32_t Byte = 0;
+		float Width = 0;
+		bool Space = false;
+		bool Hanging = false;
+	};
+
+	enum class BreakFlag : uint8_t
+	{
+		No = 0,
+		Allow = 1,
+		Must = 2,
+	};
 }

@@ -73,4 +73,21 @@ namespace mocca::mtext
 		uint32_t Features = 0;
 		TextAlignment Align = TextAlignment::Start;
 	};
+
+	namespace detail
+	{
+		struct LineEmitter
+		{
+			TextLayout& Layout;
+			const ShapedText& Shaped;
+			const TextLayoutStyle& Style;
+			const std::vector<Cluster>& Clusters;
+			float Scale = 0;
+			float LineHeight = 0;
+			float HalfLeading = 0;
+			float Ascent = 0;
+
+			[[nodiscard]] auto Emit(size_t begin, size_t end) -> float;
+		};
+	}
 }
