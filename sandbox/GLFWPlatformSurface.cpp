@@ -1,7 +1,11 @@
 #include "GLFWPlatformSurface.h"
+#include "core/Application.h"
 #include "core/Logger.h"
+#include "text/FontRegistry.h"
+#include "text/TextLayout.h"
 #include "text/Unicode.h"
 #include "utils/Math.h"
+#include <string>
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "nanovg.h"
@@ -71,11 +75,6 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 			"failed to create NanoVG context"
 		);
 		return;
-	}
-
-	if (nvgCreateFont(_vg, "sans", "../sandbox/Inter.ttf") == -1)
-	{
-		mc_error(mocca::ErrorCode::InvalidState, "failed to create font");
 	}
 
 	int w;
@@ -171,18 +170,11 @@ void GLFWPlatformSurface::Submit(
 
 	nvgBeginFrame(_vg, (float)w, (float)h, _scale);
 	nvgResetScissor(_vg);
-	nvgFontFace(_vg, "sans");
-	nvgFontSize(_vg, 16);
-
-	float ascender;
-	float descender;
-	float lineh;
-	nvgTextMetrics(_vg, &ascender, &descender, &lineh);
 
 	for (const auto& cmd : commands)
 	{
 		std::visit(
-			[this, ascender](const auto& c) -> void
+			[this](const auto& c) -> void
 			{
 				using T = std::decay_t<decltype(c)>;
 				if constexpr (std::is_same_v<T, mocca::cmds::DrawRectCmd>)
@@ -246,19 +238,32 @@ void GLFWPlatformSurface::Submit(
 				}
 				else if constexpr (std::is_same_v<T, mocca::cmds::DrawTextCmd>)
 				{
-					nvgFontFace(_vg, "sans");
+					int font = FontIdFor(c.Face);
+					if (font < 0 || c.Layout == nullptr)
+					{
+						return;
+					}
+
+					nvgFontFaceId(_vg, font);
+					nvgFontSize(_vg, c.Size);
+					nvgTextLetterSpacing(_vg, c.Layout->LetterSpacing);
+					nvgTextAlign(_vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
 					nvgFillColor(
 						_vg,
 						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
 					);
-					nvgFontSize(_vg, c.Size);
-					nvgText(
-						_vg,
-						c.Position.X,
-						c.Position.Y + ascender,
-						c.Content.c_str(),
-						nullptr
-					);
+
+					for (const auto& line : c.Layout->Lines)
+					{
+						nvgText(
+							_vg,
+							c.Position.X +
+								line.XOffset(c.BoxWidth, c.Align),
+							c.Position.Y + line.Baseline,
+							c.Content.data() + line.Start,
+							c.Content.data() + line.End
+						);
+					}
 				}
 				else if constexpr (std::is_same_v<T, mocca::cmds::PushClipCmd>)
 				{
@@ -292,6 +297,46 @@ void GLFWPlatformSurface::Submit(
 
 	nvgEndFrame(_vg);
 	glfwSwapBuffers(_window);
+}
+
+auto GLFWPlatformSurface::FontIdFor(mocca::mtext::FontFaceId id) -> int
+{
+	auto found = _nvgFonts.find(id);
+	if (found != _nvgFonts.end())
+	{
+		return found->second;
+	}
+
+	int handle = -1;
+	if (_vg != nullptr && mocca::Application::main != nullptr &&
+		id != static_cast<mocca::mtext::FontFaceId>(-1))
+	{
+		const auto& entry = mocca::Application::main->Fonts().Entry(id);
+		std::string name = "mocca-face-" + std::to_string(id);
+
+		if (const auto* path = std::get_if<std::string>(&entry.Source))
+		{
+			handle = nvgCreateFont(_vg, name.c_str(), path->c_str());
+		}
+		else if (
+			const auto* memory =
+				std::get_if<mocca::mtext::FontMemorySource>(&entry.Source)
+		)
+		{
+			handle = nvgCreateFontMem(
+				_vg,
+				name.c_str(),
+				reinterpret_cast<unsigned char*>(
+					const_cast<std::byte*>(memory->Data.data())
+				),
+				static_cast<int>(memory->Data.size()),
+				0
+			);
+		}
+	}
+
+	_nvgFonts.emplace(id, handle);
+	return handle;
 }
 
 auto GLFWPlatformSurface::GetSize() const -> mocca::IVec2

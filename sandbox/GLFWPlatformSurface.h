@@ -2,6 +2,8 @@
 #include "input/InputTypes.h"
 #include "platform/PlatformSurface.h"
 #include "core/Surface.h"
+#include "text/FontTypes.h"
+#include <unordered_map>
 #include <vector>
 
 struct GLFWwindow;
@@ -41,6 +43,7 @@ public:
 
 private:
 	static auto ToKeyCode(int glfwKey) -> mocca::KeyCode;
+	auto FontIdFor(mocca::mtext::FontFaceId id) -> int;
 
 	GLFWwindow* _window = nullptr;
 	NVGcontext* _vg = nullptr;
@@ -48,6 +51,8 @@ private:
 	float _scale = 1.0F;
 	bool _glfwRefHeld = false;
 	mocca::Surface* _surface = nullptr;
+
+	std::unordered_map<mocca::mtext::FontFaceId, int> _nvgFonts;
 
 	mocca::InputBatch _pending;
 };

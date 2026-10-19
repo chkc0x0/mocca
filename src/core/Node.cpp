@@ -2,6 +2,8 @@
 #include "core/HookStore.h"
 #include "style/StyleProperty.h"
 #include "text/Measure.h"
+#include "text/TextLayout.h"
+#include "text/TextLayoutBuilder.h"
 #include "style/StyleApply.h"
 #include "utils/ScopedProfiler.h"
 #include "yoga/YGNode.h"
@@ -401,7 +403,8 @@ namespace mocca::detail
 		}
 		else if (IsText())
 		{
-			// ts a mess brah
+			const std::string& content = std::get<TextElement>(Kind).Content;
+
 			canvas.DrawRect(
 				x,
 				y,
@@ -411,12 +414,24 @@ namespace mocca::detail
 				RectStyle{}
 			);
 
+			auto layout = mtext::detail::TextLayoutBuilder::ResolveTextLayout(
+				Style,
+				content,
+				w,
+				true
+			);
+
 			canvas.DrawText(
-				x,
-				y,
-				std::get<TextElement>(Kind).Content,
-				Style.Get<styles::StyleProperty::TextColor>(),
-				Style.Get<styles::StyleProperty::FontSize>().Value
+				cmds::DrawTextCmd{
+					.Position = {.X = x, .Y = y},
+					.Content = content,
+					.Color = Style.Get<styles::StyleProperty::TextColor>(),
+					.Size = Style.Get<styles::StyleProperty::FontSize>().Value,
+					.Face = layout->Face,
+					.Layout = layout,
+					.BoxWidth = w,
+					.Align = Style.Get<styles::StyleProperty::TextAlign>(),
+				}
 			);
 		}
 		else

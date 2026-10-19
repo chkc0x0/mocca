@@ -53,6 +53,7 @@ namespace mocca::mtext
 		float Ascent = 0;
 		float Descent = 0;
 		float LineHeight = 0;
+		float LetterSpacing = 0;
 		std::vector<ShapedRun> Runs;
 		std::vector<TextLine> Lines;
 		Vector2 Size{.X = 0, .Y = 0};

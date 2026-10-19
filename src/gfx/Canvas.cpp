@@ -22,16 +22,9 @@ namespace mocca
 		);
 	}
 
-	void Canvas::DrawText(float x, float y, std::string text, Color color, float size)
+	void Canvas::DrawText(cmds::DrawTextCmd cmd)
 	{
-		_commands.emplace_back(
-			cmds::DrawTextCmd{
-				.Position = {.X = x, .Y = y},
-				.Content = std::move(text),
-				.Color = color,
-                .Size = size,
-			}
-		);
+		_commands.emplace_back(std::move(cmd));
 	}
 
 	void Canvas::PushClip(float x, float y, float w, float h)

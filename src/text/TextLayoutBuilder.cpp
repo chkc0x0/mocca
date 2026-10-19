@@ -22,6 +22,7 @@ namespace mocca::mtext::detail
 		auto layout = std::make_shared<TextLayout>();
 		layout->Face = shaped.Face;
 		layout->FontSize = style.SizePx;
+		layout->LetterSpacing = style.LetterSpacingPx;
 
 		float scale = static_cast<float>(style.SizePx) /
 					  static_cast<float>(shaped.Upem);

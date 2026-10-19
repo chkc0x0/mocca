@@ -1,6 +1,8 @@
 #pragma once
+#include "text/TextLayout.h"
 #include "utils/Color.h"
 #include "utils/Math.h"
+#include <memory>
 #include <string>
 #include <variant>
 
@@ -41,6 +43,10 @@ namespace mocca::cmds
 		std::string Content;
 		struct Color Color;
 		float Size;
+		mtext::FontFaceId Face = static_cast<mtext::FontFaceId>(-1);
+		std::shared_ptr<const mtext::TextLayout> Layout;
+		float BoxWidth = 0;
+		TextAlignment Align = TextAlignment::Start;
 	};
 
 	struct PushClipCmd
