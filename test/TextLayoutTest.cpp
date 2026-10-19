@@ -1,10 +1,13 @@
 #include "TestSupport.h"
+#include "core/Node.h"
 #include "style/ComputedStyle.h"
 #include "style/StyleHelpers.h"
+#include "text/Measure.h"
 #include "text/TextLayoutBuilder.h"
 #include "text/FontRegistry.h"
 #include "text/TextLayout.h"
 #include "text/TextShaper.h"
+#include <cmath>
 
 #ifndef mc_testFont
 #	define mc_testFont ""
@@ -366,5 +369,47 @@ namespace mtest
 		ASSERT_NE(a, nullptr);
 		EXPECT_EQ(a, b) << "subpixel widths = same key";
 		EXPECT_NE(a, c) << "pixel change makes new layout";
+	}
+
+	TEST_F(TextLayoutTest, MeasureMatchesShrinkWrap)
+	{
+		ComputedStyle style;
+		std::string content =
+			"the quick brown fox jumps over the lazy dog";
+
+		auto reference =
+			TextLayoutBuilder::ResolveTextLayout(style, content, 80.0F, true);
+		ASSERT_NE(reference, nullptr);
+		ASSERT_GT(reference->Lines.size(), 1U);
+
+		mocca::detail::Node node;
+		node.Kind = mocca::TextElement{.Content = content};
+
+		YGNodeRef yoga = YGNodeNew();
+		YGNodeSetContext(yoga, &node);
+
+		YGSize measured = measureFunc(
+			yoga,
+			80.0F,
+			YGMeasureModeAtMost,
+			0.0F,
+			YGMeasureModeUndefined
+		);
+		YGNodeFree(yoga);
+
+		EXPECT_LE(measured.width, 80.0F);
+		EXPECT_FLOAT_EQ(measured.height, std::ceil(reference->Size.Y));
+
+		auto atMeasured = TextLayoutBuilder::ResolveTextLayout(
+			style,
+			content,
+			measured.width,
+			true
+		);
+
+		ASSERT_NE(atMeasured, nullptr);
+		EXPECT_EQ(atMeasured->Lines.size(), reference->Lines.size())
+			<< "a shrink-wrapped measure must not change the line count";
+		EXPECT_FLOAT_EQ(atMeasured->Size.Y, reference->Size.Y);
 	}
 }
