@@ -25,7 +25,8 @@ sources = [
     'src/text/HarfbuzzUtils.cpp',
     'src/text/TextResolve.cpp',
     'src/text/TextShaper.cpp',
-    'src/text/ShapeCache.cpp'
+    'src/text/ShapeCache.cpp',
+    'src/text/LineBreak.cpp',
 ]
 
 cmake = import('cmake')
