@@ -20,15 +20,15 @@ namespace mocca::mtext::detail
 	) -> std::shared_ptr<const TextLayout>
 	{
 		auto layout = std::make_shared<TextLayout>();
-		layout->Face = shaped.Face;
+		layout->Face = shaped.StrutFace;
 		layout->FontSize = style.SizePx;
 		layout->LetterSpacing = style.LetterSpacingPx;
 
 		float scale = static_cast<float>(style.SizePx) /
-					  static_cast<float>(shaped.Upem);
-		float ascent = static_cast<float>(shaped.Ascender) * scale;
-		float descent = static_cast<float>(shaped.Descender) * scale;
-		float lineGap = static_cast<float>(shaped.LineGap) * scale;
+					  static_cast<float>(shaped.StrutUpem);
+		float ascent = static_cast<float>(shaped.StrutAscender) * scale;
+		float descent = static_cast<float>(shaped.StrutDescender) * scale;
+		float lineGap = static_cast<float>(shaped.StrutLineGap) * scale;
 
 		float lineHeight = ascent + descent + lineGap;
 		switch (style.LineHeight)
@@ -54,13 +54,13 @@ namespace mocca::mtext::detail
 			return layout;
 		}
 
-		std::vector<Cluster> clusters = buildClusters(shaped, style, scale);
+		std::vector<Cluster> clusters = buildClusters(shaped, style);
 		size_t n = clusters.size();
 		std::vector<BreakFlag> breaks = breakOpportunities(shaped.Content);
 
 		auto opportunity = [&](size_t i) -> BreakFlag
 		{
-			size_t byteOffset = (i < n) ? clusters[i].Byte
+			size_t byteOffset = (i < n) ? clusters[i].Start
 										: shaped.Content.size();
 			return breaks[byteOffset];
 		};
@@ -70,7 +70,6 @@ namespace mocca::mtext::detail
 			.Shaped = shaped,
 			.Style = style,
 			.Clusters = clusters,
-			.Scale = scale,
 			.LineHeight = lineHeight,
 			.HalfLeading = halfLeading,
 			.Ascent = ascent,
@@ -115,7 +114,7 @@ namespace mocca::mtext::detail
 				lastAllow = i;
 			}
 
-			float newRaw = raw + clusters[i].Width;
+			float newRaw = raw + clusters[i].Advance;
 			float newTrim = clusters[i].Hanging ? trim : newRaw;
 
 			if (wrap && i > lineBegin && newTrim > maxWidth + FitEpsilon)

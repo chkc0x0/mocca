@@ -116,28 +116,53 @@ namespace mocca::mtext
 			uint32_t Cluster = 0;
 		};
 
-		struct ShapedText
+		struct ShapedItem
 		{
-			uint64_t Id = 0;
 			FontFaceId Face = SIZE_MAX;
 			uint32_t Upem = 1000;
-			uint32_t Variations = 0;
-			uint32_t Features = 0;
+			uint32_t Start = 0;
+			uint32_t End = 0;
+			uint8_t Level = 0;
 			int32_t Ascender = 0;
 			int32_t Descender = 0;
 			int32_t LineGap = 0;
-			std::string Content;
 			std::vector<ShapeGlyph> Glyphs;
+		};
+
+		struct ShapedParagraph
+		{
+			uint32_t Start = 0;
+			uint32_t End = 0;
+			uint8_t BaseLevel = 0;
+		};
+
+		struct ShapedText
+		{
+			uint64_t Id = 0;
+			uint32_t Variations = 0;
+			uint32_t Features = 0;
+			std::string Content;
+
+			FontFaceId StrutFace = SIZE_MAX;
+			uint32_t StrutUpem = 1000;
+			int32_t StrutAscender = 0;
+			int32_t StrutDescender = 0;
+			int32_t StrutLineGap = 0;
+
+			std::vector<ShapedItem> Items;
+			std::vector<ShapedParagraph> Paragraphs;
 		};
 	}
 
 	struct Cluster
 	{
-		uint32_t StartGlyph = 0;
-		uint32_t EndGlyph = 0;
-		uint32_t Byte = 0;
-		float Width = 0;
-		bool Space = false;
+		uint32_t Start = 0;
+		uint32_t End = 0;
+		uint32_t Item = 0;
+		uint32_t GlyphBegin = 0;
+		uint32_t GlyphEnd = 0;
+		float Advance = 0;
+		bool IsSpace = false;
 		bool Hanging = false;
 	};
 

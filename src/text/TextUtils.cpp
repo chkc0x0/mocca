@@ -1,47 +1,79 @@
 #include "text/TextUtils.h"
 #include "text/TextLayout.h"
 #include "linebreak.h"
+#include <algorithm>
 
 namespace mocca::mtext::detail
 {
-	auto buildClusters(
-		const ShapedText& shaped,
-		const TextLayoutStyle& style,
-		float scale
-	) -> std::vector<Cluster>
+	namespace
+	{
+		auto scaleFor(const ShapedItem& item, float sizePx) -> float
+		{
+			return (item.Upem == 0)
+					   ? 0.0F
+					   : sizePx / static_cast<float>(item.Upem);
+		}
+	}
+
+	auto buildClusters(const ShapedText& shaped, const TextLayoutStyle& style)
+		-> std::vector<Cluster>
 	{
 		const std::string& content = shaped.Content;
 		std::vector<Cluster> clusters;
-		clusters.reserve(shaped.Glyphs.size());
 
-		for (size_t g = 0; g < shaped.Glyphs.size();)
+		for (uint32_t itemIndex = 0; itemIndex < shaped.Items.size();
+			 itemIndex++)
 		{
-			uint32_t byte = shaped.Glyphs[g].Cluster;
-			float width = 0;
-			size_t j = g;
-			while (j < shaped.Glyphs.size() && shaped.Glyphs[j].Cluster == byte)
+			const ShapedItem& item = shaped.Items[itemIndex];
+			float scale = scaleFor(item, style.SizePx);
+
+			std::vector<Cluster> groups;
+			groups.reserve(item.Glyphs.size());
+			for (size_t g = 0; g < item.Glyphs.size();)
 			{
-				width += static_cast<float>(shaped.Glyphs[j].XAdvance) * scale;
-				j++;
+				uint32_t byte = item.Glyphs[g].Cluster;
+				float width = 0;
+				size_t j = g;
+				while (j < item.Glyphs.size() &&
+					   item.Glyphs[j].Cluster == byte)
+				{
+					width +=
+						static_cast<float>(item.Glyphs[j].XAdvance) * scale;
+					j++;
+				}
+
+				bool space =
+					byte < content.size() && isSpaceByte(content[byte]);
+				bool hanging =
+					byte < content.size() && isHangingByte(content[byte]);
+				width += style.LetterSpacingPx +
+						 (space ? style.WordSpacingPx : 0.0F);
+
+				groups.push_back(
+					Cluster{
+						.Start = byte,
+						.Item = itemIndex,
+						.GlyphBegin = static_cast<uint32_t>(g),
+						.GlyphEnd = static_cast<uint32_t>(j),
+						.Advance = width,
+						.IsSpace = space,
+						.Hanging = hanging,
+					}
+				);
+				g = j;
 			}
 
-			bool space = byte < content.size() && isSpaceByte(content[byte]);
-			bool hanging = byte < content.size() &&
-						   isHangingByte(content[byte]);
-			width += style.LetterSpacingPx +
-					 (space ? style.WordSpacingPx : 0.0F);
-
-			clusters.push_back(
-				Cluster{
-					.StartGlyph = static_cast<uint32_t>(g),
-					.EndGlyph = static_cast<uint32_t>(j),
-					.Byte = byte,
-					.Width = width,
-					.Space = space,
-					.Hanging = hanging,
-				}
-			);
-			g = j;
+			bool rtl = (item.Level & 1) != 0;
+			size_t count = groups.size();
+			for (size_t k = 0; k < count; k++)
+			{
+				size_t logical = rtl ? count - 1 - k : k;
+				Cluster cluster = groups[logical];
+				cluster.End = (k + 1 < count)
+								  ? groups[rtl ? count - 2 - k : k + 1].Start
+								  : item.End;
+				clusters.push_back(cluster);
+			}
 		}
 
 		return clusters;
@@ -52,58 +84,90 @@ namespace mocca::mtext::detail
 		size_t n = Clusters.size();
 		size_t contentSize = Shaped.Content.size();
 
+		size_t glyphBound = end;
+		while (glyphBound > begin && Clusters[glyphBound - 1].Hanging)
+		{
+			glyphBound--;
+		}
+
 		TextLine line;
-		line.Start = (begin < n) ? Clusters[begin].Byte
+		line.Start = (begin < n) ? Clusters[begin].Start
 								 : static_cast<uint32_t>(contentSize);
-		line.End = (end < n) ? Clusters[end].Byte
+		line.End = (end < n) ? Clusters[end].Start
 							 : static_cast<uint32_t>(contentSize);
 
 		float width = 0;
-		for (size_t k = begin; k < end; k++)
+		for (size_t k = begin; k < glyphBound; k++)
 		{
-			width += Clusters[k].Width;
-		}
-		for (size_t k = end; k > begin && Clusters[k - 1].Hanging; k--)
-		{
-			width -= Clusters[k - 1].Width;
+			width += Clusters[k].Advance;
 		}
 		line.Width = width;
 
 		auto lineIndex = static_cast<float>(Layout.Lines.size());
 		line.Baseline = (lineIndex * LineHeight) + HalfLeading + Ascent;
+		line.RunBegin = static_cast<uint32_t>(Layout.Runs.size());
 
-		ShapedRun run;
-		run.Face = Shaped.Face;
-		run.Size = Style.SizePx;
 		float penX = 0;
-		for (size_t k = begin; k < end; k++)
+		for (size_t k = begin; k < glyphBound;)
 		{
-			const Cluster& cluster = Clusters[k];
-			for (uint32_t g = cluster.StartGlyph; g < cluster.EndGlyph; g++)
+			uint32_t itemIndex = Clusters[k].Item;
+			const ShapedItem& item = Shaped.Items[itemIndex];
+			float scale = scaleFor(item, Style.SizePx);
+
+			size_t j = k;
+			uint32_t glyphBegin = Clusters[k].GlyphBegin;
+			uint32_t glyphEnd = Clusters[k].GlyphEnd;
+			while (j < glyphBound && Clusters[j].Item == itemIndex)
 			{
-				const ShapeGlyph& src = Shaped.Glyphs[g];
-				float advance = static_cast<float>(src.XAdvance) * Scale;
+				glyphBegin = std::min(glyphBegin, Clusters[j].GlyphBegin);
+				glyphEnd = std::max(glyphEnd, Clusters[j].GlyphEnd);
+				j++;
+			}
+
+			std::vector<float> spacing(glyphEnd - glyphBegin, 0.0F);
+			for (size_t c = k; c < j; c++)
+			{
+				const Cluster& cluster = Clusters[c];
+				spacing[cluster.GlyphEnd - 1 - glyphBegin] +=
+					Style.LetterSpacingPx +
+					(cluster.IsSpace ? Style.WordSpacingPx : 0.0F);
+			}
+
+			ShapedRun run;
+			run.Face = item.Face;
+			run.Size = Style.SizePx;
+			run.Start = Clusters[k].Start;
+			run.End = Clusters[j - 1].End;
+			run.Level = item.Level;
+			run.X = penX;
+			run.Glyphs.reserve(glyphEnd - glyphBegin);
+
+			float pen = 0;
+			for (uint32_t g = glyphBegin; g < glyphEnd; g++)
+			{
+				const ShapeGlyph& src = item.Glyphs[g];
+				float advance = static_cast<float>(src.XAdvance) * scale;
 				run.Glyphs.push_back(
 					ShapedGlyph{
 						.GlyphId = src.GlyphId,
-						.X = penX,
+						.X = pen,
 						.XAdvance = advance,
-						.XOffset = static_cast<float>(src.XOffset) * Scale,
-						.YOffset = static_cast<float>(src.YOffset) * Scale,
+						.XOffset = static_cast<float>(src.XOffset) * scale,
+						.YOffset = static_cast<float>(src.YOffset) * scale,
 						.Cluster = src.Cluster,
 					}
 				);
-				penX += advance;
+				pen += advance + spacing[g - glyphBegin];
 			}
-			penX += Style.LetterSpacingPx +
-					(cluster.Space ? Style.WordSpacingPx : 0.0F);
+			run.Width = pen;
+			penX += run.Width;
+
+			Layout.Runs.push_back(std::move(run));
+			k = j;
 		}
-		run.Width = penX;
 
-		line.RunBegin = static_cast<uint32_t>(Layout.Runs.size());
-		line.RunEnd = line.RunBegin + 1;
+		line.RunEnd = static_cast<uint32_t>(Layout.Runs.size());
 
-		Layout.Runs.push_back(std::move(run));
 		Layout.Lines.push_back(line);
 		return line.Width;
 	}

@@ -29,6 +29,10 @@ namespace mocca::mtext
 	{
 		FontFaceId Face = SIZE_MAX;
 		float Size = 0;
+		uint32_t Start = 0;
+		uint32_t End = 0;
+		float X = 0;
+		uint8_t Level = 0;
 		std::vector<ShapedGlyph> Glyphs;
 		float Width = 0;
 	};
@@ -41,6 +45,7 @@ namespace mocca::mtext
 		float Baseline = 0;
 		uint32_t RunBegin = 0;
 		uint32_t RunEnd = 0;
+		uint8_t BaseLevel = 0;
 
 		[[nodiscard]] auto XOffset(float boxWidth, TextAlignment align) const
 			-> float;
@@ -83,7 +88,6 @@ namespace mocca::mtext
 			const ShapedText& Shaped;
 			const TextLayoutStyle& Style;
 			const std::vector<Cluster>& Clusters;
-			float Scale = 0;
 			float LineHeight = 0;
 			float HalfLeading = 0;
 			float Ascent = 0;

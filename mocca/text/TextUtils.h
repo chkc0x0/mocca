@@ -6,8 +6,7 @@ namespace mocca::mtext::detail
 {
 	[[nodiscard]] auto buildClusters(
 		const ShapedText& shaped,
-		const TextLayoutStyle& style,
-		float scale
+		const TextLayoutStyle& style
 	) -> std::vector<Cluster>;
 
 	[[nodiscard]] inline auto isSpaceByte(char c) -> bool

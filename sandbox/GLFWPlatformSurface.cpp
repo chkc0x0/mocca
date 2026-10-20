@@ -241,14 +241,11 @@ void GLFWPlatformSurface::Submit(
 				}
 				else if constexpr (std::is_same_v<T, mocca::cmds::DrawTextCmd>)
 				{
-					int font = FontIdFor(c.Face);
-					if (font < 0 || c.Layout == nullptr)
+					if (c.Layout == nullptr)
 					{
 						return;
 					}
 
-					nvgFontFaceId(_vg, font);
-					nvgFontSize(_vg, c.Size);
 					nvgTextLetterSpacing(_vg, c.Layout->LetterSpacing);
 					nvgTextAlign(_vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
 					nvgFillColor(
@@ -258,56 +255,68 @@ void GLFWPlatformSurface::Submit(
 
 					for (const auto& line : c.Layout->Lines)
 					{
-						nvgText(
-							_vg,
-							c.Position.X +
-								line.XOffset(c.BoxWidth, c.Align),
-							c.Position.Y + line.Baseline,
-							c.Content.data() + line.Start,
-							c.Content.data() + line.End
-						);
+						float lineX = c.Position.X +
+									  line.XOffset(c.BoxWidth, c.Align);
+						for (uint32_t r = line.RunBegin; r < line.RunEnd; r++)
+						{
+							const auto& run = c.Layout->Runs[r];
+							int font = FontIdFor(run.Face);
+							if (font < 0)
+							{
+								continue;
+							}
+
+							nvgFontFaceId(_vg, font);
+							nvgFontSize(_vg, run.Size);
+							nvgText(
+								_vg,
+								lineX + run.X,
+								c.Position.Y + line.Baseline,
+								c.Content.data() + run.Start,
+								c.Content.data() + run.End
+							);
+						}
 					}
 
 					if constexpr (DebugRunBoxes)
 					{
-						size_t count = std::min(
-							c.Layout->Runs.size(),
-							c.Layout->Lines.size()
-						);
-						for (size_t i = 0; i < count; i++)
+						float halfLeading =
+							(c.Layout->LineHeight -
+							 (c.Layout->Ascent + c.Layout->Descent)) *
+							0.5F;
+						for (const auto& line : c.Layout->Lines)
 						{
-							const auto& run = c.Layout->Runs[i];
-							const auto& line = c.Layout->Lines[i];
-
 							float left =
 								c.Position.X +
 								line.XOffset(c.BoxWidth, c.Align);
-							float halfLeading =
-								(c.Layout->LineHeight -
-								 (c.Layout->Ascent + c.Layout->Descent)) *
-								0.5F;
 							float emTop =
 								c.Position.Y + line.Baseline -
 								c.Layout->Ascent;
 
-							nvgBeginPath(_vg);
-							nvgRect(
-								_vg,
-								left,
-								emTop - halfLeading,
-								run.Width,
-								c.Layout->LineHeight
-							);
-							nvgFillColor(
-								_vg,
-								nvgRGBA(
+							for (uint32_t r = line.RunBegin; r < line.RunEnd;
+								 r++)
+							{
+								const auto& run = c.Layout->Runs[r];
+								nvgBeginPath(_vg);
+								nvgRect(
+									_vg,
+									left + run.X,
+									emTop - halfLeading,
+									run.Width,
+									c.Layout->LineHeight
+								);
+								nvgFillColor(
+									_vg,
+									nvgRGBA(
 									static_cast<unsigned char>(rand() % 256),
 									static_cast<unsigned char>(rand() % 256),
 									static_cast<unsigned char>(rand() % 256),
-									110
-								)
-							);
-							nvgFill(_vg);
+										110
+									)
+								);
+								nvgFill(_vg);
+                                
+							}
 						}
 					}
 				}

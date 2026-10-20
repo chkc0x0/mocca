@@ -33,9 +33,12 @@ namespace mtest
 	auto totalAdvance(const ShapedText& shaped) -> int64_t
 	{
 		int64_t sum = 0;
-		for (const auto& glyph : shaped.Glyphs)
+		for (const auto& item : shaped.Items)
 		{
-			sum += glyph.XAdvance;
+			for (const auto& glyph : item.Glyphs)
+			{
+				sum += glyph.XAdvance;
+			}
 		}
 		return sum;
 	}
@@ -75,12 +78,29 @@ namespace mtest
 		auto shaped = TextShaper::Shape("Hello", testStyle());
 
 		ASSERT_NE(shaped, nullptr);
-		EXPECT_EQ(shaped->Face, 0U);
-		EXPECT_GT(shaped->Upem, 0U);
-		EXPECT_FALSE(shaped->Glyphs.empty());
+		EXPECT_EQ(shaped->StrutFace, 0U);
+		EXPECT_GT(shaped->StrutUpem, 0U);
+		ASSERT_EQ(shaped->Items.size(), 1U);
+		EXPECT_FALSE(shaped->Items[0].Glyphs.empty());
 		EXPECT_GT(totalAdvance(*shaped), 0);
-		EXPECT_GT(shaped->Ascender, 0);
-		EXPECT_GT(shaped->Descender, 0);
+		EXPECT_GT(shaped->StrutAscender, 0);
+		EXPECT_GT(shaped->StrutDescender, 0);
+	}
+
+	TEST_F(TextLayoutTest, GlyphClustersInsideItem)
+	{
+		auto shaped = TextShaper::Shape("Hello, world", testStyle());
+
+		ASSERT_NE(shaped, nullptr);
+		ASSERT_FALSE(shaped->Items.empty());
+		for (const auto& item : shaped->Items)
+		{
+			for (const auto& glyph : item.Glyphs)
+			{
+				EXPECT_GE(glyph.Cluster, item.Start);
+				EXPECT_LT(glyph.Cluster, item.End);
+			}
+		}
 	}
 
 	TEST_F(TextLayoutTest, EmptyShapesNothing)
@@ -88,7 +108,8 @@ namespace mtest
 		auto shaped = TextShaper::Shape("", testStyle());
 
 		ASSERT_NE(shaped, nullptr);
-		EXPECT_TRUE(shaped->Glyphs.empty());
+		ASSERT_EQ(shaped->Items.size(), 1U);
+		EXPECT_TRUE(shaped->Items[0].Glyphs.empty());
 	}
 
 	TEST_F(TextLayoutTest, CachedShapeReused)

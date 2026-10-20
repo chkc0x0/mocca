@@ -11,6 +11,28 @@
 
 namespace mocca::mtext::detail
 {
+	auto buildParagraphs(std::string_view content)
+		-> std::vector<ShapedParagraph>
+	{
+		std::vector<ShapedParagraph> paragraphs;
+		size_t start = 0;
+		for (size_t i = 0; i <= content.size(); i++)
+		{
+			if (i == content.size() || content[i] == '\n')
+			{
+				paragraphs.push_back(
+					ShapedParagraph{
+						.Start = static_cast<uint32_t>(start),
+						.End = static_cast<uint32_t>(i),
+						.BaseLevel = 0,
+					}
+				);
+				start = i + 1;
+			}
+		}
+		return paragraphs;
+	}
+
 	auto hashVariations(const std::vector<hb_variation_t>& variations) -> size_t
 	{
 		size_t hash = std::hash<size_t>{}(variations.size());
@@ -149,18 +171,19 @@ namespace mocca::mtext::detail
 		const hb_glyph_position_t* positions =
 			hb_buffer_get_glyph_positions(buffer, &count);
 
-		auto shaped = std::make_shared<ShapedText>();
-		shaped->Id = nextShapedId++;
-		shaped->Face = faceId;
-		shaped->Upem = hb_face_get_upem(face);
-		shaped->Variations = style.Variations;
-		shaped->Features = style.Features;
-		shaped->Content = std::string(content);
-		shaped->Glyphs.reserve(count);
+		uint32_t upem = hb_face_get_upem(face);
+
+		ShapedItem item;
+		item.Face = faceId;
+		item.Upem = upem;
+		item.Start = 0;
+		item.End = static_cast<uint32_t>(content.size());
+		item.Level = 0;
+		item.Glyphs.reserve(count);
 
 		for (unsigned i = 0; i < count; i++)
 		{
-			shaped->Glyphs.push_back(
+			item.Glyphs.push_back(
 				ShapeGlyph{
 					.GlyphId = infos[i].codepoint,
 					.XAdvance = positions[i].x_advance,
@@ -172,23 +195,40 @@ namespace mocca::mtext::detail
 			);
 		}
 
+		int32_t ascender = 0;
+		int32_t descender = 0;
+		int32_t lineGap = 0;
 		hb_font_extents_t extents{};
 		if (hb_font_get_h_extents(font, &extents) != 0)
 		{
-			shaped->Ascender = extents.ascender;
-			shaped->Descender = -extents.descender;
-			shaped->LineGap = extents.line_gap;
+			ascender = extents.ascender;
+			descender = -extents.descender;
+			lineGap = extents.line_gap;
 		}
 		else
 		{
-			shaped->Ascender = static_cast<int32_t>(
-				static_cast<float>(shaped->Upem) * 0.8F
-			);
-			shaped->Descender = static_cast<int32_t>(
-				static_cast<float>(shaped->Upem) * 0.2F
-			);
-			shaped->LineGap = 0;
+			ascender = static_cast<int32_t>(static_cast<float>(upem) * 0.8F);
+			descender = static_cast<int32_t>(static_cast<float>(upem) * 0.2F);
+			lineGap = 0;
 		}
+		item.Ascender = ascender;
+		item.Descender = descender;
+		item.LineGap = lineGap;
+
+		auto shaped = std::make_shared<ShapedText>();
+		shaped->Id = nextShapedId++;
+		shaped->Variations = style.Variations;
+		shaped->Features = style.Features;
+		shaped->Content = std::string(content);
+
+		shaped->StrutFace = faceId;
+		shaped->StrutUpem = upem;
+		shaped->StrutAscender = ascender;
+		shaped->StrutDescender = descender;
+		shaped->StrutLineGap = lineGap;
+
+		shaped->Items.push_back(std::move(item));
+		shaped->Paragraphs = buildParagraphs(content);
 
 		hb_buffer_destroy(buffer);
 
@@ -304,8 +344,7 @@ namespace mocca::mtext::detail
 
 namespace mocca::mtext
 {
-	auto TextLine::XOffset(float boxWidth, TextAlignment align) const
-		-> float
+	auto TextLine::XOffset(float boxWidth, TextAlignment align) const -> float
 	{
 		switch (align)
 		{
