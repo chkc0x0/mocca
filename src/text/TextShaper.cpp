@@ -3,11 +3,14 @@
 #include "core/Logger.h"
 #include "hb-ot.h"
 #include "style/StyleValue.h"
+#include "text/FontCoverage.h"
 #include "text/FontRegistry.h"
+#include "text/FontTypes.h"
 #include "utils/ScopedProfiler.h"
 #include <algorithm>
 #include <functional>
 #include <optional>
+#include <vector>
 
 namespace mocca::mtext::detail
 {
@@ -42,6 +45,101 @@ namespace mocca::mtext::detail
 			mocca::hashCombine(hash, std::hash<float>{}(variation.value));
 		}
 		return hash;
+	}
+
+	struct FontMetrics
+	{
+		int32_t Ascender = 0;
+		int32_t Descender = 0;
+		int32_t LineGap = 0;
+	};
+
+	auto metricsFor(hb_font_t* font, uint32_t upem) -> FontMetrics
+	{
+		hb_font_extents_t extents{};
+		if (hb_font_get_h_extents(font, &extents) != 0)
+		{
+			return FontMetrics{
+				.Ascender = extents.ascender,
+				.Descender = -extents.descender,
+				.LineGap = extents.line_gap,
+			};
+		}
+
+		return FontMetrics{
+			.Ascender = static_cast<int32_t>(static_cast<float>(upem) * 0.8F),
+			.Descender = static_cast<int32_t>(static_cast<float>(upem) * 0.2F),
+			.LineGap = 0,
+		};
+	}
+
+	auto shapeItem(
+		hb_font_t* font,
+		hb_face_t* face,
+		std::string_view content,
+		const TextItem& item,
+		const std::vector<hb_feature_t>& features
+	) -> ShapedItem
+	{
+		const char* data = content.empty() ? "" : content.data();
+		auto offset = static_cast<int>(item.Start);
+		auto length = static_cast<int>(item.End - item.Start);
+
+		hb_buffer_t* buffer = hb_buffer_create();
+		hb_buffer_add_utf8(
+			buffer,
+			data,
+			static_cast<int>(content.size()),
+			offset,
+			length
+		);
+		hb_buffer_set_direction(buffer, HB_DIRECTION_LTR);
+		hb_buffer_set_script(buffer, static_cast<hb_script_t>(item.Script));
+		hb_buffer_guess_segment_properties(buffer);
+		hb_shape(
+			font,
+			buffer,
+			features.data(),
+			static_cast<unsigned>(features.size())
+		);
+
+		unsigned count = 0;
+		const hb_glyph_info_t* infos =
+			hb_buffer_get_glyph_infos(buffer, &count);
+		const hb_glyph_position_t* positions =
+			hb_buffer_get_glyph_positions(buffer, &count);
+
+		uint32_t upem = hb_face_get_upem(face);
+
+		ShapedItem out;
+		out.Face = item.Face;
+		out.Upem = upem;
+		out.Start = item.Start;
+		out.End = item.End;
+		out.Level = 0;
+		out.Glyphs.reserve(count);
+
+		for (unsigned i = 0; i < count; i++)
+		{
+			out.Glyphs.push_back(
+				ShapeGlyph{
+					.GlyphId = infos[i].codepoint,
+					.XAdvance = positions[i].x_advance,
+					.YAdvance = positions[i].y_advance,
+					.XOffset = positions[i].x_offset,
+					.YOffset = positions[i].y_offset,
+					.Cluster = infos[i].cluster,
+				}
+			);
+		}
+
+		FontMetrics metrics = metricsFor(font, upem);
+		out.Ascender = metrics.Ascender;
+		out.Descender = metrics.Descender;
+		out.LineGap = metrics.LineGap;
+
+		hb_buffer_destroy(buffer);
+		return out;
 	}
 
 	struct AxisRange
@@ -109,34 +207,34 @@ namespace mocca::mtext::detail
 		auto& registry = Application::main->Fonts();
 		auto stack = registry.MatchStack(style.Families, style.Request);
 
-		FontFaceId faceId = SIZE_MAX;
+		std::vector<FontFaceId> faces;
+		faces.reserve(stack.Entries.size());
 		for (const auto& entry : stack.Entries)
 		{
 			if (entry.Match)
 			{
-				faceId = entry.Match.Id;
-				break;
+				faces.push_back(entry.Match.Id);
 			}
 		}
 
-		if (faceId == SIZE_MAX)
+		if (faces.empty())
 		{
 			return ReportNoFace();
 		}
 
-		hb_face_t* face = registry.Face(faceId);
-		if (face == nullptr)
+		hb_face_t* strut = registry.Face(faces.front());
+		if (strut == nullptr)
 		{
 			return ReportNoFace();
 		}
 
-		auto variations =
-			buildVariations(face, style.Request, style.Variations);
+		auto strutVariations =
+			buildVariations(strut, style.Request, style.Variations);
 
 		ShapeKey key{
 			.Content = std::string(content),
-			.Face = faceId,
-			.Variations = hashVariations(variations),
+			.Faces = faces,
+			.Variations = hashVariations(strutVariations),
 			.Features = style.Features,
 		};
 
@@ -148,72 +246,13 @@ namespace mocca::mtext::detail
 
 		stats.ShapeCalls++;
 
-		hb_font_t* font = FontFor(face, faceId, variations);
 		auto features = buildFeatures(style.Features);
 
-		const char* data = content.empty() ? "" : content.data();
-		auto length = static_cast<int>(content.size());
-
-		hb_buffer_t* buffer = hb_buffer_create();
-		hb_buffer_add_utf8(buffer, data, length, 0, length);
-		hb_buffer_set_direction(buffer, HB_DIRECTION_LTR);
-		hb_buffer_guess_segment_properties(buffer);
-		hb_shape(
-			font,
-			buffer,
-			features.data(),
-			static_cast<unsigned>(features.size())
+		uint32_t strutUpem = hb_face_get_upem(strut);
+		FontMetrics strutMetrics = metricsFor(
+			FontFor(strut, faces.front(), strutVariations),
+			strutUpem
 		);
-
-		unsigned count = 0;
-		const hb_glyph_info_t* infos =
-			hb_buffer_get_glyph_infos(buffer, &count);
-		const hb_glyph_position_t* positions =
-			hb_buffer_get_glyph_positions(buffer, &count);
-
-		uint32_t upem = hb_face_get_upem(face);
-
-		ShapedItem item;
-		item.Face = faceId;
-		item.Upem = upem;
-		item.Start = 0;
-		item.End = static_cast<uint32_t>(content.size());
-		item.Level = 0;
-		item.Glyphs.reserve(count);
-
-		for (unsigned i = 0; i < count; i++)
-		{
-			item.Glyphs.push_back(
-				ShapeGlyph{
-					.GlyphId = infos[i].codepoint,
-					.XAdvance = positions[i].x_advance,
-					.YAdvance = positions[i].y_advance,
-					.XOffset = positions[i].x_offset,
-					.YOffset = positions[i].y_offset,
-					.Cluster = infos[i].cluster,
-				}
-			);
-		}
-
-		int32_t ascender = 0;
-		int32_t descender = 0;
-		int32_t lineGap = 0;
-		hb_font_extents_t extents{};
-		if (hb_font_get_h_extents(font, &extents) != 0)
-		{
-			ascender = extents.ascender;
-			descender = -extents.descender;
-			lineGap = extents.line_gap;
-		}
-		else
-		{
-			ascender = static_cast<int32_t>(static_cast<float>(upem) * 0.8F);
-			descender = static_cast<int32_t>(static_cast<float>(upem) * 0.2F);
-			lineGap = 0;
-		}
-		item.Ascender = ascender;
-		item.Descender = descender;
-		item.LineGap = lineGap;
 
 		auto shaped = std::make_shared<ShapedText>();
 		shaped->Id = nextShapedId++;
@@ -221,16 +260,30 @@ namespace mocca::mtext::detail
 		shaped->Features = style.Features;
 		shaped->Content = std::string(content);
 
-		shaped->StrutFace = faceId;
-		shaped->StrutUpem = upem;
-		shaped->StrutAscender = ascender;
-		shaped->StrutDescender = descender;
-		shaped->StrutLineGap = lineGap;
+		shaped->StrutFace = faces.front();
+		shaped->StrutUpem = strutUpem;
+		shaped->StrutAscender = strutMetrics.Ascender;
+		shaped->StrutDescender = strutMetrics.Descender;
+		shaped->StrutLineGap = strutMetrics.LineGap;
 
-		shaped->Items.push_back(std::move(item));
 		shaped->Paragraphs = buildParagraphs(content);
 
-		hb_buffer_destroy(buffer);
+		for (const TextItem& item : TextItem::Itemize(content, faces))
+		{
+			hb_face_t* face = registry.Face(item.Face);
+			if (face == nullptr)
+			{
+				continue;
+			}
+
+			auto variations =
+				buildVariations(face, style.Request, style.Variations);
+			hb_font_t* font = FontFor(face, item.Face, variations);
+
+			shaped->Items.push_back(
+				shapeItem(font, face, content, item, features)
+			);
+		}
 
 		cache.Insert(key, shaped);
 		return shaped;
@@ -245,6 +298,7 @@ namespace mocca::mtext::detail
 	{
 		cache.Clear();
 		fonts.clear();
+		FontCoverage::Clear();
 		warnedNoFace = false;
 	}
 

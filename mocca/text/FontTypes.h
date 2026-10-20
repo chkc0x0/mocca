@@ -152,6 +152,28 @@ namespace mocca::mtext
 			std::vector<ShapedItem> Items;
 			std::vector<ShapedParagraph> Paragraphs;
 		};
+
+		struct TextItem
+		{
+			uint32_t Start = 0;
+			uint32_t End = 0;
+			uint32_t Script = 0;
+			FontFaceId Face = SIZE_MAX;
+
+			static auto Itemize(
+				std::string_view content,
+				std::span<const FontFaceId> stack
+			) -> std::vector<TextItem>;
+		};
+
+		struct Grapheme
+		{
+			uint32_t Start = 0;
+			uint32_t End = 0;
+			uint32_t Script = 0;
+			bool Sticky = false;
+			std::vector<uint32_t> Codepoints;
+		};
 	}
 
 	struct Cluster

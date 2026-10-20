@@ -6,7 +6,10 @@ namespace mocca::mtext::detail
 	auto hashShapeKey(const ShapeKey& key) -> size_t
 	{
 		size_t hash = std::hash<std::string>{}(key.Content);
-		mocca::hashCombine(hash, std::hash<size_t>{}(key.Face));
+		for (FontFaceId face : key.Faces)
+		{
+			mocca::hashCombine(hash, std::hash<size_t>{}(face));
+		}
 		mocca::hashCombine(hash, key.Variations);
 		mocca::hashCombine(hash, std::hash<uint32_t>{}(key.Features));
 		return hash;

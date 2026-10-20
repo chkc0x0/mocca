@@ -25,6 +25,8 @@ sources = [
     'src/text/HarfbuzzUtils.cpp',
     'src/text/TextResolve.cpp',
     'src/text/TextShaper.cpp',
+    'src/text/Itemizer.cpp',
+    'src/text/FontCoverage.cpp',
     'src/text/ShapeCache.cpp',
     'src/text/TextUtils.cpp',
     'src/text/TextLayoutBuilder.cpp',
@@ -103,6 +105,9 @@ if get_option('tests')
         cpp_args: [
             '-Dmc_testFont="@0@"'.format(
                 meson.project_source_root() / 'sandbox' / 'Inter.ttf'
+            ),
+            '-Dmc_testCjkFont="@0@"'.format(
+                meson.project_source_root() / 'sandbox' / 'NotoSansTC.ttf'
             )
         ],
         override_options: ['unity=on', 'unity_size=8'],

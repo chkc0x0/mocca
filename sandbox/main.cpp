@@ -110,7 +110,7 @@ auto Editor() -> Element
 			{
 				BackgroundColor(Color::Oklch(0.7, 0.1036, 171)),
 				Padding(px(16)),
-				FontFamily("Inter", "sans-serif"),
+				FontFamily("Inter", "Noto Sans TC"),
 				FontSize(px(24)),
 			},
 		.Children = {
@@ -177,7 +177,10 @@ auto main(int argc, const char** argv) -> int
 		}
 	);
 
-	app.Fonts().RegisterFile("../sandbox/NotoSansTC.ttf");
+	app.Fonts().RegisterFile(
+		"../sandbox/NotoSansTC.ttf",
+		{.Family = "Noto Sans TC"}
+	);
 
 	app.On(
 		ApplicationEvent::SurfaceCreated,

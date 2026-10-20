@@ -3,14 +3,16 @@
 #include <cstddef>
 #include <list>
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace mocca::mtext::detail
 {
 	struct ShapeKey
 	{
 		std::string Content;
-		FontFaceId Face = SIZE_MAX;
+		std::vector<FontFaceId> Faces;
 		size_t Variations = 0;
 		uint32_t Features = 0;
 
