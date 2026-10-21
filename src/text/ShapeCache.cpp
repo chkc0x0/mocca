@@ -12,6 +12,10 @@ namespace mocca::mtext::detail
 		}
 		mocca::hashCombine(hash, key.Variations);
 		mocca::hashCombine(hash, std::hash<uint32_t>{}(key.Features));
+		mocca::hashCombine(
+			hash,
+			std::hash<uint8_t>{}(static_cast<uint8_t>(key.Base))
+		);
 		return hash;
 	}
 

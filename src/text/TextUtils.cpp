@@ -2,16 +2,68 @@
 #include "text/TextLayout.h"
 #include "linebreak.h"
 #include <algorithm>
+#include <utility>
 
 namespace mocca::mtext::detail
 {
-	namespace
+	auto scaleFor(const ShapedItem& item, float sizePx) -> float
 	{
-		auto scaleFor(const ShapedItem& item, float sizePx) -> float
+		return (item.Upem == 0) ? 0.0F : sizePx / static_cast<float>(item.Upem);
+	}
+
+	auto baseLevelFor(
+		const std::vector<ShapedParagraph>& paragraphs,
+		uint32_t offset
+	) -> uint8_t
+	{
+		uint8_t level = 0;
+		for (const ShapedParagraph& paragraph : paragraphs)
 		{
-			return (item.Upem == 0)
-					   ? 0.0F
-					   : sizePx / static_cast<float>(item.Upem);
+			if (paragraph.Start > offset)
+			{
+				break;
+			}
+			level = paragraph.BaseLevel;
+		}
+		return level;
+	}
+
+	auto reorderRuns(std::vector<ShapedRun>& runs) -> void
+	{
+		if (runs.size() < 2)
+		{
+			return;
+		}
+
+		uint8_t highest = 0;
+		uint8_t lowestOdd = 0xFF;
+		for (const ShapedRun& run : runs)
+		{
+			highest = std::max(highest, run.Level);
+			if ((run.Level & 1) != 0)
+			{
+				lowestOdd = std::min(lowestOdd, run.Level);
+			}
+		}
+
+		for (int level = highest; level >= static_cast<int>(lowestOdd); level--)
+		{
+			for (size_t i = 0; i < runs.size();)
+			{
+				if (std::cmp_less(runs[i].Level, level))
+				{
+					i++;
+					continue;
+				}
+
+				size_t j = i;
+				while (j < runs.size() && runs[j].Level >= level)
+				{
+					j++;
+				}
+				std::reverse(runs.begin() + i, runs.begin() + j);
+				i = j;
+			}
 		}
 	}
 
@@ -34,18 +86,17 @@ namespace mocca::mtext::detail
 				uint32_t byte = item.Glyphs[g].Cluster;
 				float width = 0;
 				size_t j = g;
-				while (j < item.Glyphs.size() &&
-					   item.Glyphs[j].Cluster == byte)
+				while (j < item.Glyphs.size() && item.Glyphs[j].Cluster == byte)
 				{
-					width +=
-						static_cast<float>(item.Glyphs[j].XAdvance) * scale;
+					width += static_cast<float>(item.Glyphs[j].XAdvance) *
+							 scale;
 					j++;
 				}
 
-				bool space =
-					byte < content.size() && isSpaceByte(content[byte]);
-				bool hanging =
-					byte < content.size() && isHangingByte(content[byte]);
+				bool space = byte < content.size() &&
+							 isSpaceByte(content[byte]);
+				bool hanging = byte < content.size() &&
+							   isHangingByte(content[byte]);
 				width += style.LetterSpacingPx +
 						 (space ? style.WordSpacingPx : 0.0F);
 
@@ -95,6 +146,7 @@ namespace mocca::mtext::detail
 								 : static_cast<uint32_t>(contentSize);
 		line.End = (end < n) ? Clusters[end].Start
 							 : static_cast<uint32_t>(contentSize);
+		line.BaseLevel = baseLevelFor(Shaped.Paragraphs, line.Start);
 
 		float width = 0;
 		for (size_t k = begin; k < glyphBound; k++)
@@ -105,9 +157,8 @@ namespace mocca::mtext::detail
 
 		auto lineIndex = static_cast<float>(Layout.Lines.size());
 		line.Baseline = (lineIndex * LineHeight) + HalfLeading + Ascent;
-		line.RunBegin = static_cast<uint32_t>(Layout.Runs.size());
 
-		float penX = 0;
+		std::vector<ShapedRun> runs;
 		for (size_t k = begin; k < glyphBound;)
 		{
 			uint32_t itemIndex = Clusters[k].Item;
@@ -139,7 +190,6 @@ namespace mocca::mtext::detail
 			run.Start = Clusters[k].Start;
 			run.End = Clusters[j - 1].End;
 			run.Level = item.Level;
-			run.X = penX;
 			run.Glyphs.reserve(glyphEnd - glyphBegin);
 
 			float pen = 0;
@@ -160,12 +210,21 @@ namespace mocca::mtext::detail
 				pen += advance + spacing[g - glyphBegin];
 			}
 			run.Width = pen;
-			penX += run.Width;
 
-			Layout.Runs.push_back(std::move(run));
+			runs.push_back(std::move(run));
 			k = j;
 		}
 
+		reorderRuns(runs);
+
+		line.RunBegin = static_cast<uint32_t>(Layout.Runs.size());
+		float penX = 0;
+		for (ShapedRun& run : runs)
+		{
+			run.X = penX;
+			penX += run.Width;
+			Layout.Runs.push_back(std::move(run));
+		}
 		line.RunEnd = static_cast<uint32_t>(Layout.Runs.size());
 
 		Layout.Lines.push_back(line);

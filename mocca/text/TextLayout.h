@@ -15,6 +15,13 @@ namespace mocca::mtext
 		Px,
 	};
 
+	enum class BaseDirection : uint8_t
+	{
+		LTR,
+		RTL,
+		Auto,
+	};
+
 	struct ShapedGlyph
 	{
 		uint32_t GlyphId = 0;
@@ -78,6 +85,7 @@ namespace mocca::mtext
 		uint32_t Variations = 0;
 		uint32_t Features = 0;
 		TextAlignment Align = TextAlignment::Start;
+		BaseDirection Base = BaseDirection::LTR;
 	};
 
 	namespace detail

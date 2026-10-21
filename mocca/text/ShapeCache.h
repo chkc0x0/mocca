@@ -1,5 +1,6 @@
 #pragma once
 #include "text/FontTypes.h"
+#include "text/TextLayout.h"
 #include <cstddef>
 #include <list>
 #include <memory>
@@ -15,6 +16,7 @@ namespace mocca::mtext::detail
 		std::vector<FontFaceId> Faces;
 		size_t Variations = 0;
 		uint32_t Features = 0;
+		BaseDirection Base = BaseDirection::LTR;
 
 		auto operator==(const ShapeKey&) const -> bool = default;
 	};

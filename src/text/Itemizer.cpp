@@ -100,8 +100,25 @@ namespace mocca::mtext::detail
 		return out;
 	}
 
-	auto resolveScripts(std::vector<Grapheme>& graphemes) -> void
+	auto levelAt(const Grapheme& grapheme, std::span<const uint8_t> levels)
+		-> uint8_t
 	{
+		return (grapheme.Start < levels.size()) ? levels[grapheme.Start] : 0;
+	}
+
+	struct StrongNeighbors
+	{
+		std::vector<size_t> Prev;
+		std::vector<size_t> Next;
+	};
+
+	auto findStrongNeighbors(const std::vector<Grapheme>& graphemes)
+		-> StrongNeighbors
+	{
+		StrongNeighbors out;
+		out.Prev.assign(graphemes.size(), SIZE_MAX);
+		out.Next.assign(graphemes.size(), SIZE_MAX);
+
 		size_t begin = 0;
 		while (begin < graphemes.size())
 		{
@@ -115,31 +132,71 @@ namespace mocca::mtext::detail
 				end++;
 			}
 
-			uint32_t firstStrong = 0;
+			size_t previous = SIZE_MAX;
 			for (size_t i = begin; i < end; i++)
 			{
+				out.Prev[i] = previous;
 				if (!graphemes[i].Sticky)
 				{
-					firstStrong = graphemes[i].Script;
-					break;
+					previous = i;
 				}
 			}
 
-			uint32_t previous = 0;
-			for (size_t i = begin; i < end; i++)
+			size_t next = SIZE_MAX;
+			for (size_t i = end; i-- > begin;)
 			{
-				if (graphemes[i].Sticky)
+				out.Next[i] = next;
+				if (!graphemes[i].Sticky)
 				{
-					graphemes[i].Script = previous != 0 ? previous
-														: firstStrong;
-				}
-				else
-				{
-					previous = graphemes[i].Script;
+					next = i;
 				}
 			}
 
 			begin = end;
+		}
+
+		return out;
+	}
+
+	auto resolveScripts(
+		std::vector<Grapheme>& graphemes,
+		const StrongNeighbors& neighbors,
+		std::span<const uint8_t> levels
+	) -> void
+	{
+		for (size_t i = 0; i < graphemes.size(); i++)
+		{
+			if (!graphemes[i].Sticky)
+			{
+				continue;
+			}
+
+			size_t before = neighbors.Prev[i];
+			size_t after = neighbors.Next[i];
+			uint8_t level = levelAt(graphemes[i], levels);
+
+			uint32_t script = 0;
+			if (before != SIZE_MAX && after != SIZE_MAX)
+			{
+				if (levelAt(graphemes[after], levels) == level)
+				{
+					script = graphemes[after].Script;
+				}
+				else
+				{
+					script = graphemes[before].Script;
+				}
+			}
+			else if (before != SIZE_MAX)
+			{
+				script = graphemes[before].Script;
+			}
+			else if (after != SIZE_MAX)
+			{
+				script = graphemes[after].Script;
+			}
+
+			graphemes[i].Script = script;
 		}
 	}
 
@@ -170,18 +227,18 @@ namespace mocca::mtext::detail
 	auto chooseFace(
 		const Grapheme& grapheme,
 		std::span<const FontFaceId> stack,
-		FontFaceId previous
+		FontFaceId preferred
 	) -> FontFaceId
 	{
 		if (!hasRequirements(grapheme))
 		{
-			return previous != SIZE_MAX ? previous : stack.front();
+			return preferred != SIZE_MAX ? preferred : stack.front();
 		}
 
-		if (isSpaceOnly(grapheme) && previous != SIZE_MAX &&
-			covers(grapheme, previous))
+		if (isSpaceOnly(grapheme) && preferred != SIZE_MAX &&
+			covers(grapheme, preferred))
 		{
-			return previous;
+			return preferred;
 		}
 
 		for (FontFaceId face : stack)
@@ -197,7 +254,8 @@ namespace mocca::mtext::detail
 
 	auto TextItem::Itemize(
 		std::string_view content,
-		std::span<const FontFaceId> stack
+		std::span<const FontFaceId> stack,
+		std::span<const uint8_t> levels
 	) -> std::vector<TextItem>
 	{
 		std::vector<TextItem> items;
@@ -213,6 +271,7 @@ namespace mocca::mtext::detail
 					.Start = 0,
 					.End = 0,
 					.Script = HB_SCRIPT_COMMON,
+					.Level = 0,
 					.Face = stack.front(),
 				}
 			);
@@ -220,15 +279,34 @@ namespace mocca::mtext::detail
 		}
 
 		std::vector<Grapheme> graphemes = splitGraphemes(content);
-		resolveScripts(graphemes);
+		StrongNeighbors neighbors = findStrongNeighbors(graphemes);
+		resolveScripts(graphemes, neighbors, levels);
 
 		FontFaceId previousFace = SIZE_MAX;
 		bool closed = true;
 		std::vector<uint32_t> warnedScripts;
 
-		for (const auto& grapheme : graphemes)
+		for (size_t index = 0; index < graphemes.size(); index++)
 		{
-			FontFaceId face = chooseFace(grapheme, stack, previousFace);
+			const Grapheme& grapheme = graphemes[index];
+			uint8_t level = levelAt(grapheme, levels);
+
+			FontFaceId preferred = previousFace;
+			bool sameAsPrevious =
+				previousFace != SIZE_MAX &&
+				levelAt(graphemes[index - 1], levels) == level;
+			if (!sameAsPrevious)
+			{
+				size_t after = neighbors.Next[index];
+				if (after != SIZE_MAX &&
+					levelAt(graphemes[after], levels) == level)
+				{
+					preferred = chooseFace(graphemes[after], stack, SIZE_MAX);
+				}
+			}
+
+			FontFaceId face = chooseFace(grapheme, stack, preferred);
+
 			if (hasRequirements(grapheme) && !covers(grapheme, face) &&
 				std::ranges::find(warnedScripts, grapheme.Script) ==
 					warnedScripts.end())
@@ -251,13 +329,14 @@ namespace mocca::mtext::detail
 
 			if (closed || items.empty() ||
 				items.back().Script != grapheme.Script ||
-				items.back().Face != face)
+				items.back().Face != face || items.back().Level != level)
 			{
 				items.push_back(
 					TextItem{
 						.Start = grapheme.Start,
 						.End = grapheme.End,
 						.Script = grapheme.Script,
+						.Level = level,
 						.Face = face,
 					}
 				);

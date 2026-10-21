@@ -35,6 +35,7 @@ namespace mocca::mtext::detail
 	{
 		uint64_t ShapeCalls = 0;
 		uint64_t ShapeHits = 0;
+		uint64_t BidiResolves = 0;
 	};
 
 	class TextShaper

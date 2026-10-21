@@ -110,7 +110,7 @@ auto Editor() -> Element
 			{
 				BackgroundColor(Color::Oklch(0.7, 0.1036, 171)),
 				Padding(px(16)),
-				FontFamily("Inter", "Noto Sans TC"),
+				FontFamily("Inter", "Noto Emoji", "Google Sans", "Noto Sans Arabic", "Noto Sans TC"),
 				FontSize(px(24)),
 			},
 		.Children = {
@@ -175,6 +175,21 @@ auto main(int argc, const char** argv) -> int
 			.Family = "Inter",
 			.Weight = Range<float>{100, 900},
 		}
+	);
+
+	app.Fonts().RegisterFile(
+		"../sandbox/GoogleSans.ttf",
+		{.Family = "Google Sans"}
+	);
+
+	app.Fonts().RegisterFile(
+		"../sandbox/NotoEmoji.ttf",
+		{.Family = "Noto Emoji"}
+	);
+
+	app.Fonts().RegisterFile(
+		"../sandbox/NotoSansArabic.ttf",
+		{.Family = "Noto Sans Arabic"}
 	);
 
 	app.Fonts().RegisterFile(

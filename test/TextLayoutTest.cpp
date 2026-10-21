@@ -83,13 +83,10 @@ namespace mtest
 				FontDescriptorOverrides{.Family = "sans-serif"}
 			);
 
-			if (mc_testCjkFont[0] != '\0')
-			{
-				App().Fonts().RegisterFile(
-					mc_testCjkFont,
-					FontDescriptorOverrides{.Family = "CJK"}
-				);
-			}
+			App().Fonts().RegisterFile(
+				mc_testCjkFont,
+				FontDescriptorOverrides{.Family = "CJK"}
+			);
 		}
 
 		auto CjkFace() -> mocca::mtext::FontFaceId
@@ -198,7 +195,8 @@ namespace mtest
 	{
 		ComputedStyle style;
 
-		auto layout = TextLayoutBuilder::ResolveTextLayout(style, "", 100.0F, true);
+		auto layout =
+			TextLayoutBuilder::ResolveTextLayout(style, "", 100.0F, true);
 
 		ASSERT_NE(layout, nullptr);
 		EXPECT_TRUE(layout->Lines.empty());
@@ -223,8 +221,9 @@ namespace mtest
 		EXPECT_FLOAT_EQ(layout->Size.Y, layout->LineHeight);
 
 		const mocca::mtext::TextLine& line = layout->Lines[0];
-		float halfLeading =
-			(layout->LineHeight - (layout->Ascent + layout->Descent)) * 0.5F;
+		float halfLeading = (layout->LineHeight -
+							 (layout->Ascent + layout->Descent)) *
+							0.5F;
 		EXPECT_FLOAT_EQ(line.Baseline, halfLeading + layout->Ascent);
 	}
 
@@ -349,7 +348,8 @@ namespace mtest
 		ASSERT_EQ(layout->Lines.size(), 2U);
 		EXPECT_NEAR(layout->Lines[0].Width, abWidth, 0.2F)
 			<< "the hanging space must not count toward the line width";
-		EXPECT_EQ(layout->Lines[0].End, 3U) << "the space still belongs to the line";
+		EXPECT_EQ(layout->Lines[0].End, 3U)
+			<< "the space still belongs to the line";
 		EXPECT_EQ(layout->Lines[1].Start, 3U);
 	}
 
@@ -357,7 +357,9 @@ namespace mtest
 	{
 		ComputedStyle style;
 		style.Set<StyleProperty::FontSize>(px(18.0F));
-		style.Set<StyleProperty::LineHeight>(mocca::styles::LineHeightType{1.5F});
+		style.Set<StyleProperty::LineHeight>(
+			mocca::styles::LineHeightType{1.5F}
+		);
 
 		auto layout =
 			TextLayoutBuilder::ResolveTextLayout(style, "x", 1000.0F, true);
@@ -370,11 +372,15 @@ namespace mtest
 	{
 		ComputedStyle style;
 		style.Set<StyleProperty::FontSize>(px(20.0F));
-		style.Set<StyleProperty::LineHeight>(mocca::styles::LineHeightType{1.0F});
+		style.Set<StyleProperty::LineHeight>(
+			mocca::styles::LineHeightType{1.0F}
+		);
 		auto tight =
 			TextLayoutBuilder::ResolveTextLayout(style, "Hi", 1000.0F, true);
 
-		style.Set<StyleProperty::LineHeight>(mocca::styles::LineHeightType{2.0F});
+		style.Set<StyleProperty::LineHeight>(
+			mocca::styles::LineHeightType{2.0F}
+		);
 		auto loose =
 			TextLayoutBuilder::ResolveTextLayout(style, "Hi", 1000.0F, true);
 
@@ -420,8 +426,7 @@ namespace mtest
 	TEST_F(TextLayoutTest, MeasureMatchesShrinkWrap)
 	{
 		ComputedStyle style;
-		std::string content =
-			"the quick brown fox jumps over the lazy dog";
+		std::string content = "the quick brown fox jumps over the lazy dog";
 
 		auto reference =
 			TextLayoutBuilder::ResolveTextLayout(style, content, 80.0F, true);
@@ -531,8 +536,7 @@ namespace mtest
 		EXPECT_FLOAT_EQ(leading->Lines[0].Baseline, latin->Lines[0].Baseline);
 
 		ASSERT_FALSE(cjk->Runs.empty());
-		EXPECT_EQ(cjk->Runs[0].Face, CjkFace())
-			<< "the CJK text fell back";
+		EXPECT_EQ(cjk->Runs[0].Face, CjkFace()) << "the CJK text fell back";
 		EXPECT_EQ(cjk->Face, 0U);
 	}
 
@@ -625,8 +629,8 @@ namespace mtest
 		};
 
 		std::vector<Case> cases{
-			{.Content="日本語\n日本語", .Items=2},
-			{.Content="日本語\t日本語", .Items=1},
+			{.Content = "日本語\n日本語", .Items = 2},
+			{.Content = "日本語\t日本語", .Items = 1},
 		};
 
 		for (const Case& testCase : cases)
@@ -634,7 +638,7 @@ namespace mtest
 			auto shaped = TextShaper::Shape(testCase.Content, style);
 
 			ASSERT_NE(shaped, nullptr) << testCase.Content;
-			
+
 			ASSERT_EQ(shaped->Items.size(), testCase.Items) << testCase.Content;
 			for (const auto& item : shaped->Items)
 			{
@@ -697,7 +701,7 @@ namespace mtest
 		std::string vs16 = encode(0x2764) + encode(0xFE0F);
 		std::string family = encode(0x1F468) + encode(0x200D) + encode(0x1F466);
 
-	    std::vector<std::string> contents{
+		std::vector<std::string> contents{
 			"Hello",
 			"Hello 日本語",
 			"日本語",

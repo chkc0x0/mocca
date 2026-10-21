@@ -21,4 +21,7 @@ namespace mocca::mtext::detail
 
 	[[nodiscard]] auto breakOpportunities(std::string_view utf8)
 		-> std::vector<BreakFlag>;
+
+	[[nodiscard]] auto resolveBidi(std::string_view utf8, BaseDirection base)
+		-> BidiResult;
 }

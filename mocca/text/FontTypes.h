@@ -158,11 +158,13 @@ namespace mocca::mtext
 			uint32_t Start = 0;
 			uint32_t End = 0;
 			uint32_t Script = 0;
+			uint8_t Level = 0;
 			FontFaceId Face = SIZE_MAX;
 
 			static auto Itemize(
 				std::string_view content,
-				std::span<const FontFaceId> stack
+				std::span<const FontFaceId> stack,
+				std::span<const uint8_t> levels
 			) -> std::vector<TextItem>;
 		};
 
@@ -173,6 +175,13 @@ namespace mocca::mtext
 			uint32_t Script = 0;
 			bool Sticky = false;
 			std::vector<uint32_t> Codepoints;
+		};
+
+		struct BidiResult
+		{
+			std::vector<uint8_t> Levels;
+			std::vector<ShapedParagraph> Paragraphs;
+			bool UsedEngine = false;
 		};
 	}
 

@@ -44,6 +44,9 @@ namespace mocca::mtext::detail
 		out.Variations = style.Get<P::FontVariationSettings>();
 		out.Features = style.Get<P::FontFeatureSettings>();
 		out.Align = style.Get<P::TextAlign>();
+		out.Base = style.Get<P::LayoutDirection>() == LayoutDirections::RTL
+					   ? BaseDirection::RTL
+					   : BaseDirection::LTR;
 
 		if (const auto* spacing =
 				std::get_if<Length>(&style.Get<P::LetterSpacing>()))
