@@ -178,13 +178,17 @@ namespace mocca::mtext::detail
 			uint32_t script = 0;
 			if (before != SIZE_MAX && after != SIZE_MAX)
 			{
-				if (levelAt(graphemes[after], levels) == level)
+				bool beforeMatches =
+					levelAt(graphemes[before], levels) == level;
+				bool afterMatches = levelAt(graphemes[after], levels) == level;
+
+				if (beforeMatches || !afterMatches)
 				{
-					script = graphemes[after].Script;
+					script = graphemes[before].Script;
 				}
 				else
 				{
-					script = graphemes[before].Script;
+					script = graphemes[after].Script;
 				}
 			}
 			else if (before != SIZE_MAX)
