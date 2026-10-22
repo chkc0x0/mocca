@@ -97,7 +97,7 @@ namespace mocca
 	void Application::Tick(double dt)
 	{
 		mc_profileFunction();
-		
+
 		_inTick = true;
 
 		std::erase_if(
@@ -151,6 +151,24 @@ namespace mocca
 
 		_context._store->ClearDirty();
 
+		_createPendingSurfaces();
+		_reparentPendingSurfaces();
+
+		for (auto& surface : _platformSurfaces)
+		{
+			mc_profileScope("Surface::Submit");
+			auto* plat = surface->GetPlatform();
+			
+			plat->BeginFrame();
+			plat->Submit(surface->GetDrawData());
+            plat->EndFrame();
+		}
+
+		mc_profileFrame();
+	}
+
+	void Application::_createPendingSurfaces()
+	{
 		std::erase_if(
 			_pendingSurfaces,
 			[this](std::pair<Surface*, std::unique_ptr<Surface>>& pair) -> auto
@@ -173,7 +191,10 @@ namespace mocca
 				return true;
 			}
 		);
+	}
 
+	void Application::_reparentPendingSurfaces()
+	{
 		for (auto& [origin, child, target] : _pendingReparents)
 		{
 			if (child->GetState() != SurfaceState::Alive ||
@@ -201,8 +222,6 @@ namespace mocca
 			((target != nullptr) ? target : child)->MarkDirty();
 		}
 		_pendingReparents.clear();
-
-		mc_profileFrame();
 	}
 
 	void Application::On(

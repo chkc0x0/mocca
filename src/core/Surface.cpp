@@ -183,12 +183,6 @@ namespace mocca
 		}
 
 		Paint();
-
-		if (IsPlatformBacked())
-		{
-			mc_profileScope("Surface::Submit");
-			GetPlatform()->Submit(GetDrawData());
-		}
 	}
 
 	void Surface::Paint()

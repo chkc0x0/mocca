@@ -64,10 +64,6 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 	glfwMakeContextCurrent(_window);
 	glfwSwapInterval(1);
 
-	float scaleX = 1.0F;
-	float scaleY = 1.0F;
-	glfwGetWindowContentScale(_window, &scaleX, &scaleY);
-	_scale = scaleX;
 	glewInit();
 
 	_vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
@@ -79,11 +75,6 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 		);
 		return;
 	}
-
-	int w;
-	int h;
-	glfwGetWindowSize(_window, &w, &h);
-	_size = {.X = w, .Y = h};
 
 	glfwSetWindowUserPointer(_window, this);
 	glfwSetCursorPosCallback(_window, OnMouseMove);
@@ -145,22 +136,13 @@ auto GLFWPlatformSurface::ShouldClose() -> bool
 	return glfwWindowShouldClose(_window) != 0;
 }
 
-void GLFWPlatformSurface::Submit(
-	const std::vector<mocca::cmds::DrawCommand>& commands
-)
+void GLFWPlatformSurface::BeginFrame()
 {
-	if (_window == nullptr || _vg == nullptr)
-	{
-		return;
-	}
-
 	glfwMakeContextCurrent(_window);
 
-	int w;
-	int h;
-	glfwGetWindowSize(_window, &w, &h);
+	auto size = Size();
+	glViewport(0, 0, static_cast<int>(size.X), static_cast<int>(size.Y));
 
-	glViewport(0, 0, w, h);
 	if (_surface->GetDescriptor().Title == "Sandbox2")
 	{
 		glClearColor(0.2F, 0.1F, 0.1F, 1.0F);
@@ -171,9 +153,50 @@ void GLFWPlatformSurface::Submit(
 	}
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	nvgBeginFrame(_vg, (float)w, (float)h, _scale);
+	
+	nvgBeginFrame(_vg, size.X, size.Y, Scale().X);
 	nvgResetScissor(_vg);
+}
 
+void GLFWPlatformSurface::EndFrame()
+{
+	nvgEndFrame(_vg);
+	glfwSwapBuffers(_window);
+}
+
+auto GLFWPlatformSurface::Size() -> mocca::IVec2
+{
+	int w;
+	int h;
+	glfwGetWindowSize(_window, &w, &h);
+	return {.X=w, .Y=h};
+}
+
+auto GLFWPlatformSurface::FramebufferSize() -> mocca::IVec2
+{
+	int w;
+	int h;
+	glfwGetFramebufferSize(_window, &w, &h);
+	return {.X = w, .Y = h};
+}
+
+auto GLFWPlatformSurface::Scale() -> mocca::Vector2
+{
+	float scaleX = 1.0F;
+	float scaleY = 1.0F;
+	glfwGetWindowContentScale(_window, &scaleX, &scaleY);
+	return {.X=scaleX, .Y=scaleY};
+}
+
+void GLFWPlatformSurface::Submit(
+	const std::vector<mocca::cmds::DrawCommand>& commands
+)
+{
+	if (_window == nullptr || _vg == nullptr)
+	{
+		return;
+	}
+	
 	for (const auto& cmd : commands)
 	{
 		std::visit(
@@ -280,18 +303,16 @@ void GLFWPlatformSurface::Submit(
 
 					if constexpr (DebugRunBoxes)
 					{
-						float halfLeading =
-							(c.Layout->LineHeight -
-							 (c.Layout->Ascent + c.Layout->Descent)) *
-							0.5F;
+						float halfLeading = (c.Layout->LineHeight -
+											 (c.Layout->Ascent +
+											  c.Layout->Descent)) *
+											0.5F;
 						for (const auto& line : c.Layout->Lines)
 						{
-							float left =
-								c.Position.X +
-								line.XOffset(c.BoxWidth, c.Align);
-							float emTop =
-								c.Position.Y + line.Baseline -
-								c.Layout->Ascent;
+							float left = c.Position.X +
+										 line.XOffset(c.BoxWidth, c.Align);
+							float emTop = c.Position.Y + line.Baseline -
+										  c.Layout->Ascent;
 
 							for (uint32_t r = line.RunBegin; r < line.RunEnd;
 								 r++)
@@ -308,14 +329,19 @@ void GLFWPlatformSurface::Submit(
 								nvgFillColor(
 									_vg,
 									nvgRGBA(
-									static_cast<unsigned char>(rand() % 256),
-									static_cast<unsigned char>(rand() % 256),
-									static_cast<unsigned char>(rand() % 256),
+										static_cast<unsigned char>(
+											rand() % 256
+										),
+										static_cast<unsigned char>(
+											rand() % 256
+										),
+										static_cast<unsigned char>(
+											rand() % 256
+										),
 										110
 									)
 								);
 								nvgFill(_vg);
-                                
 							}
 						}
 					}
@@ -349,9 +375,6 @@ void GLFWPlatformSurface::Submit(
 			cmd
 		);
 	}
-
-	nvgEndFrame(_vg);
-	glfwSwapBuffers(_window);
 }
 
 auto GLFWPlatformSurface::FontIdFor(mocca::mtext::FontFaceId id) -> int
@@ -392,11 +415,6 @@ auto GLFWPlatformSurface::FontIdFor(mocca::mtext::FontFaceId id) -> int
 
 	_nvgFonts.emplace(id, handle);
 	return handle;
-}
-
-auto GLFWPlatformSurface::GetSize() const -> mocca::IVec2
-{
-	return _size;
 }
 
 void GLFWPlatformSurface::OnMouseMove(GLFWwindow* window, double x, double y)
@@ -525,7 +543,6 @@ void GLFWPlatformSurface::OnWindowResize(
 	auto* self = static_cast<GLFWPlatformSurface*>(
 		glfwGetWindowUserPointer(window)
 	);
-	self->_size = {.X = width, .Y = height};
 	self->_pending.Surface.push_back({
 		.EventType = mocca::SurfaceEvent::Type::Resize,
 		.Data1 = (float)width,

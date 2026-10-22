@@ -94,6 +94,9 @@ namespace mocca
 		}
 
 	private:
+		void _createPendingSurfaces();
+		void _reparentPendingSurfaces();
+		
 		ApplicationID _id;
 
 		struct

@@ -28,8 +28,6 @@ public:
 	auto ShouldClose() -> bool override;
 	void Submit(const std::vector<mocca::cmds::DrawCommand>& commands) override;
 
-	[[nodiscard]] auto GetSize() const -> mocca::IVec2;
-
 	static void OnMouseMove(GLFWwindow* window, double x, double y);
 	static void OnScroll(GLFWwindow* window, double xoffset, double yoffset);
 	static void
@@ -41,14 +39,18 @@ public:
 	static void OnWindowClose(GLFWwindow* window);
 	static void OnWindowFocus(GLFWwindow* window, int focused);
 
+	void BeginFrame() override;
+	void EndFrame() override;
+	auto Size() -> mocca::IVec2 override;
+	auto FramebufferSize() -> mocca::IVec2 override;
+    auto Scale() -> mocca::Vector2 override;
+
 private:
 	static auto ToKeyCode(int glfwKey) -> mocca::KeyCode;
 	auto FontIdFor(mocca::mtext::FontFaceId id) -> int;
 
 	GLFWwindow* _window = nullptr;
 	NVGcontext* _vg = nullptr;
-	mocca::IVec2 _size = {.X = 0, .Y = 0};
-	float _scale = 1.0F;
 	bool _glfwRefHeld = false;
 	mocca::Surface* _surface = nullptr;
 
