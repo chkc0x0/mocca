@@ -25,10 +25,10 @@ namespace std
 		auto operator()(const mocca::anim::Curve& c) const noexcept -> size_t
 		{
 			size_t h = std::hash<uint8_t>{}(static_cast<uint8_t>(c.Kind));
-			mocca::hashCombine(h, std::hash<float>{}(c.P1));
-			mocca::hashCombine(h, std::hash<float>{}(c.P2));
-			mocca::hashCombine(h, std::hash<float>{}(c.P3));
-			mocca::hashCombine(h, std::hash<float>{}(c.P4));
+			mocca::detail::hashCombine(h, std::hash<float>{}(c.P1));
+			mocca::detail::hashCombine(h, std::hash<float>{}(c.P2));
+			mocca::detail::hashCombine(h, std::hash<float>{}(c.P3));
+			mocca::detail::hashCombine(h, std::hash<float>{}(c.P4));
 			return h;
 		}
 	};
@@ -39,8 +39,11 @@ namespace std
 			-> size_t
 		{
 			size_t h = std::hash<uint32_t>{}(t.Props);
-			mocca::hashCombine(h, std::hash<float>{}(t.Duration));
-			mocca::hashCombine(h, std::hash<mocca::anim::Curve>{}(t.Curve));
+			mocca::detail::hashCombine(h, std::hash<float>{}(t.Duration));
+			mocca::detail::hashCombine(
+				h,
+				std::hash<mocca::anim::Curve>{}(t.Curve)
+			);
 			return h;
 		}
 	};

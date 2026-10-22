@@ -102,12 +102,12 @@ namespace mocca::mtext::detail
 			italic = ((head.U16(44).value_or(0) & 2) != 0);
 		}
 
-		d.Style = oblique  ? FontStyleEnum::Oblique
-				  : italic ? FontStyleEnum::Italic
-						   : FontStyleEnum::Normal;
+		d.Style = oblique  ? styles::FontStyleEnum::Oblique
+				  : italic ? styles::FontStyleEnum::Italic
+						   : styles::FontStyleEnum::Normal;
 
 		// css obliques are positive so we negate
-		if (d.Style == FontStyleEnum::Oblique)
+		if (d.Style == styles::FontStyleEnum::Oblique)
 		{
 			Table post(face, HB_TAG('p', 'o', 's', 't'));
 			float angle = -static_cast<float>(post.I32(4).value_or(0)) /

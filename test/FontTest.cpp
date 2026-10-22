@@ -5,7 +5,7 @@
 
 namespace mtest
 {
-	using mocca::FontStyleEnum;
+	using namespace mocca::styles;
 	using mocca::Range;
 	using mocca::mtext::FontDescriptor;
 	using mocca::mtext::FontMatcher;

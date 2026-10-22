@@ -82,7 +82,7 @@ namespace mocca::mtext
 			};
 
 			uint8_t tier = Order[int(q.Style)][int(p.Style)];
-			float dist = (p.Style == FontStyleEnum::Oblique)
+			float dist = (p.Style == styles::FontStyleEnum::Oblique)
 							 ? std::abs(Nearest(p.Slant, q.Slant) - q.Slant)
 							 : 0.0F;
 			return {.Tier = tier, .Dist = dist};
@@ -136,8 +136,8 @@ namespace mocca::mtext
 			m.Index = i;
 			m.Weight = Nearest(d->Weight, q.Weight);
 			m.Stretch = Nearest(d->Stretch, q.Stretch);
-			m.Slant = (d->Style == FontStyleEnum::Oblique &&
-					   q.Style == FontStyleEnum::Oblique)
+			m.Slant = (d->Style == styles::FontStyleEnum::Oblique &&
+					   q.Style == styles::FontStyleEnum::Oblique)
 						  ? Nearest(d->Slant, q.Slant)
 						  : 0.0F;
 			return m;

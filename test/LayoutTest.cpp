@@ -8,12 +8,10 @@
 
 namespace mtest
 {
-	using mocca::Alignment;
 	using mocca::BoxDescriptor;
 	using mocca::ComponentDescriptor;
 	using mocca::Element;
 	using mocca::ElementKey;
-	using mocca::FlexDirections;
 	using mocca::TextDescriptor;
 	using namespace mocca::styles;
 
@@ -83,6 +81,8 @@ namespace mtest
 			[]() -> Element
 			{
 				std::vector<Element> rows;
+				rows.reserve(5);
+
 				for (int i = 0; i < 5; ++i)
 				{
 					rows.push_back(

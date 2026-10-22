@@ -211,7 +211,7 @@ namespace mocca
 		void* userData
 	)
 	{
-		auto hash = hashString(event);
+		auto hash = detail::hashString(event);
 		if (_events.EmitDepth > 0)
 		{
 			_events.PendingEvents.push_back({
@@ -254,7 +254,7 @@ namespace mocca
 
 	auto Application::EmitEvent(std::string_view event, void* data) -> bool
 	{
-		auto it = _events.Events.find(hashString(event));
+		auto it = _events.Events.find(detail::hashString(event));
 		if (it == _events.Events.end())
 		{
 			return true;
@@ -302,7 +302,7 @@ namespace mocca
 
 	void Application::RemoveCallbacks(std::string_view event)
 	{
-		auto hash = hashString(event);
+		auto hash = detail::hashString(event);
 		if (_events.EmitDepth > 0)
 		{
 			_events.PendingEvents.push_back(

@@ -54,7 +54,7 @@ namespace mocca::mtext
 		uint32_t RunEnd = 0;
 		uint8_t BaseLevel = 0;
 
-		[[nodiscard]] auto XOffset(float boxWidth, TextAlignment align) const
+		[[nodiscard]] auto XOffset(float boxWidth, styles::TextAlignment align) const
 			-> float;
 	};
 
@@ -84,7 +84,7 @@ namespace mocca::mtext
 
 		uint32_t Variations = 0;
 		uint32_t Features = 0;
-		TextAlignment Align = TextAlignment::Start;
+		styles::TextAlignment Align = styles::TextAlignment::Start;
 		BaseDirection Base = BaseDirection::LTR;
 	};
 

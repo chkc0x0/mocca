@@ -22,8 +22,14 @@ namespace mocca::mtext::detail
 		size_t hash = std::hash<size_t>{}(variations.size());
 		for (const auto& variation : variations)
 		{
-			mocca::hashCombine(hash, std::hash<uint32_t>{}(variation.tag));
-			mocca::hashCombine(hash, std::hash<float>{}(variation.value));
+			mocca::detail::hashCombine(
+				hash,
+				std::hash<uint32_t>{}(variation.tag)
+			);
+			mocca::detail::hashCombine(
+				hash,
+				std::hash<float>{}(variation.value)
+			);
 		}
 		return hash;
 	}
@@ -404,7 +410,7 @@ namespace mocca::mtext::detail
 
 		set(HB_TAG('w', 'g', 'h', 't'), request.Weight);
 		set(HB_TAG('w', 'd', 't', 'h'), request.Stretch);
-		if (request.Style == FontStyleEnum::Oblique)
+		if (request.Style == styles::FontStyleEnum::Oblique)
 		{
 			set(HB_TAG('s', 'l', 'n', 't'), -request.Slant);
 		}
@@ -447,24 +453,25 @@ namespace mocca::mtext::detail
 
 namespace mocca::mtext
 {
-	auto TextLine::XOffset(float boxWidth, TextAlignment align) const -> float
+	auto TextLine::XOffset(float boxWidth, styles::TextAlignment align) const
+		-> float
 	{
 		bool rtl = (BaseLevel & 1) != 0;
 
 		switch (align)
 		{
-		case TextAlignment::Start:
+		case styles::TextAlignment::Start:
 			return rtl ? boxWidth - Width : 0;
-		case TextAlignment::End:
+		case styles::TextAlignment::End:
 			return rtl ? 0 : boxWidth - Width;
-		case TextAlignment::Left:
+		case styles::TextAlignment::Left:
 			return 0;
-		case TextAlignment::Right:
+		case styles::TextAlignment::Right:
 			return boxWidth - Width;
-		case TextAlignment::Center:
+		case styles::TextAlignment::Center:
 			return (boxWidth - Width) * 0.5F;
-		case TextAlignment::Justify:
-		case TextAlignment::MatchParent:
+		case styles::TextAlignment::Justify:
+		case styles::TextAlignment::MatchParent:
 		default:
 			return 0;
 		}

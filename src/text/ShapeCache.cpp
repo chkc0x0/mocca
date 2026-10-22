@@ -8,11 +8,11 @@ namespace mocca::mtext::detail
 		size_t hash = std::hash<std::string>{}(key.Content);
 		for (FontFaceId face : key.Faces)
 		{
-			mocca::hashCombine(hash, std::hash<size_t>{}(face));
+			mocca::detail::hashCombine(hash, std::hash<size_t>{}(face));
 		}
-		mocca::hashCombine(hash, key.Variations);
-		mocca::hashCombine(hash, std::hash<uint32_t>{}(key.Features));
-		mocca::hashCombine(
+		mocca::detail::hashCombine(hash, key.Variations);
+		mocca::detail::hashCombine(hash, std::hash<uint32_t>{}(key.Features));
+		mocca::detail::hashCombine(
 			hash,
 			std::hash<uint8_t>{}(static_cast<uint8_t>(key.Base))
 		);

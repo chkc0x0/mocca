@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mocca
+namespace mocca::styles
 {
 	enum class StyleKeyword : char
 	{

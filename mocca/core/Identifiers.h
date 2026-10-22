@@ -5,20 +5,23 @@
 
 namespace mocca
 {
-	constexpr auto hashString(std::string_view str) -> uint64_t
+	namespace detail
 	{
-		uint64_t hash = 14695981039346656037ULL;
-		for (char c : str)
+		constexpr auto hashString(std::string_view str) -> uint64_t
 		{
-			hash ^= static_cast<uint8_t>(c);
-			hash *= 1099511628211ULL;
+			uint64_t hash = 14695981039346656037ULL;
+			for (char c : str)
+			{
+				hash ^= static_cast<uint8_t>(c);
+				hash *= 1099511628211ULL;
+			}
+			return hash;
 		}
-		return hash;
-	}
 
-	constexpr void hashCombine(size_t& seed, size_t h)
-	{
-		seed ^= h + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+		constexpr void hashCombine(size_t& seed, size_t h)
+		{
+			seed ^= h + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+		}
 	}
 
 	struct ApplicationID
@@ -46,7 +49,7 @@ namespace mocca
 
 	struct ElementKey
 	{
-		ElementKey(std::string_view str) : _value(hashString(str)) {};
+		ElementKey(std::string_view str) : _value(detail::hashString(str)) {};
 		ElementKey(uint64_t value) : _value(value) {};
 		ElementKey(int value) : _value(static_cast<uint64_t>(value)) {};
 		ElementKey() : _value(0) {};

@@ -6,13 +6,28 @@ namespace mocca::mtext::detail
 	auto LayoutKeyHash::operator()(const LayoutKey& key) const -> size_t
 	{
 		size_t hash = std::hash<uint64_t>{}(key.ShapedId);
-		mocca::hashCombine(hash, std::hash<uint32_t>{}(key.SizeBits));
-		mocca::hashCombine(hash, std::hash<uint8_t>{}(key.LineHeightKind));
-		mocca::hashCombine(hash, std::hash<uint32_t>{}(key.LineHeightBits));
-		mocca::hashCombine(hash, std::hash<uint32_t>{}(key.LetterSpacingBits));
-		mocca::hashCombine(hash, std::hash<uint32_t>{}(key.WordSpacingBits));
-		mocca::hashCombine(hash, std::hash<uint32_t>{}(key.MaxWidthBits));
-		mocca::hashCombine(hash, std::hash<bool>{}(key.Wrap));
+		mocca::detail::hashCombine(hash, std::hash<uint32_t>{}(key.SizeBits));
+		mocca::detail::hashCombine(
+			hash,
+			std::hash<uint8_t>{}(key.LineHeightKind)
+		);
+		mocca::detail::hashCombine(
+			hash,
+			std::hash<uint32_t>{}(key.LineHeightBits)
+		);
+		mocca::detail::hashCombine(
+			hash,
+			std::hash<uint32_t>{}(key.LetterSpacingBits)
+		);
+		mocca::detail::hashCombine(
+			hash,
+			std::hash<uint32_t>{}(key.WordSpacingBits)
+		);
+		mocca::detail::hashCombine(
+			hash,
+			std::hash<uint32_t>{}(key.MaxWidthBits)
+		);
+		mocca::detail::hashCombine(hash, std::hash<bool>{}(key.Wrap));
 		return hash;
 	}
 

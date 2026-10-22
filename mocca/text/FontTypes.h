@@ -17,7 +17,7 @@ namespace mocca::mtext
 #define mc_fontProperties                                                      \
 	mc_fontProperty(Weight, Range<float>)                                      \
 		mc_fontProperty(Stretch, Range<float>)                                 \
-			mc_fontProperty(Style, FontStyleEnum)                              \
+			mc_fontProperty(Style, styles::FontStyleEnum)                      \
 				mc_fontProperty(Slant, Range<float>)
 
 	struct FaceProps
@@ -66,7 +66,7 @@ namespace mocca::mtext
 	{
 		float Weight = 400.0F;
 		float Stretch = 100.0F;
-		FontStyleEnum Style = FontStyleEnum::Normal;
+		styles::FontStyleEnum Style = styles::FontStyleEnum::Normal;
 		float Slant = 14.0F;
 	};
 

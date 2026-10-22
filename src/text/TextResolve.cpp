@@ -24,7 +24,7 @@ namespace mocca::mtext::detail
 		request.Weight = style.Get<styles::StyleProperty::FontWeight>();
 		request.Stretch = style.Get<styles::StyleProperty::FontStretch>();
 
-		const FontStyleType& fontStyle =
+		const styles::FontStyleType& fontStyle =
 			style.Get<styles::StyleProperty::FontStyle>();
 		request.Style = fontStyle.Style;
 		request.Slant = fontStyle.Angle;
@@ -44,7 +44,8 @@ namespace mocca::mtext::detail
 		out.Variations = style.Get<P::FontVariationSettings>();
 		out.Features = style.Get<P::FontFeatureSettings>();
 		out.Align = style.Get<P::TextAlign>();
-		out.Base = style.Get<P::LayoutDirection>() == LayoutDirections::RTL
+		out.Base = style.Get<P::LayoutDirection>() ==
+						   styles::LayoutDirections::RTL
 					   ? BaseDirection::RTL
 					   : BaseDirection::LTR;
 

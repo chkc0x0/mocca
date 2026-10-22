@@ -101,7 +101,7 @@ namespace std
 			size_t h = std::hash<size_t>{}(f.Families.size());
 			for (const std::string& name : f.Families)
 			{
-				mocca::hashCombine(h, std::hash<std::string>{}(name));
+				mocca::detail::hashCombine(h, std::hash<std::string>{}(name));
 			}
 			return h;
 		}
@@ -115,8 +115,8 @@ namespace std
 			size_t h = std::hash<size_t>{}(v.Axes.size());
 			for (const auto& a : v.Axes)
 			{
-				mocca::hashCombine(h, std::hash<uint32_t>{}(a.Tag));
-				mocca::hashCombine(h, std::hash<float>{}(a.Value));
+				mocca::detail::hashCombine(h, std::hash<uint32_t>{}(a.Tag));
+				mocca::detail::hashCombine(h, std::hash<float>{}(a.Value));
 			}
 			return h;
 		}
@@ -130,8 +130,8 @@ namespace std
 			size_t h = std::hash<size_t>{}(v.Axes.size());
 			for (const auto& a : v.Axes)
 			{
-				mocca::hashCombine(h, std::hash<uint32_t>{}(a.Tag));
-				mocca::hashCombine(h, std::hash<uint32_t>{}(a.Value));
+				mocca::detail::hashCombine(h, std::hash<uint32_t>{}(a.Tag));
+				mocca::detail::hashCombine(h, std::hash<uint32_t>{}(a.Value));
 			}
 			return h;
 		}

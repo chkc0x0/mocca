@@ -22,9 +22,7 @@ namespace mtest
 {
 	using mocca::mtext::FontDescriptorOverrides;
 	using mocca::mtext::TextLayoutStyle;
-	using mocca::styles::ComputedStyle;
-	using mocca::styles::px;
-	using mocca::styles::StyleProperty;
+	using namespace mocca::styles;
 	using namespace mocca::mtext::detail;
 
 	auto testStyle() -> TextLayoutStyle
@@ -177,16 +175,16 @@ namespace mtest
 		mocca::mtext::TextLine line{.Width = 40.0F};
 
 		EXPECT_FLOAT_EQ(
-			line.XOffset(100.0F, mocca::TextAlignment::Start),
+			line.XOffset(100.0F, TextAlignment::Start),
 			0.0F
 		);
-		EXPECT_FLOAT_EQ(line.XOffset(100.0F, mocca::TextAlignment::End), 60.0F);
+		EXPECT_FLOAT_EQ(line.XOffset(100.0F, TextAlignment::End), 60.0F);
 		EXPECT_FLOAT_EQ(
-			line.XOffset(100.0F, mocca::TextAlignment::Right),
+			line.XOffset(100.0F, TextAlignment::Right),
 			60.0F
 		);
 		EXPECT_FLOAT_EQ(
-			line.XOffset(100.0F, mocca::TextAlignment::Center),
+			line.XOffset(100.0F, TextAlignment::Center),
 			30.0F
 		);
 	}

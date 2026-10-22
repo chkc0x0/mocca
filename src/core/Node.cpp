@@ -274,9 +274,9 @@ namespace mocca::detail
 		if (IsBox())
 		{
 			auto overflow = Style.Get<styles::StyleProperty::Overflow>();
-			bool clips = overflow == OverflowType::Hidden ||
-						 overflow == OverflowType::Scroll;
-			bool scrolls = overflow == OverflowType::Scroll;
+			bool clips = overflow == styles::OverflowType::Hidden ||
+						 overflow == styles::OverflowType::Scroll;
+			bool scrolls = overflow == styles::OverflowType::Scroll;
 
 			if (clips)
 			{
@@ -644,7 +644,7 @@ namespace mocca::detail
 	auto clipsChildren(const Node& n) -> bool
 	{
 		return n.IsBox() && n.Style.Get<styles::StyleProperty::Overflow>() !=
-								OverflowType::Visible;
+								styles::OverflowType::Visible;
 	}
 
 	auto hitTestImpl(Node* node, float x, float y, Vector2 scroll) -> Node*
@@ -667,7 +667,7 @@ namespace mocca::detail
 		Vector2 childScroll = scroll;
 		if (node->IsBox() &&
 			node->Style.Get<styles::StyleProperty::Overflow>() ==
-				OverflowType::Scroll)
+				styles::OverflowType::Scroll)
 		{
 			childScroll.X += node->ScrollOffset.X;
 			childScroll.Y += node->ScrollOffset.Y;

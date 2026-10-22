@@ -301,9 +301,9 @@ namespace mocca::mtext
 				d.Family,
 				e.Match.Weight,
 				e.Match.Stretch,
-				d.Style == FontStyleEnum::Normal   ? "normal"
-				: d.Style == FontStyleEnum::Italic ? "italic"
-												   : "oblique",
+				d.Style == styles::FontStyleEnum::Normal   ? "normal"
+				: d.Style == styles::FontStyleEnum::Italic ? "italic"
+														   : "oblique",
 				e.ViaAlias ? "  (alias)" : ""
 			);
 		}

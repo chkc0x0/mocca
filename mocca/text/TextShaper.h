@@ -26,7 +26,7 @@ namespace mocca::mtext::detail
 		auto operator()(const FontKey& key) const -> size_t
 		{
 			size_t hash = std::hash<size_t>{}(key.Face);
-			mocca::hashCombine(hash, key.Variations);
+			mocca::detail::hashCombine(hash, key.Variations);
 			return hash;
 		}
 	};

@@ -46,7 +46,7 @@ namespace mocca::cmds
 		mtext::FontFaceId Face = static_cast<mtext::FontFaceId>(-1);
 		std::shared_ptr<const mtext::TextLayout> Layout;
 		float BoxWidth = 0;
-		TextAlignment Align = TextAlignment::Start;
+		styles::TextAlignment Align = styles::TextAlignment::Start;
 	};
 
 	struct PushClipCmd

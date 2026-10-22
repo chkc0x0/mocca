@@ -11,7 +11,8 @@ namespace mocca::detail
 	{
 		for (Node* n = node; n != nullptr; n = n->Parent)
 		{
-			if (n->IsBox() && n->Style.Get<styles::StyleProperty::Overflow>() == OverflowType::Scroll)
+			if (n->IsBox() && n->Style.Get<styles::StyleProperty::Overflow>() ==
+								  styles::OverflowType::Scroll)
 			{
 				return n;
 			}
@@ -49,7 +50,7 @@ namespace mocca::detail
 
 		if (n->IsBox() &&
 			n->Style.Get<styles::StyleProperty::Overflow>() ==
-				OverflowType::Scroll &&
+				styles::OverflowType::Scroll &&
 			n->YogaNode != nullptr)
 		{
 			float maxX = 0.0F;
