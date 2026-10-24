@@ -68,6 +68,11 @@ namespace mocca
 
 	Application::~Application()
 	{
+		_init = false;
+		_gfxDevice.reset();
+
+		EmitEvent(ApplicationEvent::Shutdown, nullptr);
+
 		for (auto& s : _surfaces)
 		{
 			Surface::AnnounceSubtreeDestroyed(s.get());
@@ -97,6 +102,20 @@ namespace mocca
 	void Application::Tick(double dt)
 	{
 		mc_profileFunction();
+
+		if (!_init)
+		{
+			_init = true;
+			EmitEvent(ApplicationEvent::Init, nullptr);
+
+			if (_gfxDevice && !_gfxDevice->Initialize())
+			{
+				mc_error(
+					ErrorCode::InvalidState,
+					"RenderDevice failed to initialize! is this UB?"
+				);
+			}
+		}
 
 		_inTick = true;
 
@@ -156,12 +175,32 @@ namespace mocca
 
 		for (auto& surface : _platformSurfaces)
 		{
-			mc_profileScope("Surface::Submit");
+			mc_profileScope("Surface::Render");
 			auto* plat = surface->GetPlatform();
-			
+
 			plat->BeginFrame();
-			plat->Submit(surface->GetDrawData());
-            plat->EndFrame();
+
+			if (surface->_renderer == nullptr && _gfxDevice != nullptr)
+			{
+				surface->_renderer =
+					_gfxDevice->CreateRenderer(surface, plat->GfxHandle());
+			}
+
+			if (surface->_renderer != nullptr)
+			{
+				auto size = plat->Size();
+				surface->_renderer->Render({
+					.Commands = surface->GetDrawData(),
+					.ViewportSize =
+						{
+							.X = static_cast<float>(size.X),
+							.Y = static_cast<float>(size.Y),
+						},
+					.Scale = plat->Scale(),
+				});
+			}
+
+			plat->EndFrame();
 		}
 
 		mc_profileFrame();

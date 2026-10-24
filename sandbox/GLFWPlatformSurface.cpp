@@ -1,29 +1,20 @@
 #include "GLFWPlatformSurface.h"
-#include "core/Application.h"
 #include "core/Logger.h"
-#include "text/FontRegistry.h"
-#include "text/TextLayout.h"
+#include "gfx/GfxTypes.h"
 #include "text/Unicode.h"
 #include "utils/Math.h"
-#include <cstdlib>
-#include <string>
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
-#include "nanovg.h"
 #include "GL/glew.h"
-#define NANOVG_GL3_IMPLEMENTATION 1
-#include "nanovg_gl.h"
 
 static int glfwInitialized = 0;
-
-static constexpr bool DebugRunBoxes = true;
 
 GLFWPlatformSurface::GLFWPlatformSurface(
 	mocca::Surface* surface,
 	const mocca::SurfaceDesc& desc
 )
 {
-	_surface = surface;
+	(void)surface;
 
 	if (glfwInitialized == 0)
 	{
@@ -66,16 +57,6 @@ GLFWPlatformSurface::GLFWPlatformSurface(
 
 	glewInit();
 
-	_vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
-	if (_vg == nullptr)
-	{
-		mc_error(
-			mocca::ErrorCode::InvalidState,
-			"failed to create NanoVG context"
-		);
-		return;
-	}
-
 	glfwSetWindowUserPointer(_window, this);
 	glfwSetCursorPosCallback(_window, OnMouseMove);
 	glfwSetMouseButtonCallback(_window, OnMouseButton);
@@ -94,12 +75,6 @@ GLFWPlatformSurface::~GLFWPlatformSurface()
 		glfwMakeContextCurrent(_window);
 	}
 
-	if (_vg != nullptr)
-	{
-		nvgDeleteGL3(_vg);
-		_vg = nullptr;
-	}
-
 	if (_window != nullptr)
 	{
 		glfwMakeContextCurrent(nullptr);
@@ -115,7 +90,7 @@ GLFWPlatformSurface::~GLFWPlatformSurface()
 
 void GLFWPlatformSurface::CollectEvents(mocca::InputBatch& batch)
 {
-	if (_window == nullptr || _vg == nullptr)
+	if (_window == nullptr)
 	{
 		_pending.Surface.push_back({
 			.EventType = mocca::SurfaceEvent::Type::Close,
@@ -140,27 +115,15 @@ void GLFWPlatformSurface::BeginFrame()
 {
 	glfwMakeContextCurrent(_window);
 
-	auto size = Size();
-	glViewport(0, 0, static_cast<int>(size.X), static_cast<int>(size.Y));
+	auto size = FramebufferSize();
+	glViewport(0, 0, size.X, size.Y);
 
-	if (_surface->GetDescriptor().Title == "Sandbox2")
-	{
-		glClearColor(0.2F, 0.1F, 0.1F, 1.0F);
-	}
-	else
-	{
-		glClearColor(0.1F, 0.1F, 0.1F, 1.0F);
-	}
+	glClearColor(0.1F, 0.1F, 0.1F, 1.0F);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-	
-	nvgBeginFrame(_vg, size.X, size.Y, Scale().X);
-	nvgResetScissor(_vg);
 }
 
 void GLFWPlatformSurface::EndFrame()
 {
-	nvgEndFrame(_vg);
 	glfwSwapBuffers(_window);
 }
 
@@ -186,235 +149,6 @@ auto GLFWPlatformSurface::Scale() -> mocca::Vector2
 	float scaleY = 1.0F;
 	glfwGetWindowContentScale(_window, &scaleX, &scaleY);
 	return {.X=scaleX, .Y=scaleY};
-}
-
-void GLFWPlatformSurface::Submit(
-	const std::vector<mocca::cmds::DrawCommand>& commands
-)
-{
-	if (_window == nullptr || _vg == nullptr)
-	{
-		return;
-	}
-	
-	for (const auto& cmd : commands)
-	{
-		std::visit(
-			[this](const auto& c) -> void
-			{
-				using T = std::decay_t<decltype(c)>;
-				if constexpr (std::is_same_v<T, mocca::cmds::DrawRectCmd>)
-				{
-					const auto& radius = c.Radius;
-					bool rounded = radius.TopLeft > 0 || radius.TopRight > 0 ||
-								   radius.BottomRight > 0 ||
-								   radius.BottomLeft > 0;
-
-					nvgBeginPath(_vg);
-					if (rounded)
-					{
-						nvgRoundedRectVarying(
-							_vg,
-							c.Rect.X,
-							c.Rect.Y,
-							c.Rect.Width,
-							c.Rect.Height,
-							radius.TopLeft,
-							radius.TopRight,
-							radius.BottomRight,
-							radius.BottomLeft
-						);
-					}
-					else
-					{
-						nvgRect(
-							_vg,
-							c.Rect.X,
-							c.Rect.Y,
-							c.Rect.Width,
-							c.Rect.Height
-						);
-					}
-					nvgFillColor(
-						_vg,
-						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
-					);
-					nvgFill(_vg);
-
-					float borderWidth = std::max({
-						c.Border.Top,
-						c.Border.Right,
-						c.Border.Bottom,
-						c.Border.Left,
-					});
-					if (borderWidth > 0 && c.BorderColor.A > 0)
-					{
-						nvgStrokeColor(
-							_vg,
-							nvgRGBA(
-								c.BorderColor.R,
-								c.BorderColor.G,
-								c.BorderColor.B,
-								c.BorderColor.A
-							)
-						);
-						nvgStrokeWidth(_vg, borderWidth);
-						nvgStroke(_vg);
-					}
-				}
-				else if constexpr (std::is_same_v<T, mocca::cmds::DrawTextCmd>)
-				{
-					if (c.Layout == nullptr)
-					{
-						return;
-					}
-
-					nvgTextLetterSpacing(_vg, c.Layout->LetterSpacing);
-					nvgTextAlign(_vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-					nvgFillColor(
-						_vg,
-						nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
-					);
-
-					for (const auto& line : c.Layout->Lines)
-					{
-						float lineX = c.Position.X +
-									  line.XOffset(c.BoxWidth, c.Align);
-						for (uint32_t r = line.RunBegin; r < line.RunEnd; r++)
-						{
-							const auto& run = c.Layout->Runs[r];
-							int font = FontIdFor(run.Face);
-							if (font < 0)
-							{
-								continue;
-							}
-
-							nvgFontFaceId(_vg, font);
-							nvgFontSize(_vg, run.Size);
-							nvgText(
-								_vg,
-								lineX + run.X,
-								c.Position.Y + line.Baseline,
-								c.Content.data() + run.Start,
-								c.Content.data() + run.End
-							);
-						}
-					}
-
-					if constexpr (DebugRunBoxes)
-					{
-						float halfLeading = (c.Layout->LineHeight -
-											 (c.Layout->Ascent +
-											  c.Layout->Descent)) *
-											0.5F;
-						for (const auto& line : c.Layout->Lines)
-						{
-							float left = c.Position.X +
-										 line.XOffset(c.BoxWidth, c.Align);
-							float emTop = c.Position.Y + line.Baseline -
-										  c.Layout->Ascent;
-
-							for (uint32_t r = line.RunBegin; r < line.RunEnd;
-								 r++)
-							{
-								const auto& run = c.Layout->Runs[r];
-								nvgBeginPath(_vg);
-								nvgRect(
-									_vg,
-									left + run.X,
-									emTop - halfLeading,
-									run.Width,
-									c.Layout->LineHeight
-								);
-								nvgFillColor(
-									_vg,
-									nvgRGBA(
-										static_cast<unsigned char>(
-											rand() % 256
-										),
-										static_cast<unsigned char>(
-											rand() % 256
-										),
-										static_cast<unsigned char>(
-											rand() % 256
-										),
-										110
-									)
-								);
-								nvgFill(_vg);
-							}
-						}
-					}
-				}
-				else if constexpr (std::is_same_v<T, mocca::cmds::PushClipCmd>)
-				{
-					nvgSave(_vg);
-					nvgScissor(
-						_vg,
-						c.Rect.X,
-						c.Rect.Y,
-						c.Rect.Width,
-						c.Rect.Height
-					);
-				}
-				else if constexpr (
-					std::is_same_v<T, mocca::cmds::PopClipCmd> ||
-					std::is_same_v<T, mocca::cmds::PopTransformCmd>
-				)
-				{
-					nvgRestore(_vg);
-				}
-				else if constexpr (
-					std::is_same_v<T, mocca::cmds::PushTransformCmd>
-				)
-				{
-					nvgSave(_vg);
-					nvgTranslate(_vg, c.Offset.X, c.Offset.Y);
-				}
-			},
-			cmd
-		);
-	}
-}
-
-auto GLFWPlatformSurface::FontIdFor(mocca::mtext::FontFaceId id) -> int
-{
-	auto found = _nvgFonts.find(id);
-	if (found != _nvgFonts.end())
-	{
-		return found->second;
-	}
-
-	int handle = -1;
-	if (_vg != nullptr && mocca::Application::main != nullptr &&
-		id != static_cast<mocca::mtext::FontFaceId>(-1))
-	{
-		const auto& entry = mocca::Application::main->Fonts().Entry(id);
-		std::string name = "mocca-face-" + std::to_string(id);
-
-		if (const auto* path = std::get_if<std::string>(&entry.Source))
-		{
-			handle = nvgCreateFont(_vg, name.c_str(), path->c_str());
-		}
-		else if (
-			const auto* memory =
-				std::get_if<mocca::mtext::FontMemorySource>(&entry.Source)
-		)
-		{
-			handle = nvgCreateFontMem(
-				_vg,
-				name.c_str(),
-				reinterpret_cast<unsigned char*>(
-					const_cast<std::byte*>(memory->Data.data())
-				),
-				static_cast<int>(memory->Data.size()),
-				0
-			);
-		}
-	}
-
-	_nvgFonts.emplace(id, handle);
-	return handle;
 }
 
 void GLFWPlatformSurface::OnMouseMove(GLFWwindow* window, double x, double y)
@@ -680,4 +414,15 @@ auto GLFWPlatformSurface::ToKeyCode(int glfwKey) -> mocca::KeyCode
 	default:
 		return mocca::KeyCode::Unknown;
 	}
+}
+
+auto GLFWPlatformSurface::GfxHandle() -> mocca::gfx::GraphicsHandle
+{
+	return {
+		.Api = mocca::gfx::GraphicsApi::OpenGL,
+		.GetProcAddress =
+			[](const char* name) -> void*
+		{ return reinterpret_cast<void*>(glfwGetProcAddress(name)); },
+		.Native = _window,
+	};
 }

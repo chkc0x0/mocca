@@ -22,6 +22,12 @@ namespace mocca
 		{
 			std::erase(Application::main->_platformSurfaces, this);
 		}
+
+		if (_renderer != nullptr && _platform != nullptr)
+		{
+			_platform->BeginFrame();
+			_renderer.reset();
+		}
 	}
 
 	void Surface::Update(double dt)

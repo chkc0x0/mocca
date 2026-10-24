@@ -2,6 +2,7 @@
 #include "core/Element.h"
 #include "core/Hooks.h"
 #include "sandbox/GLFWPlatformSurface.h"
+#include "sandbox/NVGRenderDevice.h"
 #include <iostream>
 #include "GLFW/glfw3.h"
 #include "style/StyleHelpers.h"
@@ -167,6 +168,7 @@ void logCallback(const LogMessage& message, void* user)
 auto main(int argc, const char** argv) -> int
 {
 	auto app = Application("com.mocca.sandbox");
+	app.SetRenderDevice<sandbox::NVGRenderDevice>();
 	mocca::Logger::SetLogCallback(logCallback);
 
 	app.Fonts().RegisterFile(

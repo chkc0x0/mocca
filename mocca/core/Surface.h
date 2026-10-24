@@ -3,6 +3,7 @@
 #include "gfx/Canvas.h"
 #include "core/Node.h"
 #include "Element.h"
+#include "gfx/Renderer.h"
 #include "input/InputTypes.h"
 #include "platform/PlatformSurface.h"
 #include <memory>
@@ -215,6 +216,8 @@ namespace mocca
 
 		Surface* _focusSurface = nullptr;
 		Surface* _captureSurface = nullptr;
+
+		std::unique_ptr<gfx::Renderer> _renderer;
 
 		friend class Application;
 	};

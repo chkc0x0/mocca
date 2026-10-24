@@ -2,6 +2,7 @@
 #include "Context.h"
 #include "Logger.h"
 #include "Surface.h"
+#include "gfx/RenderDevice.h"
 #include "text/FontRegistry.h"
 #include <chrono>
 #include <cstddef>
@@ -16,6 +17,14 @@ namespace mocca
 
 	enum class ApplicationEvent : uint64_t
 	{
+		// app.init (data = nullptr)
+		// called in the first tick
+		Init = 0x563f6467da5e005a,
+
+		// app.shutdown (data = nullptr)
+		// called at destructor
+		Shutdown = 0x88bab3ab1b23a982,
+
 		// app.poll (data = nullptr)
 		// emitted every tick before input collection
 		Poll = 0x2dc706262aa3f105,
@@ -78,12 +87,12 @@ namespace mocca
 		void RemoveCallbacks(std::string_view event);
 
 		void Print() const;
-		auto IsRunning() -> bool
+		auto IsRunning() const -> bool
 		{
 			return !_surfaces.empty();
 		}
 
-		auto GetInterners() -> detail::TypeInterners*
+		auto GetInterners() const -> detail::TypeInterners*
 		{
 			return _interners.get();
 		}
@@ -93,10 +102,22 @@ namespace mocca
 			return _fonts;
 		}
 
+		auto GetRenderDevice() -> gfx::RenderDevice*
+		{
+			return _gfxDevice.get();
+		}
+
+		template <typename T, typename... Args>
+		void SetRenderDevice(Args&&... args)
+		{
+			_gfxDevice =
+				std::make_unique<T>(std::forward<Args>(args)...);
+		}
+
 	private:
 		void _createPendingSurfaces();
 		void _reparentPendingSurfaces();
-		
+
 		ApplicationID _id;
 
 		struct
@@ -113,6 +134,7 @@ namespace mocca
 		std::vector<std::tuple<Surface*, Surface*, Surface*>> _pendingReparents;
 
 		bool _inTick = false;
+		bool _init = false;
 		uint32_t _stateOnEffectStreak = 0;
 		bool _stateOnEffectWarned = false;
 
@@ -122,6 +144,7 @@ namespace mocca
 
 		std::unique_ptr<detail::TypeInterners> _interners;
 		mtext::FontRegistry _fonts;
+		std::unique_ptr<gfx::RenderDevice> _gfxDevice;
 
 		struct
 		{
