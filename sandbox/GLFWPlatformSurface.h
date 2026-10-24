@@ -14,10 +14,7 @@ namespace mocca
 class GLFWPlatformSurface : public mocca::PlatformSurface
 {
 public:
-	explicit GLFWPlatformSurface(
-		mocca::Surface* surface,
-		const mocca::SurfaceDesc& desc
-	);
+	explicit GLFWPlatformSurface(const mocca::SurfaceDesc& desc);
 	~GLFWPlatformSurface() override;
 
 	void CollectEvents(mocca::InputBatch& batch) override;
@@ -46,7 +43,6 @@ private:
 	static auto ToKeyCode(int glfwKey) -> mocca::KeyCode;
 
 	GLFWwindow* _window = nullptr;
-	bool _glfwRefHeld = false;
 
 	mocca::InputBatch _pending;
 };

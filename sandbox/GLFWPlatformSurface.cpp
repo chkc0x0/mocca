@@ -7,35 +7,8 @@
 #include "GLFW/glfw3.h"
 #include "GL/glew.h"
 
-static int glfwInitialized = 0;
-
-GLFWPlatformSurface::GLFWPlatformSurface(
-	mocca::Surface* surface,
-	const mocca::SurfaceDesc& desc
-)
+GLFWPlatformSurface::GLFWPlatformSurface(const mocca::SurfaceDesc& desc)
 {
-	(void)surface;
-
-	if (glfwInitialized == 0)
-	{
-		if (glfwInit() == GLFW_FALSE)
-		{
-			mc_error(
-				mocca::ErrorCode::InvalidState,
-				"failed to initialize GLFW"
-			);
-			return;
-		}
-	}
-	++glfwInitialized;
-	_glfwRefHeld = true;
-
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-	glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
-
 	_window = glfwCreateWindow(
 		desc.Width,
 		desc.Height,
@@ -72,19 +45,8 @@ GLFWPlatformSurface::~GLFWPlatformSurface()
 {
 	if (_window != nullptr)
 	{
-		glfwMakeContextCurrent(_window);
-	}
-
-	if (_window != nullptr)
-	{
-		glfwMakeContextCurrent(nullptr);
 		glfwDestroyWindow(_window);
 		_window = nullptr;
-	}
-
-	if (_glfwRefHeld && --glfwInitialized == 0)
-	{
-		glfwTerminate();
 	}
 }
 
@@ -132,7 +94,7 @@ auto GLFWPlatformSurface::Size() -> mocca::IVec2
 	int w;
 	int h;
 	glfwGetWindowSize(_window, &w, &h);
-	return {.X=w, .Y=h};
+	return {.X = w, .Y = h};
 }
 
 auto GLFWPlatformSurface::FramebufferSize() -> mocca::IVec2
@@ -148,7 +110,7 @@ auto GLFWPlatformSurface::Scale() -> mocca::Vector2
 	float scaleX = 1.0F;
 	float scaleY = 1.0F;
 	glfwGetWindowContentScale(_window, &scaleX, &scaleY);
-	return {.X=scaleX, .Y=scaleY};
+	return {.X = scaleX, .Y = scaleY};
 }
 
 void GLFWPlatformSurface::OnMouseMove(GLFWwindow* window, double x, double y)
@@ -420,8 +382,7 @@ auto GLFWPlatformSurface::GfxHandle() -> mocca::gfx::GraphicsHandle
 {
 	return {
 		.Api = mocca::gfx::GraphicsApi::OpenGL,
-		.GetProcAddress =
-			[](const char* name) -> void*
+		.GetProcAddress = [](const char* name) -> void*
 		{ return reinterpret_cast<void*>(glfwGetProcAddress(name)); },
 		.Native = _window,
 	};

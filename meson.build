@@ -83,6 +83,7 @@ if get_option('sandbox')
             'sandbox/main.cpp',
             'sandbox/GLFWPlatformSurface.cpp',
             'sandbox/NVGRenderDevice.cpp',
+            'sandbox/GLFWPlatformInterface.cpp'
         ],
         include_directories: include_directories('sandbox'),
     )

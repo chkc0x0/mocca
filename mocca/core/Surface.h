@@ -1,5 +1,4 @@
 #pragma once
-#include "core/Logger.h"
 #include "gfx/Canvas.h"
 #include "core/Node.h"
 #include "Element.h"
@@ -80,19 +79,6 @@ namespace mocca
 		[[nodiscard]] auto GetDescriptor() const -> SurfaceDesc
 		{
 			return _desc;
-		}
-
-		template <typename T> void SetPlatform()
-		{
-			mc_assert(
-				IsExternal(),
-				"cant set a platform for a composite surface"
-			);
-			mc_assert(
-				_platform == nullptr,
-				"this surface already has a platform"
-			);
-			_platform = std::make_unique<T>(this, GetDescriptor());
 		}
 
 		[[nodiscard]] auto GetPlatform() const -> PlatformSurface*

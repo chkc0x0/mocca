@@ -134,6 +134,10 @@ namespace mocca
 		);
 
 		EmitEvent(ApplicationEvent::Poll, nullptr);
+		if (_platform)
+		{
+			_platform->PumpEvents();
+		}
 
 		_animationsActive = _context._store->FlushAnimations(dt);
 
@@ -291,7 +295,7 @@ namespace mocca
 		void* userData
 	)
 	{
-		auto hash = (uint64_t)event;
+		auto hash = static_cast<uint64_t>(event);
 		if (_events.EmitDepth > 0)
 		{
 			_events.PendingEvents.push_back({
@@ -402,6 +406,25 @@ namespace mocca
 	{
 		auto surface = std::make_unique<Surface>(desc);
 		auto* ptr = surface.get();
+
+		if (((desc.Flags & SurfaceFlags::External) != 0U))
+		{
+			if (_platform && _gfxDevice)
+			{
+				surface->_platform =
+					_platform->CreateSurface(desc, _gfxDevice->Requirements());
+			}
+			else
+			{
+				mc_error(
+					ErrorCode::InvalidState,
+					"tried to create an external surface but either "
+					"RenderDevice "
+					"or PlatformInterface was not set. window WONT be created"
+				);
+			}
+		}
+
 		if (!EmitEvent(ApplicationEvent::SurfaceCreated, ptr))
 		{
 			return nullptr;
@@ -494,5 +517,27 @@ namespace mocca
 			"expected to have an application instance running"
 		);
 		return &Application::main->_context;
+	}
+
+	auto Application::GetAppID() -> const ApplicationID&
+	{
+		mc_assert(
+			main != nullptr,
+			"expected to have an Application instance running"
+		);
+
+		return main->_id;
+	}
+
+	void Application::SetPlatformInterface(
+		std::unique_ptr<platform::PlatformInterface> plat
+	)
+	{
+		if (plat == nullptr)
+		{
+			mc_error(ErrorCode::InvalidArgument, "platform is...null?");
+		}
+		
+		_platform = std::move(plat);
 	}
 }

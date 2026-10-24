@@ -1,10 +1,9 @@
+#include "GLFWPlatformInterface.h"
 #include "core/Application.h"
 #include "core/Element.h"
 #include "core/Hooks.h"
-#include "sandbox/GLFWPlatformSurface.h"
 #include "sandbox/NVGRenderDevice.h"
 #include <iostream>
-#include "GLFW/glfw3.h"
 #include "style/StyleHelpers.h"
 #include "utils/Color.h"
 
@@ -169,6 +168,8 @@ auto main(int argc, const char** argv) -> int
 {
 	auto app = Application("com.mocca.sandbox");
 	app.SetRenderDevice<sandbox::NVGRenderDevice>();
+	app.SetPlatformInterface(sandbox::createGLFWPlatformInterface());
+	
 	mocca::Logger::SetLogCallback(logCallback);
 
 	app.Fonts().RegisterFile(
@@ -197,28 +198,6 @@ auto main(int argc, const char** argv) -> int
 	app.Fonts().RegisterFile(
 		"../sandbox/NotoSansTC.ttf",
 		{.Family = "Noto Sans TC"}
-	);
-
-	app.On(
-		ApplicationEvent::SurfaceCreated,
-		[](auto* data, auto* user) -> auto
-		{
-			auto* surface = (Surface*)data;
-			if (surface->IsExternal())
-			{
-				surface->SetPlatform<GLFWPlatformSurface>();
-			}
-			return true;
-		}
-	);
-
-	app.On(
-		ApplicationEvent::Poll,
-		[](auto* data, auto* user) -> auto
-		{
-			glfwPollEvents();
-			return true;
-		}
 	);
 
 	app.RegisterSurface({

@@ -1,8 +1,9 @@
 #pragma once
 #include "Context.h"
-#include "Logger.h"
 #include "Surface.h"
+#include "core/Logger.h"
 #include "gfx/RenderDevice.h"
+#include "platform/PlatformInterface.h"
 #include "text/FontRegistry.h"
 #include <chrono>
 #include <cstddef>
@@ -54,16 +55,7 @@ namespace mocca
 		void Tick();
 		void DumpTree();
 
-		static auto GetAppID() -> const ApplicationID&
-		{
-			mc_assert(
-				main != nullptr,
-				"expected to have an Application instance running"
-			);
-
-			return main->_id;
-		}
-
+		static auto GetAppID() -> const ApplicationID&;
 		static void SetDefaultLogCallback();
 
 		auto RegisterSurface(const SurfaceDesc& desc) -> Surface*;
@@ -107,12 +99,18 @@ namespace mocca
 			return _gfxDevice.get();
 		}
 
+		auto GetPlatform() -> platform::PlatformInterface*
+		{
+			return _platform.get();
+		}
+
 		template <typename T, typename... Args>
 		void SetRenderDevice(Args&&... args)
 		{
-			_gfxDevice =
-				std::make_unique<T>(std::forward<Args>(args)...);
+			_gfxDevice = std::make_unique<T>(std::forward<Args>(args)...);
 		}
+
+		void SetPlatformInterface(std::unique_ptr<platform::PlatformInterface> plat);
 
 	private:
 		void _createPendingSurfaces();
@@ -145,6 +143,7 @@ namespace mocca
 		std::unique_ptr<detail::TypeInterners> _interners;
 		mtext::FontRegistry _fonts;
 		std::unique_ptr<gfx::RenderDevice> _gfxDevice;
+		std::unique_ptr<platform::PlatformInterface> _platform;
 
 		struct
 		{
