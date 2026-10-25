@@ -1,0 +1,88 @@
+#pragma once
+#include "gfx/Texture.h"
+#include <functional>
+#include <optional>
+#include <span>
+#include <unordered_map>
+#include <vector>
+
+namespace mocca
+{
+	class Surface;
+}
+
+namespace mocca::gfx
+{
+	class TextureRegistry
+	{
+	public:
+		using SubscriberId = uint32_t;
+
+		using Source = std::function<bool(const TextureDesc&, std::vector<std::byte>&)>;
+
+		auto Create(
+			const TextureDesc& desc,
+			std::span<const std::byte> pixels,
+			Source source = {}
+		) -> TextureId;
+
+		auto Update(
+			TextureId id,
+			std::span<const std::byte> pixels,
+			std::optional<TextureDesc> desc = std::nullopt
+		) -> bool;
+
+		void Destroy(TextureId id);
+		void SetSource(TextureId id, Source source);
+
+		[[nodiscard]] auto Get(TextureId id) -> Texture*;
+		[[nodiscard]] auto Get(TextureId id) const -> const Texture*;
+
+		void Acquire(TextureId id, Surface* consumer);
+		void Release(TextureId id, Surface* consumer);
+		void ReleaseConsumerSurface(Surface* surface);
+
+		void SetRetainCPU(TextureId id, bool retain);
+		void DropCPU(TextureId id);
+
+		auto Subscribe(std::span<Surface* const> served) -> SubscriberId;
+		void Unsubscribe(SubscriberId sub);
+		void Acknowledge(SubscriberId sub, TextureId id, uint32_t revision);
+		void AcknowledgeRemoved(SubscriberId sub, TextureId id);
+
+		void CollectFor(Surface* surface, std::vector<const Texture*>& out);
+
+		void FlushReleases();
+
+	private:
+		struct Slot
+		{
+			uint32_t Gen = 1;
+			bool Alive = false;
+			bool Owned = false;
+			bool Destroying = false;
+			Texture Data;
+			Source Src;
+			uint32_t HydrateFailedRev = 0;
+			std::vector<Surface*> Consumers;
+			std::unordered_map<SubscriberId, uint32_t> Acked;
+		};
+
+		struct Subscriber
+		{
+			std::vector<Surface*> Served;
+		};
+
+		std::vector<Slot> _slots;
+		std::vector<uint32_t> _free;
+		std::unordered_map<SubscriberId, Subscriber> _subs;
+		SubscriberId _nextSub = 1;
+
+		auto _slot(TextureId id) -> Slot*;
+		auto _anySlot(TextureId id) -> Slot*;
+		void _checkDestroy(Slot& s);
+		void _maybeDropCPU(Slot& s);
+		auto _needsPixels(const Slot& s, Surface* surface) const -> bool;
+		auto _hydrate(Slot& s) -> bool;
+	};
+}
