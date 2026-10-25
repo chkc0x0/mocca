@@ -2,12 +2,14 @@
 #include "core/Application.h"
 #include "core/Element.h"
 #include "core/Hooks.h"
+#include "gfx/Texture.h"
 #include "sandbox/NVGRenderDevice.h"
 #include <iostream>
 #include "style/StyleHelpers.h"
 #include "utils/Color.h"
 
 using namespace mocca;
+mocca::gfx::TextureId cat;
 
 const char Placeholder[] = {
 	"[latin wrap]      Lorem ipsum dolor sit amet, consectetur adipiscing "
@@ -110,13 +112,20 @@ auto Editor() -> Element
 			{
 				BackgroundColor(Color::Oklch(0.7, 0.1036, 171)),
 				Padding(px(16)),
-				FontFamily("Inter", "Noto Emoji", "Google Sans", "Noto Sans Arabic", "Noto Sans TC"),
+				FontFamily(
+					"Inter",
+					"Noto Emoji",
+					"Google Sans",
+					"Noto Sans Arabic",
+					"Noto Sans TC"
+				),
 				FontSize(px(24)),
 			},
 		.Children = {
 			box({
 				.Style =
 					{
+						BackgroundImage(cat),
 						BackgroundColor(Color(255, 255, 255, 40)),
 						BorderRadius(px(16)),
 						Width(px(600)),
@@ -144,7 +153,7 @@ auto Editor() -> Element
 						TextDescriptor{
 							.Style =
 								{
-									BackgroundColor(Color(255, 255, 255)),
+									TextColor(Color(255, 255, 255)),
 									FontWeight(500.0F),
 									LineHeight(px(26)),
 									LetterSpacing(px(0.25F)),
@@ -169,7 +178,7 @@ auto main(int argc, const char** argv) -> int
 	auto app = Application("com.mocca.sandbox");
 	app.SetRenderDevice<sandbox::NVGRenderDevice>();
 	app.SetPlatformInterface(sandbox::createGLFWPlatformInterface());
-	
+
 	mocca::Logger::SetLogCallback(logCallback);
 
 	app.Fonts().RegisterFile(
@@ -199,6 +208,8 @@ auto main(int argc, const char** argv) -> int
 		"../sandbox/NotoSansTC.ttf",
 		{.Family = "Noto Sans TC"}
 	);
+
+	cat = app.Textures().Load("../sandbox/cat.png");
 
 	app.RegisterSurface({
 		.Width = 800,

@@ -1,5 +1,7 @@
 #include "gfx/TextureRegistry.h"
 #include "core/Logger.h"
+#include "gfx/ImageDecoder.h"
+#include "gfx/ImageDecoderRegistry.h"
 #include <algorithm>
 
 namespace mocca::gfx
@@ -475,5 +477,97 @@ namespace mocca::gfx
 
 		s.Data.Pixels = std::move(pixels);
 		return true;
+	}
+
+	auto TextureRegistry::Load(
+		std::span<const std::byte> data,
+		uint32_t flags
+	) -> gfx::TextureId
+	{
+		gfx::DecodedImage image;
+		if (!ImageDecoderRegistry::Decode(data, image))
+		{
+			return {};
+		}
+
+		gfx::TextureDesc desc{
+			.Width = image.Width,
+			.Height = image.Height,
+			.Format = image.Format,
+			.Flags = flags,
+		};
+
+		std::vector<std::byte> bytes(data.begin(), data.end());
+		auto source = [bytes = std::move(bytes)](
+						  const gfx::TextureDesc& wanted,
+						  std::vector<std::byte>& out,
+						  void*
+					  ) -> bool
+		{
+			gfx::DecodedImage decoded;
+			if (!ImageDecoderRegistry::Decode(bytes, decoded))
+			{
+				return false;
+			}
+			if (decoded.Width != wanted.Width ||
+				decoded.Height != wanted.Height)
+			{
+				return false;
+			}
+			out = std::move(decoded.Pixels);
+			return true;
+		};
+
+		auto id = Create(desc, image.Pixels, source);
+		mc_debug("created texture {} (gen {}) from data ({} bytes)", id.Id, id.Gen, bytes.size());
+
+		return id;
+	}
+
+	auto TextureRegistry::Load(const std::string& path, uint32_t flags)
+		-> gfx::TextureId
+	{
+		gfx::DecodedImage image;
+		if (!ImageDecoderRegistry::DecodeFile(path, image))
+		{
+			return {};
+		}
+
+		gfx::TextureDesc desc{
+			.Width = image.Width,
+			.Height = image.Height,
+			.Format = image.Format,
+			.Flags = flags,
+		};
+
+		auto source = [path](
+						  const gfx::TextureDesc& wanted,
+						  std::vector<std::byte>& out,
+						  void*
+					  ) -> bool
+		{
+			gfx::DecodedImage decoded;
+			if (!ImageDecoderRegistry::DecodeFile(path, decoded))
+			{
+				return false;
+			}
+			if (decoded.Width != wanted.Width ||
+				decoded.Height != wanted.Height)
+			{
+				return false;
+			}
+			out = std::move(decoded.Pixels);
+			return true;
+		};
+
+		auto id = Create(desc, image.Pixels, source);
+		mc_debug(
+			"created texture {} (gen {}) from file {}",
+			id.Id,
+			id.Gen,
+			path
+		);
+
+		return id;
 	}
 }

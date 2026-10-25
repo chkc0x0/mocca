@@ -10,6 +10,8 @@ sources = [
     'src/gfx/Canvas.cpp',
     'src/gfx/TextureRegistry.cpp',
     'src/gfx/TextureCache.cpp',
+    'src/gfx/ImageDecoderRegistry.cpp',
+    'src/gfx/StbImageDecoder.cpp',
     'src/style/StyleApply.cpp',
     'src/core/Element.cpp',
     'src/core/HookFrame.cpp',
@@ -48,6 +50,7 @@ dependencies = [
     dependency('freetype2'), 
     dependency('harfbuzz'), 
     subproject('SheenBidi').get_variable('sheenbidi_dep'),
+    subproject('stb').get_variable('stb_image_dep'),
     dependency('libunibreak'),
     dependency('libutf8proc'),
     dependency('simdutf')

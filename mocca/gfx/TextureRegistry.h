@@ -3,6 +3,7 @@
 #include <functional>
 #include <optional>
 #include <span>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -56,6 +57,11 @@ namespace mocca::gfx
 		void CollectFor(Surface* surface, std::vector<const Texture*>& out);
 
 		void FlushReleases();
+
+		auto Load(std::span<const std::byte> data, uint32_t flags = 0)
+			-> gfx::TextureId;
+		auto Load(const std::string& path, uint32_t flags = 0)
+			-> gfx::TextureId;
 
 	private:
 		struct Slot

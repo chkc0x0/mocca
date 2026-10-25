@@ -1,10 +1,13 @@
 #include "core/Application.h"
 #include "core/HookStore.h"
 #include "core/Logger.h"
+#include "gfx/StbImageDecoder.h"
+#include "gfx/ImageDecoderRegistry.h"
 #include "utils/ScopedProfiler.h"
 #include "utils/TypeInterners.h"
 #include <algorithm>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -64,6 +67,9 @@ namespace mocca
 		);
 
 		_interners = std::make_unique<detail::TypeInterners>();
+		gfx::ImageDecoderRegistry::Register(
+			std::make_unique<gfx::StbImageDecoder>()
+		);
 	}
 
 	Application::~Application()
@@ -545,7 +551,7 @@ namespace mocca
 		{
 			mc_error(ErrorCode::InvalidArgument, "platform is...null?");
 		}
-		
+
 		_platform = std::move(plat);
 	}
 }
