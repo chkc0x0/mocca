@@ -194,6 +194,7 @@ namespace mocca
 			{
 				auto size = plat->Size();
 
+				surface->SyncTextureConsumers(_textures);
 				_textureScratch.clear();
 				_textures.CollectFor(surface, _textureScratch);
 

@@ -3,13 +3,21 @@
 #include "core/Node.h"
 #include "Element.h"
 #include "gfx/Renderer.h"
+#include "gfx/Texture.h"
 #include "input/InputTypes.h"
 #include "platform/PlatformSurface.h"
 #include <memory>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace mocca
 {
 	class Surface;
+
+	namespace gfx
+	{
+		class TextureRegistry;
+	}
 
 	namespace SurfaceFlags
 	{
@@ -52,6 +60,7 @@ namespace mocca
 		void Update(double dt);
 		void Tick(double dt);
 		void Paint();
+		void SyncTextureConsumers(gfx::TextureRegistry& registry);
 		void Print(int depth = 0) const;
 
 		void MarkDirty()
@@ -191,6 +200,9 @@ namespace mocca
 		int _zombieTimeout = 0;
 		int _zombieRemaining = 0;
 		Canvas _canvas;
+
+		std::unordered_map<gfx::TextureId, int, gfx::TextureIdHash> _textureAge;
+		std::unordered_set<gfx::TextureId, gfx::TextureIdHash> _textureSeen;
 
 		std::vector<std::unique_ptr<Surface>> _children;
 

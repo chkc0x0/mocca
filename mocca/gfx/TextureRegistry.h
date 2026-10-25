@@ -39,6 +39,8 @@ namespace mocca::gfx
 		[[nodiscard]] auto Get(TextureId id) -> Texture*;
 		[[nodiscard]] auto Get(TextureId id) const -> const Texture*;
 
+		[[nodiscard]] auto IsShared(TextureId id) const -> bool;
+
 		void Acquire(TextureId id, Surface* consumer);
 		void Release(TextureId id, Surface* consumer);
 		void ReleaseConsumerSurface(Surface* surface);

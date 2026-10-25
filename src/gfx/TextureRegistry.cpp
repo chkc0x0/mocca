@@ -183,6 +183,22 @@ namespace mocca::gfx
 		return &s.Data;
 	}
 
+	auto TextureRegistry::IsShared(TextureId id) const -> bool
+	{
+		if (id.Id >= _slots.size())
+		{
+			return false;
+		}
+
+		const auto& s = _slots[id.Id];
+		if (!s.Alive || s.Destroying || s.Gen != id.Gen)
+		{
+			return false;
+		}
+
+		return (s.Data.Desc.Flags & TextureFlags::Shared) != 0;
+	}
+
 	void TextureRegistry::Acquire(TextureId id, Surface* consumer)
 	{
 		auto* s = _slot(id);

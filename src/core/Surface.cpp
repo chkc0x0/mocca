@@ -7,6 +7,7 @@
 #include "input/Dispatch.h"
 #include "input/InputTypes.h"
 #include "core/Logger.h"
+#include "gfx/TextureRegistry.h"
 #include "style/ComputedStyle.h"
 #include "utils/ScopedProfiler.h"
 #include "yoga/YGNode.h"
@@ -16,6 +17,8 @@
 
 namespace mocca
 {
+	constexpr int TextureConsumerGrace = 4;
+
 	Surface::~Surface()
 	{
 		if (Application::main != nullptr && IsPlatformBacked())
@@ -229,6 +232,55 @@ namespace mocca
 		_dirty = false;
 	}
 
+	void Surface::SyncTextureConsumers(gfx::TextureRegistry& registry)
+	{
+		_textureSeen.clear();
+		for (const auto& cmd : _canvas.Commands())
+		{
+			if (const auto* image = std::get_if<cmds::DrawImageCmd>(&cmd))
+			{
+				_textureSeen.insert(image->Texture);
+			}
+		}
+
+		for (auto id : _textureSeen)
+		{
+			if (registry.IsShared(id))
+			{
+				continue;
+			}
+
+			auto [it, added] = _textureAge.try_emplace(id, 0);
+			if (added)
+			{
+				registry.Acquire(id, this);
+			}
+			else
+			{
+				it->second = 0;
+			}
+		}
+
+		for (auto it = _textureAge.begin(); it != _textureAge.end();)
+		{
+			if (_textureSeen.contains(it->first))
+			{
+				++it;
+				continue;
+			}
+
+			if (++it->second > TextureConsumerGrace)
+			{
+				registry.Release(it->first, this);
+				it = _textureAge.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+
 	auto Surface::FindSurfaceContaining(detail::NodeId id) -> Surface*
 	{
 		if (detail::Node::FindNodeById(_root.get(), id) != nullptr)
@@ -326,7 +378,8 @@ namespace mocca
 			synth.EventType = type;
 
 			node->Events->Call(
-				type == PointerEvent::Type::Enter ? EventType::PointerEnter : EventType::PointerLeave,
+				type == PointerEvent::Type::Enter ? EventType::PointerEnter
+												  : EventType::PointerLeave,
 				synth
 			);
 		};
