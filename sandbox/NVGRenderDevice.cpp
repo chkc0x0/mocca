@@ -9,6 +9,8 @@
 #include <type_traits>
 #include "GL/glew.h"
 #include "nanovg.h"
+#include <span>
+#include <utility>
 #define NANOVG_GL3_IMPLEMENTATION 1
 #include "nanovg_gl.h"
 
@@ -34,11 +36,13 @@ namespace sandbox
 		const mocca::gfx::GraphicsHandle& handle
 	) -> std::unique_ptr<mocca::gfx::Renderer>
 	{
-		(void)surf;
-		return std::make_unique<NVGRenderer>(handle);
+		return std::make_unique<NVGRenderer>(surf, handle);
 	}
 
-	NVGRenderer::NVGRenderer(const mocca::gfx::GraphicsHandle& handle)
+	NVGRenderer::NVGRenderer(
+		mocca::Surface* surface,
+		const mocca::gfx::GraphicsHandle& handle
+	)
 	{
 		(void)handle;
 
@@ -49,11 +53,20 @@ namespace sandbox
 				mocca::ErrorCode::InvalidState,
 				"failed to create NanoVG context"
 			);
+			return;
 		}
+
+		_texCache = std::make_unique<NVGTextureCache>(
+			mocca::Application::main->Textures(),
+			_vg,
+			std::span<mocca::Surface* const>(&surface, 1)
+		);
 	}
 
 	NVGRenderer::~NVGRenderer()
 	{
+		_texCache.reset();
+
 		if (_vg != nullptr)
 		{
 			nvgDeleteGL3(_vg);
@@ -66,6 +79,11 @@ namespace sandbox
 		if (_vg == nullptr)
 		{
 			return;
+		}
+
+		if (_texCache != nullptr)
+		{
+			_texCache->Sync(frame.Textures);
 		}
 
 		nvgBeginFrame(
@@ -275,7 +293,7 @@ namespace sandbox
 
 		int handle = -1;
 		if (_vg != nullptr && mocca::Application::main != nullptr &&
-			id != static_cast<mocca::mtext::FontFaceId>(-1))
+			std::cmp_not_equal(id ,-1))
 		{
 			const auto& entry = mocca::Application::main->Fonts().Entry(id);
 			std::string name = "mocca-face-" + std::to_string(id);
