@@ -15,7 +15,7 @@
 - [ ] tab width prop
 - [ ] dedupe styles in node
 - [ ] enhance texture api (`BackgroundImage("cat.png")`, dirty rects and other stuff)
-- [ ] freetype module
+- [ ] freetype module (should i though?)
 - [ ] make color space a choice in anim (currently only oklab)
 - [ ] flip for properties without anim
 - [ ] widgets
