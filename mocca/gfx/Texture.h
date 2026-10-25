@@ -29,7 +29,7 @@ namespace mocca::gfx
 		Alpha8,
 	};
 
-	inline auto BytesPerPixel(TextureFormat format) -> uint32_t
+	inline auto bytesPerPixel(TextureFormat format) -> uint32_t
 	{
 		switch (format)
 		{

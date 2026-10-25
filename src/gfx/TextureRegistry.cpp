@@ -7,7 +7,7 @@ namespace mocca::gfx
 	auto expectedSize(const TextureDesc& desc) -> std::size_t
 	{
 		return static_cast<std::size_t>(desc.Width) * desc.Height *
-			   BytesPerPixel(desc.Format);
+			   bytesPerPixel(desc.Format);
 	}
 
 	auto servesAny(
