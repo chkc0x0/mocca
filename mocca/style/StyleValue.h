@@ -1,9 +1,12 @@
 #pragma once
 #include "Length.h"
-#include "gfx/Texture.h"
+#include "style/BackgroundImageTypes.h"
 #include "style/FontStyleTypes.h"
 #include "style/TransitionType.h"
 #include <cstdint>
+#include <span>
+#include <string>
+#include <string_view>
 #include <variant>
 
 namespace mocca::styles
@@ -37,7 +40,15 @@ namespace mocca::styles
 		auto internFontFeatures(const FontFeaturesType& features) -> uint32_t;
 		auto resolveFontFeatures(uint32_t ref) -> const FontFeaturesType&;
 
-		auto internBackgroundImage(const gfx::TextureId& id) -> uint32_t;
-		auto resolveBackgroundImage(uint32_t ref) -> const gfx::TextureId&;
+		auto internBackgroundImage(const BackgroundImageType& image) -> uint32_t;
+		auto resolveBackgroundImage(uint32_t ref) -> const BackgroundImageType&;
+
+		auto loadImageFile(std::string_view path, uint32_t flags)
+			-> gfx::TextureId;
+		auto loadImageMemory(
+			std::string_view name,
+			std::span<const std::byte> data,
+			uint32_t flags
+		) -> gfx::TextureId;
 	}
 }

@@ -362,13 +362,17 @@ namespace mocca::detail
 		{
 			canvas
 				.DrawRect(x, y, w, h, background, RectStyle{.Radius = radius});
-			canvas.DrawImage(
-				cmds::DrawImageCmd{
-					.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
-					.Texture = styles::detail::resolveBackgroundImage(imageRef),
-					.Radius = radius,
-				}
-			);
+			const auto& image = styles::detail::resolveBackgroundImage(imageRef);
+			for (const auto& layer : image.Layers)
+			{
+				canvas.DrawImage(
+					cmds::DrawImageCmd{
+						.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
+						.Texture = layer.Texture,
+						.Radius = radius,
+					}
+				);
+			}
 			canvas.DrawRect(
 				x,
 				y,

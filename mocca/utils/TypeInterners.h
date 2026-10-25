@@ -1,5 +1,5 @@
 #pragma once
-#include "gfx/Texture.h"
+#include "style/BackgroundImageTypes.h"
 #include "style/FontStyleTypes.h"
 #include "style/TransitionType.h"
 #include "utils/Interner.h"
@@ -13,6 +13,6 @@ namespace mocca::detail
 		Interner<styles::FontFamilyType> FontFamilies;
 		Interner<styles::FontVariationsType> FontVariations;
 		Interner<styles::FontFeaturesType> FontFeatures;
-		Interner<gfx::TextureId> BackgroundImages;
+		Interner<styles::BackgroundImageType> BackgroundImages;
 	};
 }

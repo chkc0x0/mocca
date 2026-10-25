@@ -570,4 +570,48 @@ namespace mocca::gfx
 
 		return id;
 	}
+
+	auto TextureRegistry::LoadNamed(
+		const std::string& key,
+		const std::string& path,
+		uint32_t flags
+	) -> gfx::TextureId
+	{
+		if (auto it = _named.find(key);
+			it != _named.end() && it->second.Flags == flags &&
+			_anySlot(it->second.Id) != nullptr)
+		{
+			return it->second.Id;
+		}
+
+		auto id = Load(path, flags);
+		if (_anySlot(id) != nullptr)
+		{
+			_named[key] = Named{.Id = id, .Flags = flags};
+		}
+
+		return id;
+	}
+
+	auto TextureRegistry::LoadNamed(
+		const std::string& key,
+		std::span<const std::byte> data,
+		uint32_t flags
+	) -> gfx::TextureId
+	{
+		if (auto it = _named.find(key);
+			it != _named.end() && it->second.Flags == flags &&
+			_anySlot(it->second.Id) != nullptr)
+		{
+			return it->second.Id;
+		}
+
+		auto id = Load(data, flags);
+		if (_anySlot(id) != nullptr)
+		{
+			_named[key] = Named{.Id = id, .Flags = flags};
+		}
+
+		return id;
+	}
 }

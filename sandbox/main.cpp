@@ -9,7 +9,6 @@
 #include "utils/Color.h"
 
 using namespace mocca;
-mocca::gfx::TextureId cat;
 
 const char Placeholder[] = {
 	"[latin wrap]      Lorem ipsum dolor sit amet, consectetur adipiscing "
@@ -125,7 +124,7 @@ auto Editor() -> Element
 			box({
 				.Style =
 					{
-						BackgroundImage(cat),
+						BackgroundImage({"../sandbox/cat.png", "../sandbox/star.png"}),
 						BackgroundColor(Color(255, 255, 255, 40)),
 						BorderRadius(px(16)),
 						Width(px(600)),
@@ -208,8 +207,6 @@ auto main(int argc, const char** argv) -> int
 		"../sandbox/NotoSansTC.ttf",
 		{.Family = "Noto Sans TC"}
 	);
-
-	cat = app.Textures().Load("../sandbox/cat.png");
 
 	app.RegisterSurface({
 		.Width = 800,

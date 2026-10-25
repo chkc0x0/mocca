@@ -12,6 +12,7 @@
 #include <concepts>
 #include <cstdint>
 #include <initializer_list>
+#include <span>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -375,7 +376,46 @@ namespace mocca::styles
 	{
 		return detail::encodeStyleEntry(
 			StyleProperty::BackgroundImage,
-			detail::internBackgroundImage(id)
+			detail::internBackgroundImage(BackgroundImageType{BackgroundImageEntry{id}})
+		);
+	}
+
+		inline auto
+		BackgroundImage(std::initializer_list<BackgroundImageEntry> layers)
+			-> StyleEntry
+	{
+		return detail::encodeStyleEntry(
+			StyleProperty::BackgroundImage,
+			detail::internBackgroundImage(BackgroundImageType{layers})
+		);
+	}
+
+		inline auto BackgroundImage(std::string_view path, uint32_t flags = 0)
+			-> StyleEntry
+	{
+		return detail::encodeStyleEntry(
+			StyleProperty::BackgroundImage,
+			detail::internBackgroundImage(
+				BackgroundImageType{BackgroundImageEntry{path, flags}}
+			)
+		);
+	}
+
+		inline auto BackgroundImage(
+			std::string_view name,
+			std::span<const std::byte> data,
+			uint32_t flags = 0
+		) -> StyleEntry
+	{
+		return detail::encodeStyleEntry(
+			StyleProperty::BackgroundImage,
+			detail::internBackgroundImage(
+				BackgroundImageType{
+					BackgroundImageEntry{
+						detail::loadImageMemory(name, data, flags)
+					}
+				}
+			)
 		);
 	}
 
@@ -409,9 +449,6 @@ namespace mocca::styles
 		return detail::makeFontFeatures(FontFeaturesType{axes});
 	}
 
-	// merge partial feature sets (raw pairs, variant shorthand groups, or
-	// whole lists) into one interned FontFeatureSettings entry. later
-	// sources override earlier ones tag-by-tag.
 	template <class... Sets>
 		requires(sizeof...(Sets) > 0)
 	inline auto FontFeatureSettings(const Sets&... sets) -> StyleEntry

@@ -63,6 +63,17 @@ namespace mocca::gfx
 		auto Load(const std::string& path, uint32_t flags = 0)
 			-> gfx::TextureId;
 
+		auto LoadNamed(
+			const std::string& key,
+			const std::string& path,
+			uint32_t flags = 0
+		) -> gfx::TextureId;
+		auto LoadNamed(
+			const std::string& key,
+			std::span<const std::byte> data,
+			uint32_t flags = 0
+		) -> gfx::TextureId;
+
 	private:
 		struct Slot
 		{
@@ -83,9 +94,16 @@ namespace mocca::gfx
 			std::vector<Surface*> Served;
 		};
 
+		struct Named
+		{
+			TextureId Id;
+			uint32_t Flags = 0;
+		};
+
 		std::vector<Slot> _slots;
 		std::vector<uint32_t> _free;
 		std::unordered_map<SubscriberId, Subscriber> _subs;
+		std::unordered_map<std::string, Named> _named;
 		SubscriberId _nextSub = 1;
 
 		auto _slot(TextureId id) -> Slot*;

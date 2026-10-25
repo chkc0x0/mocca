@@ -2,6 +2,21 @@
 #include "core/Application.h"
 #include "utils/TypeInterners.h"
 
+namespace mocca::styles
+{
+	BackgroundImageEntry::BackgroundImageEntry(const char* path, uint32_t flags)
+		: BackgroundImageEntry(std::string_view(path), flags)
+	{
+	}
+
+	BackgroundImageEntry::BackgroundImageEntry(
+		std::string_view path,
+		uint32_t flags
+	) : Texture(detail::loadImageFile(path, flags))
+	{
+	}
+}
+
 namespace mocca::styles::detail
 {
 	auto internTransition(const TransitionType& type) -> uint32_t
@@ -46,13 +61,28 @@ namespace mocca::styles::detail
 		return Application::main->GetInterners()->FontFeatures.Get(ref);
 	}
 
-	auto internBackgroundImage(const gfx::TextureId& id) -> uint32_t
+	auto internBackgroundImage(const BackgroundImageType& image) -> uint32_t
 	{
-		return Application::main->GetInterners()->BackgroundImages.Intern(id);
+		return Application::main->GetInterners()->BackgroundImages.Intern(image);
 	}
 
-	auto resolveBackgroundImage(uint32_t ref) -> const gfx::TextureId&
+	auto resolveBackgroundImage(uint32_t ref) -> const BackgroundImageType&
 	{
 		return Application::main->GetInterners()->BackgroundImages.Get(ref);
+	}
+
+	auto loadImageFile(std::string_view path, uint32_t flags) -> gfx::TextureId
+	{
+		std::string key(path);
+		return Application::main->Textures().LoadNamed(key, key, flags);
+	}
+
+	auto loadImageMemory(
+		std::string_view name,
+		std::span<const std::byte> data,
+		uint32_t flags
+	) -> gfx::TextureId
+	{
+		return Application::main->Textures().LoadNamed(std::string(name), data, flags);
 	}
 }
