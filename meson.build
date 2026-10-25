@@ -8,6 +8,8 @@ sources = [
     'src/core/HookStore.cpp',
     'src/core/Context.cpp',
     'src/gfx/Canvas.cpp',
+    'src/gfx/TextureRegistry.cpp',
+    'src/gfx/TextureCache.cpp',
     'src/style/StyleApply.cpp',
     'src/core/Element.cpp',
     'src/core/HookFrame.cpp',

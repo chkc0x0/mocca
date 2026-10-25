@@ -3,6 +3,7 @@
 #include "Surface.h"
 #include "core/Logger.h"
 #include "gfx/RenderDevice.h"
+#include "gfx/TextureRegistry.h"
 #include "platform/PlatformInterface.h"
 #include "text/FontRegistry.h"
 #include <chrono>
@@ -94,6 +95,11 @@ namespace mocca
 			return _fonts;
 		}
 
+		auto Textures() -> gfx::TextureRegistry&
+		{
+			return _textures;
+		}
+
 		auto GetRenderDevice() -> gfx::RenderDevice*
 		{
 			return _gfxDevice.get();
@@ -142,6 +148,8 @@ namespace mocca
 
 		std::unique_ptr<detail::TypeInterners> _interners;
 		mtext::FontRegistry _fonts;
+		gfx::TextureRegistry _textures;
+		std::vector<const gfx::Texture*> _textureScratch;
 		std::unique_ptr<gfx::RenderDevice> _gfxDevice;
 		std::unique_ptr<platform::PlatformInterface> _platform;
 

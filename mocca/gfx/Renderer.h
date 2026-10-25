@@ -1,5 +1,6 @@
 #pragma once
 #include "DrawCommands.h"
+#include "Texture.h"
 #include "utils/Math.h"
 #include <span>
 
@@ -9,6 +10,7 @@ namespace mocca::gfx
 	{
 	public:
 		std::span<const cmds::DrawCommand> Commands;
+		std::span<const Texture* const> Textures;
 		Vector2 ViewportSize;
 		Vector2 Scale;
 	};

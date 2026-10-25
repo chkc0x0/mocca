@@ -28,6 +28,11 @@ namespace mocca
 			_platform->BeginFrame();
 			_renderer.reset();
 		}
+
+		if (Application::main != nullptr)
+		{
+			Application::main->Textures().ReleaseConsumerSurface(this);
+		}
 	}
 
 	void Surface::Update(double dt)

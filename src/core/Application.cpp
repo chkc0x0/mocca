@@ -193,8 +193,13 @@ namespace mocca
 			if (surface->_renderer != nullptr)
 			{
 				auto size = plat->Size();
+
+				_textureScratch.clear();
+				_textures.CollectFor(surface, _textureScratch);
+
 				surface->_renderer->Render({
 					.Commands = surface->GetDrawData(),
+					.Textures = _textureScratch,
 					.ViewportSize =
 						{
 							.X = static_cast<float>(size.X),
@@ -206,6 +211,8 @@ namespace mocca
 
 			plat->EndFrame();
 		}
+
+		_textures.FlushReleases();
 
 		mc_profileFrame();
 	}

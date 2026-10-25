@@ -18,7 +18,8 @@ namespace mocca::gfx
 	public:
 		using SubscriberId = uint32_t;
 
-		using Source = std::function<bool(const TextureDesc&, std::vector<std::byte>&)>;
+		using Source = std::function<
+			bool(const TextureDesc&, std::vector<std::byte>&, void*)>;
 
 		auto Create(
 			const TextureDesc& desc,
@@ -33,7 +34,7 @@ namespace mocca::gfx
 		) -> bool;
 
 		void Destroy(TextureId id);
-		void SetSource(TextureId id, Source source);
+		void SetSource(TextureId id, Source source, void* user = nullptr);
 
 		[[nodiscard]] auto Get(TextureId id) -> Texture*;
 		[[nodiscard]] auto Get(TextureId id) const -> const Texture*;
@@ -63,6 +64,7 @@ namespace mocca::gfx
 			bool Destroying = false;
 			Texture Data;
 			Source Src;
+			void* User = nullptr;
 			uint32_t HydrateFailedRev = 0;
 			std::vector<Surface*> Consumers;
 			std::unordered_map<SubscriberId, uint32_t> Acked;
@@ -80,9 +82,9 @@ namespace mocca::gfx
 
 		auto _slot(TextureId id) -> Slot*;
 		auto _anySlot(TextureId id) -> Slot*;
-		void _checkDestroy(Slot& s);
+		static void CheckDestroy(Slot& s);
 		void _maybeDropCPU(Slot& s);
 		auto _needsPixels(const Slot& s, Surface* surface) const -> bool;
-		auto _hydrate(Slot& s) -> bool;
+		static auto Hydrate(Slot& s) -> bool;
 	};
 }
