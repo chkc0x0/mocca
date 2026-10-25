@@ -22,6 +22,7 @@ namespace mocca
 			Color color,
 			const RectStyle& style = {}
 		);
+		void DrawImage(cmds::DrawImageCmd cmd);
 		void DrawText(cmds::DrawTextCmd cmd);
 		void PushClip(float x, float y, float w, float h);
 		void PopClip();

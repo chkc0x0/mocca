@@ -22,6 +22,11 @@ namespace mocca
 		);
 	}
 
+	void Canvas::DrawImage(cmds::DrawImageCmd cmd)
+	{
+		_commands.emplace_back(std::move(cmd));
+	}
+
 	void Canvas::DrawText(cmds::DrawTextCmd cmd)
 	{
 		_commands.emplace_back(std::move(cmd));

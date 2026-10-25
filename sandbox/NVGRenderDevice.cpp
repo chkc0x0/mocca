@@ -161,6 +161,67 @@ namespace sandbox
 						}
 					}
 					else if constexpr (
+						std::is_same_v<T, mocca::cmds::DrawImageCmd>
+					)
+					{
+						if (_texCache == nullptr)
+						{
+							return;
+						}
+
+						auto handle = _texCache->Handle(c.Texture);
+						if (handle == 0)
+						{
+							return;
+						}
+
+						const auto& radius = c.Radius;
+						bool rounded = radius.TopLeft > 0 ||
+									   radius.TopRight > 0 ||
+									   radius.BottomRight > 0 ||
+									   radius.BottomLeft > 0;
+
+						nvgBeginPath(_vg);
+						if (rounded)
+						{
+							nvgRoundedRectVarying(
+								_vg,
+								c.Rect.X,
+								c.Rect.Y,
+								c.Rect.Width,
+								c.Rect.Height,
+								radius.TopLeft,
+								radius.TopRight,
+								radius.BottomRight,
+								radius.BottomLeft
+							);
+						}
+						else
+						{
+							nvgRect(
+								_vg,
+								c.Rect.X,
+								c.Rect.Y,
+								c.Rect.Width,
+								c.Rect.Height
+							);
+						}
+						nvgFillPaint(
+							_vg,
+							nvgImagePattern(
+								_vg,
+								c.Rect.X,
+								c.Rect.Y,
+								c.Rect.Width,
+								c.Rect.Height,
+								0.0F,
+								static_cast<int>(handle),
+								1.0F
+							)
+						);
+						nvgFill(_vg);
+					}
+					else if constexpr (
 						std::is_same_v<T, mocca::cmds::DrawTextCmd>
 					)
 					{

@@ -1,9 +1,32 @@
 #include "TestSupport.h"
 #include "core/Hooks.h"
+#include "gfx/Canvas.h"
 
 namespace mtest
 {
 	using RenderTest = SurfaceTest;
+
+	TEST(CanvasDrawImage, EmitsImageCommand)
+	{
+		mocca::Canvas canvas;
+		canvas.DrawImage(
+			mocca::cmds::DrawImageCmd{
+				.Rect = {.X = 4, .Y = 8, .Width = 32, .Height = 16},
+				.Texture = {.Id = 7, .Gen = 1},
+				.Radius = {.TopLeft = 2, .TopRight = 2},
+			}
+		);
+
+		const auto& cmds = canvas.Commands();
+		ASSERT_EQ(cmds.size(), 1U);
+		const auto* image = std::get_if<mocca::cmds::DrawImageCmd>(&cmds.front());
+		ASSERT_NE(image, nullptr);
+		EXPECT_EQ(image->Texture.Id, 7U);
+		EXPECT_EQ(image->Texture.Gen, 1U);
+		EXPECT_FLOAT_EQ(image->Rect.X, 4.0F);
+		EXPECT_FLOAT_EQ(image->Rect.Width, 32.0F);
+		EXPECT_FLOAT_EQ(image->Radius.TopLeft, 2.0F);
+	}
 
 	TEST_F(RenderTest, FirstTickRecordsCommands)
 	{

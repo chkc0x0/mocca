@@ -1,4 +1,5 @@
 #pragma once
+#include "gfx/Texture.h"
 #include "text/TextLayout.h"
 #include "utils/Color.h"
 #include "utils/Math.h"
@@ -36,6 +37,14 @@ namespace mocca::cmds
 		struct Color BorderColor;
 	};
 
+	struct DrawImageCmd
+	{
+	public:
+		Rectangle Rect;
+		gfx::TextureId Texture;
+		CornerRadii Radius{};
+	};
+
 	struct DrawTextCmd
 	{
 	public:
@@ -69,6 +78,7 @@ namespace mocca::cmds
 
 	using DrawCommand = std::variant<
 		DrawRectCmd,
+		DrawImageCmd,
 		DrawTextCmd,
 		PushClipCmd,
 		PopClipCmd,
