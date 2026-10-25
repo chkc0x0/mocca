@@ -14,6 +14,7 @@
 - [ ] css text properties
 - [ ] tab width prop
 - [ ] dedupe styles in node
+- [ ] skia backend and better platform specific to linux/wayland
 - [ ] enhance texture api (`BackgroundImage("cat.png")`, dirty rects and other stuff)
 - [ ] freetype module (should i though?)
 - [ ] make color space a choice in anim (currently only oklab)
