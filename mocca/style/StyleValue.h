@@ -1,5 +1,6 @@
 #pragma once
 #include "Length.h"
+#include "gfx/Texture.h"
 #include "style/FontStyleTypes.h"
 #include "style/TransitionType.h"
 #include <cstdint>
@@ -35,5 +36,8 @@ namespace mocca::styles
 
 		auto internFontFeatures(const FontFeaturesType& features) -> uint32_t;
 		auto resolveFontFeatures(uint32_t ref) -> const FontFeaturesType&;
+
+		auto internBackgroundImage(const gfx::TextureId& id) -> uint32_t;
+		auto resolveBackgroundImage(uint32_t ref) -> const gfx::TextureId&;
 	}
 }

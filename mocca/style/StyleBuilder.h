@@ -371,6 +371,14 @@ namespace mocca::styles
 		mc_propertyEdges
 #undef mc_stylePropertyEdge
 
+		inline auto BackgroundImage(const gfx::TextureId& id) -> StyleEntry
+	{
+		return detail::encodeStyleEntry(
+			StyleProperty::BackgroundImage,
+			detail::internBackgroundImage(id)
+		);
+	}
+
 		constexpr auto ms(float milliseconds) -> float
 	{
 		return milliseconds / 1000.0F;

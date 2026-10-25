@@ -45,4 +45,14 @@ namespace mocca::styles::detail
 	{
 		return Application::main->GetInterners()->FontFeatures.Get(ref);
 	}
+
+	auto internBackgroundImage(const gfx::TextureId& id) -> uint32_t
+	{
+		return Application::main->GetInterners()->BackgroundImages.Intern(id);
+	}
+
+	auto resolveBackgroundImage(uint32_t ref) -> const gfx::TextureId&
+	{
+		return Application::main->GetInterners()->BackgroundImages.Get(ref);
+	}
 }

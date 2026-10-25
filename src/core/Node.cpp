@@ -253,10 +253,233 @@ namespace mocca::detail
 		return pos;
 	}
 
+	auto resolveLength(const Length& length, float basis) -> float
+	{
+		return length.Unit == LengthUnit::Percent
+				   ? length.Value * basis / 100.0F
+				   : length.Value;
+	}
+
+	auto
+	resolveCornerRadii(const styles::ComputedStyle& style, float w, float h)
+		-> cmds::CornerRadii
+	{
+		float radiusBasis = std::min(w, h);
+
+		cmds::CornerRadii radius{
+			.TopLeft = resolveLength(
+				style.Get<styles::StyleProperty::BorderRadiusTopLeft>(),
+				radiusBasis
+			),
+			.TopRight = resolveLength(
+				style.Get<styles::StyleProperty::BorderRadiusTopRight>(),
+				radiusBasis
+			),
+			.BottomRight = resolveLength(
+				style.Get<styles::StyleProperty::BorderRadiusBottomRight>(),
+				radiusBasis
+			),
+			.BottomLeft = resolveLength(
+				style.Get<styles::StyleProperty::BorderRadiusBottomLeft>(),
+				radiusBasis
+			),
+		};
+
+		float radiusScale = 1.0F;
+		if (radius.TopLeft + radius.TopRight > 0)
+		{
+			radiusScale =
+				std::min(radiusScale, w / (radius.TopLeft + radius.TopRight));
+		}
+		if (radius.BottomLeft + radius.BottomRight > 0)
+		{
+			radiusScale = std::min(
+				radiusScale,
+				w / (radius.BottomLeft + radius.BottomRight)
+			);
+		}
+		if (radius.TopLeft + radius.BottomLeft > 0)
+		{
+			radiusScale =
+				std::min(radiusScale, h / (radius.TopLeft + radius.BottomLeft));
+		}
+		if (radius.TopRight + radius.BottomRight > 0)
+		{
+			radiusScale = std::min(
+				radiusScale,
+				h / (radius.TopRight + radius.BottomRight)
+			);
+		}
+		if (radiusScale < 1.0F)
+		{
+			radius.TopLeft *= radiusScale;
+			radius.TopRight *= radiusScale;
+			radius.BottomRight *= radiusScale;
+			radius.BottomLeft *= radiusScale;
+		}
+
+		return radius;
+	}
+
+	auto resolveBorder(const styles::ComputedStyle& style, float w, float h)
+		-> cmds::EdgeSizes
+	{
+		return {
+			.Top =
+				resolveLength(style.Get<styles::StyleProperty::BorderTop>(), h),
+			.Right = resolveLength(
+				style.Get<styles::StyleProperty::BorderRight>(),
+				w
+			),
+			.Bottom = resolveLength(
+				style.Get<styles::StyleProperty::BorderBottom>(),
+				h
+			),
+			.Left = resolveLength(
+				style.Get<styles::StyleProperty::BorderLeft>(),
+				w
+			),
+		};
+	}
+
+	void paintDecorations(
+		const Node& node,
+		Canvas& canvas,
+		float x,
+		float y,
+		float w,
+		float h
+	)
+	{
+		const auto& style = node.Style;
+		auto radius = resolveCornerRadii(style, w, h);
+		auto border = resolveBorder(style, w, h);
+		auto background = style.Get<styles::StyleProperty::BackgroundColor>();
+		auto borderColor = style.Get<styles::StyleProperty::BorderColor>();
+		uint32_t imageRef = style.Get<styles::StyleProperty::BackgroundImage>();
+
+		if (imageRef != 0)
+		{
+			canvas
+				.DrawRect(x, y, w, h, background, RectStyle{.Radius = radius});
+			canvas.DrawImage(
+				cmds::DrawImageCmd{
+					.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
+					.Texture = styles::detail::resolveBackgroundImage(imageRef),
+					.Radius = radius,
+				}
+			);
+			canvas.DrawRect(
+				x,
+				y,
+				w,
+				h,
+				colors::Transparent,
+				RectStyle{
+					.Radius = radius,
+					.Border = border,
+					.BorderColor = borderColor,
+				}
+			);
+		}
+		else
+		{
+			canvas.DrawRect(
+				x,
+				y,
+				w,
+				h,
+				background,
+				RectStyle{
+					.Radius = radius,
+					.Border = border,
+					.BorderColor = borderColor,
+				}
+			);
+		}
+	}
+
+	void paintText(
+		const Node& node,
+		Canvas& canvas,
+		float x,
+		float y,
+		float w,
+		float h
+	)
+	{
+		const std::string& content = std::get<TextElement>(node.Kind).Content;
+
+		canvas.DrawRect(
+			x,
+			y,
+			w,
+			h,
+			node.Style.Get<styles::StyleProperty::BackgroundColor>(),
+			RectStyle{}
+		);
+
+		auto layout = mtext::detail::TextLayoutBuilder::ResolveTextLayout(
+			node.Style,
+			content,
+			w,
+			true
+		);
+
+		canvas.DrawText(
+			cmds::DrawTextCmd{
+				.Position = {.X = x, .Y = y},
+				.Content = content,
+				.Color = node.Style.Get<styles::StyleProperty::TextColor>(),
+				.Size = node.Style.Get<styles::StyleProperty::FontSize>().Value,
+				.Face = layout->Face,
+				.Layout = layout,
+				.BoxWidth = w,
+				.Align = node.Style.Get<styles::StyleProperty::TextAlign>(),
+			}
+		);
+	}
+
+	void
+	paintBox(Node& node, Canvas& canvas, float x, float y, float w, float h)
+	{
+		auto overflow = node.Style.Get<styles::StyleProperty::Overflow>();
+		bool clips = overflow == styles::OverflowType::Hidden ||
+					 overflow == styles::OverflowType::Scroll;
+		bool scrolls = overflow == styles::OverflowType::Scroll;
+
+		if (clips)
+		{
+			canvas.PushClip(x, y, w, h);
+		}
+
+		paintDecorations(node, canvas, x, y, w, h);
+
+		if (scrolls)
+		{
+			canvas.PushTransform(-node.ScrollOffset.X, -node.ScrollOffset.Y);
+		}
+
+		for (auto& child : node.Children)
+		{
+			child->Paint(canvas);
+		}
+
+		if (scrolls)
+		{
+			canvas.PopTransform();
+		}
+
+		if (clips)
+		{
+			canvas.PopClip();
+		}
+	}
+
 	void Node::Paint(Canvas& canvas)
 	{
 		mc_profileFunction();
-		
+
 		if (IsComponent())
 		{
 			for (auto& child : Children)
@@ -273,172 +496,17 @@ namespace mocca::detail
 
 		if (IsBox())
 		{
-			auto overflow = Style.Get<styles::StyleProperty::Overflow>();
-			bool clips = overflow == styles::OverflowType::Hidden ||
-						 overflow == styles::OverflowType::Scroll;
-			bool scrolls = overflow == styles::OverflowType::Scroll;
-
-			if (clips)
-			{
-				canvas.PushClip(x, y, w, h);
-			}
-
-			auto resolveLength = [](const Length& length, float basis) -> float
-			{
-				return length.Unit == LengthUnit::Percent
-						   ? length.Value * basis / 100.0F
-						   : length.Value;
-			};
-
-			float radiusBasis = std::min(w, h);
-
-			cmds::CornerRadii radius{
-				.TopLeft = resolveLength(
-					Style.Get<styles::StyleProperty::BorderRadiusTopLeft>(),
-					radiusBasis
-				),
-				.TopRight = resolveLength(
-					Style.Get<styles::StyleProperty::BorderRadiusTopRight>(),
-					radiusBasis
-				),
-				.BottomRight = resolveLength(
-					Style.Get<styles::StyleProperty::BorderRadiusBottomRight>(),
-					radiusBasis
-				),
-				.BottomLeft = resolveLength(
-					Style.Get<styles::StyleProperty::BorderRadiusBottomLeft>(),
-					radiusBasis
-				),
-			};
-
-			float radiusScale = 1.0F;
-			if (radius.TopLeft + radius.TopRight > 0)
-			{
-				radiusScale = std::min(
-					radiusScale,
-					w / (radius.TopLeft + radius.TopRight)
-				);
-			}
-			if (radius.BottomLeft + radius.BottomRight > 0)
-			{
-				radiusScale = std::min(
-					radiusScale,
-					w / (radius.BottomLeft + radius.BottomRight)
-				);
-			}
-			if (radius.TopLeft + radius.BottomLeft > 0)
-			{
-				radiusScale = std::min(
-					radiusScale,
-					h / (radius.TopLeft + radius.BottomLeft)
-				);
-			}
-			if (radius.TopRight + radius.BottomRight > 0)
-			{
-				radiusScale = std::min(
-					radiusScale,
-					h / (radius.TopRight + radius.BottomRight)
-				);
-			}
-			if (radiusScale < 1.0F)
-			{
-				radius.TopLeft *= radiusScale;
-				radius.TopRight *= radiusScale;
-				radius.BottomRight *= radiusScale;
-				radius.BottomLeft *= radiusScale;
-			}
-
-			cmds::EdgeSizes border{
-				.Top = resolveLength(
-					Style.Get<styles::StyleProperty::BorderTop>(),
-					h
-				),
-				.Right = resolveLength(
-					Style.Get<styles::StyleProperty::BorderRight>(),
-					w
-				),
-				.Bottom = resolveLength(
-					Style.Get<styles::StyleProperty::BorderBottom>(),
-					h
-				),
-				.Left = resolveLength(
-					Style.Get<styles::StyleProperty::BorderLeft>(),
-					w
-				),
-			};
-
-			canvas.DrawRect(
-				x,
-				y,
-				w,
-				h,
-				Style.Get<styles::StyleProperty::BackgroundColor>(),
-				RectStyle{
-					.Radius = radius,
-					.Border = border,
-					.BorderColor =
-						Style.Get<styles::StyleProperty::BorderColor>(),
-				}
-			);
-
-			if (scrolls)
-			{
-				canvas.PushTransform(-ScrollOffset.X, -ScrollOffset.Y);
-			}
-
-			for (auto& child : Children)
-			{
-				child->Paint(canvas);
-			}
-
-			if (scrolls)
-			{
-				canvas.PopTransform();
-			}
-
-			if (clips)
-			{
-				canvas.PopClip();
-			}
+			paintBox(*this, canvas, x, y, w, h);
 		}
 		else if (IsText())
 		{
-			const std::string& content = std::get<TextElement>(Kind).Content;
-
-			canvas.DrawRect(
-				x,
-				y,
-				w,
-				h,
-				Style.Get<styles::StyleProperty::BackgroundColor>(),
-				RectStyle{}
-			);
-
-			auto layout = mtext::detail::TextLayoutBuilder::ResolveTextLayout(
-				Style,
-				content,
-				w,
-				true
-			);
-
-			canvas.DrawText(
-				cmds::DrawTextCmd{
-					.Position = {.X = x, .Y = y},
-					.Content = content,
-					.Color = Style.Get<styles::StyleProperty::TextColor>(),
-					.Size = Style.Get<styles::StyleProperty::FontSize>().Value,
-					.Face = layout->Face,
-					.Layout = layout,
-					.BoxWidth = w,
-					.Align = Style.Get<styles::StyleProperty::TextAlign>(),
-				}
-			);
+			paintText(*this, canvas, x, y, w, h);
 		}
 		else
 		{
-			for (auto& children : Children)
+			for (auto& child : Children)
 			{
-				children->Paint(canvas);
+				child->Paint(canvas);
 			}
 		}
 	}
@@ -511,7 +579,7 @@ namespace mocca::detail
 	) -> std::vector<std::unique_ptr<Node>>
 	{
 		mc_profileFunction();
-		
+
 		std::unordered_map<ElementKey, std::unique_ptr<Node>> oldKeyed;
 		std::vector<std::unique_ptr<Node>> oldUnkeyed;
 		for (auto& child : oldChildren)
@@ -692,7 +760,7 @@ namespace mocca::detail
 	auto Node::FindNodeById(Node* root, NodeId id) -> Node*
 	{
 		mc_profileFunction();
-		
+
 		if (id == 0)
 		{
 			return nullptr;

@@ -66,6 +66,7 @@
     mc_styleProperty(BorderRadiusTopRight, Length, false, (Length{0})) \
     mc_styleProperty(BorderRadiusBottomLeft, Length, false, (Length{0})) \
     mc_styleProperty(BorderRadiusBottomRight, Length, false, (Length{0})) \
+    mc_styleProperty(BackgroundImage, uint32_t, false, 0U) \
     mc_styleProperty(Transition, uint32_t, false, 0U)
 
 #define mc_textPropertiesInh \

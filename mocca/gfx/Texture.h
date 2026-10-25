@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 namespace mocca::gfx
@@ -68,5 +69,17 @@ namespace mocca::gfx
 		TextureDesc Desc{};
 		uint32_t Revision = 0;
 		std::vector<std::byte> Pixels;
+	};
+}
+
+namespace std
+{
+	template <> struct hash<mocca::gfx::TextureId>
+	{
+		auto operator()(const mocca::gfx::TextureId& t) const noexcept
+			-> std::size_t
+		{
+			return mocca::gfx::TextureIdHash{}(t);
+		}
 	};
 }
