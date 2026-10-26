@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <span>
 #include <string_view>
-#include <vector>
 
 namespace mocca::gfx
 {
@@ -19,7 +18,7 @@ namespace mocca::gfx
 		uint32_t Width = 0;
 		uint32_t Height = 0;
 		TextureFormat Format = TextureFormat::RGBA8;
-		std::vector<std::byte> Pixels;
+		PixelBuffer Pixels;
 	};
 
 	class ImageDecoder

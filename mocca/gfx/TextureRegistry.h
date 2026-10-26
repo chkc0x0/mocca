@@ -20,7 +20,7 @@ namespace mocca::gfx
 		using SubscriberId = uint32_t;
 
 		using Source = std::function<
-			bool(const TextureDesc&, std::vector<std::byte>&, void*)>;
+			bool(const TextureDesc&, PixelBuffer&, void*)>;
 
 		auto Create(
 			const TextureDesc& desc,
@@ -30,7 +30,7 @@ namespace mocca::gfx
 
 		auto Create(
 			const TextureDesc& desc,
-			std::vector<std::byte> pixels,
+			PixelBuffer pixels,
 			Source source
 		) -> TextureId;
 

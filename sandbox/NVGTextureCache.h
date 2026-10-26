@@ -35,7 +35,7 @@ namespace sandbox
 				static_cast<int>(src.Desc.Width),
 				static_cast<int>(src.Desc.Height),
 				0,
-				reinterpret_cast<const unsigned char*>(src.Pixels.data())
+				reinterpret_cast<const unsigned char*>(src.Pixels.Data())
 			));
 		}
 
@@ -44,7 +44,7 @@ namespace sandbox
 			nvgUpdateImage(
 				_vg,
 				static_cast<int>(handle),
-				reinterpret_cast<const unsigned char*>(src.Pixels.data())
+				reinterpret_cast<const unsigned char*>(src.Pixels.Data())
 			);
 		}
 

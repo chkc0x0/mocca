@@ -66,10 +66,15 @@ namespace mocca::gfx
 		out.Width = static_cast<uint32_t>(width);
 		out.Height = static_cast<uint32_t>(height);
 		out.Format = TextureFormat::RGBA8;
-		const auto* begin = reinterpret_cast<const std::byte*>(pixels);
-		out.Pixels.assign(begin, begin + count);
+		out.Pixels = PixelBuffer::Adopt(
+			reinterpret_cast<const std::byte*>(pixels),
+			count,
+			[](const std::byte* data) -> void
+			{
+				stbi_image_free(const_cast<std::byte*>(data));
+			}
+		);
 
-		stbi_image_free(pixels);
 		return true;
 	}
 }

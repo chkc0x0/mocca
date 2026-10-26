@@ -36,7 +36,7 @@ namespace mocca::gfx
 				continue;
 			}
 
-			if (tex->Pixels.empty())
+			if (tex->Pixels.Empty())
 			{
 				if (_warned.insert(tex->Id).second)
 				{

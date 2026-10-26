@@ -1,8 +1,8 @@
 #pragma once
+#include "gfx/PixelBuffer.h"
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <vector>
 
 namespace mocca::gfx
 {
@@ -68,7 +68,7 @@ namespace mocca::gfx
 		TextureId Id{};
 		TextureDesc Desc{};
 		uint32_t Revision = 0;
-		std::vector<std::byte> Pixels;
+		PixelBuffer Pixels;
 	};
 }
 

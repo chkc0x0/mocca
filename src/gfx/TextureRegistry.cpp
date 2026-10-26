@@ -63,23 +63,19 @@ namespace mocca::gfx
 		Source source
 	) -> TextureId
 	{
-		return Create(
-			desc,
-			std::vector<std::byte>(pixels.begin(), pixels.end()),
-			std::move(source)
-		);
+		return Create(desc, PixelBuffer::Copy(pixels), std::move(source));
 	}
 
 	auto TextureRegistry::Create(
 		const TextureDesc& desc,
-		std::vector<std::byte> pixels,
+		PixelBuffer pixels,
 		Source source
 	) -> TextureId
 	{
 		mc_profileFunction();
 		
 		auto wanted = expectedSize(desc);
-		if (!pixels.empty() && pixels.size() != wanted)
+		if (!pixels.Empty() && pixels.Size() != wanted)
 		{
 			mc_error(
 				ErrorCode::InvalidArgument,
@@ -87,7 +83,7 @@ namespace mocca::gfx
 				desc.Width,
 				desc.Height,
 				wanted,
-				pixels.size()
+				pixels.Size()
 			);
 			return {};
 		}
@@ -147,7 +143,7 @@ namespace mocca::gfx
 		}
 
 		s->Data.Desc = next;
-		s->Data.Pixels.assign(pixels.begin(), pixels.end());
+		s->Data.Pixels = PixelBuffer::Copy(pixels);
 		s->Data.Revision++;
 		s->HydrateFailedRev = 0;
 
@@ -285,7 +281,7 @@ namespace mocca::gfx
 			return;
 		}
 
-		std::vector<std::byte>().swap(s->Data.Pixels);
+		s->Data.Pixels.Reset();
 	}
 
 	auto TextureRegistry::Subscribe(std::span<Surface* const> served)
@@ -407,7 +403,7 @@ namespace mocca::gfx
 
 	void TextureRegistry::_maybeDropCPU(Slot& s)
 	{
-		if (!s.Alive || s.Destroying || s.Data.Pixels.empty())
+		if (!s.Alive || s.Destroying || s.Data.Pixels.Empty())
 		{
 			return;
 		}
@@ -441,13 +437,13 @@ namespace mocca::gfx
 			return;
 		}
 
-		std::vector<std::byte>().swap(s.Data.Pixels);
+		s.Data.Pixels.Reset();
 	}
 
 	auto TextureRegistry::_needsPixels(const Slot& s, Surface* surface) const
 		-> bool
 	{
-		if (!s.Data.Pixels.empty() || s.Src == nullptr)
+		if (!s.Data.Pixels.Empty() || s.Src == nullptr)
 		{
 			return false;
 		}
@@ -477,9 +473,9 @@ namespace mocca::gfx
 		}
 
 		auto wanted = expectedSize(s.Data.Desc);
-		std::vector<std::byte> pixels;
+		PixelBuffer pixels;
 
-		if (!s.Src(s.Data.Desc, pixels, s.User) || pixels.size() != wanted)
+		if (!s.Src(s.Data.Desc, pixels, s.User) || pixels.Size() != wanted)
 		{
 			s.HydrateFailedRev = s.Data.Revision;
 			mc_warning(
@@ -517,10 +513,10 @@ namespace mocca::gfx
 			data.begin(),
 			data.end()
 		);
-		const auto encodedSize = bytes->size();
+		auto encodedSize = bytes->size();
 		auto source = [bytes](
 						  const gfx::TextureDesc& wanted,
-						  std::vector<std::byte>& out,
+						  PixelBuffer& out,
 						  void*
 					  ) -> bool
 		{
@@ -571,7 +567,7 @@ namespace mocca::gfx
 
 		auto source = [path](
 						  const gfx::TextureDesc& wanted,
-						  std::vector<std::byte>& out,
+						  PixelBuffer& out,
 						  void*
 					  ) -> bool
 		{
