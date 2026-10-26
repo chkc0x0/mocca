@@ -28,6 +28,12 @@ namespace mocca::gfx
 			Source source = {}
 		) -> TextureId;
 
+		auto Create(
+			const TextureDesc& desc,
+			std::vector<std::byte> pixels,
+			Source source
+		) -> TextureId;
+
 		auto Update(
 			TextureId id,
 			std::span<const std::byte> pixels,

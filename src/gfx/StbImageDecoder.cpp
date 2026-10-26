@@ -1,14 +1,6 @@
-#define STBI_ONLY_PNG
-#define STBI_ONLY_JPEG
-#define STBI_ONLY_BMP
-#define STBI_ONLY_PNM
-#define STBI_NO_STDIO
-#define STBI_MAX_DIMENSIONS (1 << 14)
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #include "gfx/StbImageDecoder.h"
-#include <cstring>
 
 namespace mocca::gfx
 {
@@ -74,8 +66,8 @@ namespace mocca::gfx
 		out.Width = static_cast<uint32_t>(width);
 		out.Height = static_cast<uint32_t>(height);
 		out.Format = TextureFormat::RGBA8;
-		out.Pixels.resize(count);
-		std::memcpy(out.Pixels.data(), pixels, count);
+		const auto* begin = reinterpret_cast<const std::byte*>(pixels);
+		out.Pixels.assign(begin, begin + count);
 
 		stbi_image_free(pixels);
 		return true;

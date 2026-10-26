@@ -2,6 +2,7 @@
 #include "core/Logger.h"
 #include "gfx/ImageDecoder.h"
 #include "gfx/ImageDecoderRegistry.h"
+#include "utils/ScopedProfiler.h"
 #include <algorithm>
 
 namespace mocca::gfx
@@ -62,6 +63,21 @@ namespace mocca::gfx
 		Source source
 	) -> TextureId
 	{
+		return Create(
+			desc,
+			std::vector<std::byte>(pixels.begin(), pixels.end()),
+			std::move(source)
+		);
+	}
+
+	auto TextureRegistry::Create(
+		const TextureDesc& desc,
+		std::vector<std::byte> pixels,
+		Source source
+	) -> TextureId
+	{
+		mc_profileFunction();
+		
 		auto wanted = expectedSize(desc);
 		if (!pixels.empty() && pixels.size() != wanted)
 		{
@@ -99,7 +115,7 @@ namespace mocca::gfx
 		s.Data.Id = {.Id = index, .Gen = s.Gen};
 		s.Data.Desc = desc;
 		s.Data.Revision = 1;
-		s.Data.Pixels.assign(pixels.begin(), pixels.end());
+		s.Data.Pixels = std::move(pixels);
 
 		return s.Data.Id;
 	}
@@ -461,7 +477,7 @@ namespace mocca::gfx
 		}
 
 		auto wanted = expectedSize(s.Data.Desc);
-		std::vector<std::byte> pixels(wanted);
+		std::vector<std::byte> pixels;
 
 		if (!s.Src(s.Data.Desc, pixels, s.User) || pixels.size() != wanted)
 		{
@@ -497,15 +513,19 @@ namespace mocca::gfx
 			.Flags = flags,
 		};
 
-		std::vector<std::byte> bytes(data.begin(), data.end());
-		auto source = [bytes = std::move(bytes)](
+		auto bytes = std::make_shared<const std::vector<std::byte>>(
+			data.begin(),
+			data.end()
+		);
+		const auto encodedSize = bytes->size();
+		auto source = [bytes](
 						  const gfx::TextureDesc& wanted,
 						  std::vector<std::byte>& out,
 						  void*
 					  ) -> bool
 		{
 			gfx::DecodedImage decoded;
-			if (!ImageDecoderRegistry::Decode(bytes, decoded))
+			if (!ImageDecoderRegistry::Decode(*bytes, decoded))
 			{
 				return false;
 			}
@@ -518,8 +538,17 @@ namespace mocca::gfx
 			return true;
 		};
 
-		auto id = Create(desc, image.Pixels, source);
-		mc_debug("created texture {} (gen {}) from data ({} bytes)", id.Id, id.Gen, bytes.size());
+		auto id = Create(
+			desc,
+			std::move(image.Pixels),
+			std::move(source)
+		);
+		mc_debug(
+			"created texture {} (gen {}) from data ({} bytes)",
+			id.Id,
+			id.Gen,
+			encodedSize
+		);
 
 		return id;
 	}
@@ -560,7 +589,11 @@ namespace mocca::gfx
 			return true;
 		};
 
-		auto id = Create(desc, image.Pixels, source);
+		auto id = Create(
+			desc,
+			std::move(image.Pixels),
+			std::move(source)
+		);
 		mc_debug(
 			"created texture {} (gen {}) from file {}",
 			id.Id,

@@ -66,12 +66,21 @@ if get_option('profile')
 endif
 
 
+stb_image_impl = static_library(
+    'stb_image_impl',
+    'src/gfx/StbImageImpl.cpp',
+    include_directories: include_directories('subprojects/stb'),
+    override_options: ['optimization=2', 'b_sanitize=none'],
+    cpp_args: ['-fvisibility=hidden'],
+)
+
 mocca_lib = library(
     'mocca',
     sources: sources,
     dependencies: dependencies,
     include_directories: include_directories('mocca'),
     cpp_pch: 'mocca/core/pch.h',
+    link_with: stb_image_impl,
 )
 
 mocca_dep = declare_dependency(

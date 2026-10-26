@@ -1,4 +1,5 @@
 #include "gfx/ImageDecoderRegistry.h"
+#include "utils/ScopedProfiler.h"
 #include <fstream>
 
 namespace mocca::gfx
@@ -29,6 +30,8 @@ namespace mocca::gfx
 		DecodedImage& out
 	) -> bool
 	{
+		mc_profileFunction();
+		
 		ImageInfo info;
 		for (const auto& decoder : decoders)
 		{
