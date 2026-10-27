@@ -105,7 +105,7 @@ namespace mocca
 			return _gfxDevice.get();
 		}
 
-		auto GetPlatform() -> platform::PlatformInterface*
+		auto Platform() -> platform::PlatformInterface*
 		{
 			return _platform.get();
 		}
