@@ -5,6 +5,7 @@ sources = [
     'src/core/Logger.cpp',
     'src/core/Surface.cpp',
     'src/core/Node.cpp',
+    'src/core/NodeRef.cpp',
     'src/core/HookStore.cpp',
     'src/core/Context.cpp',
     'src/gfx/Canvas.cpp',

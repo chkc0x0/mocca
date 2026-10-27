@@ -1,6 +1,7 @@
 #pragma once
 #include "HookStore.h"
 #include "HookFrame.h"
+#include "NodeRef.h"
 #include "anim/AnimatedValue.h"
 #include "anim/Curve.h"
 
@@ -198,6 +199,11 @@ namespace mocca
 		std::uint32_t hook = f.NextHook++;
 
 		return f.Store->GetOrCreate<T>(f.Component, hook, T{});
+	}
+
+	inline auto useNode() -> NodeRef*
+	{
+		return &useRef<NodeRef>();
 	}
 
 	template <typename... Args>

@@ -15,6 +15,7 @@
 namespace mocca
 {
 	struct Element;
+	class NodeRef;
 
 	using ComponentFn = std::function<Element()>;
 	using ComponentPropsFn = std::function<Element(const std::any&)>;
@@ -41,6 +42,7 @@ namespace mocca
 		ElementKey Key = mc_keyNone;
 		styles::StyleList Style;
 		std::shared_ptr<EventView> Events = nullptr;
+		NodeRef* Ref = nullptr;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -70,6 +72,7 @@ namespace mocca
 		styles::StyleList Style;
 		EventHandlers Events;
 		std::vector<Element> Children;
+		NodeRef* Ref = nullptr;
 	};
 
 	struct TextDescriptor
@@ -79,6 +82,7 @@ namespace mocca
 		styles::StyleList Style;
 		EventHandlers Events;
 		std::string Content;
+		NodeRef* Ref = nullptr;
 	};
 
 	struct ComponentDescriptor
@@ -97,6 +101,7 @@ namespace mocca
 			.Key = desc.Key,
 			.Style = desc.Style,
 			.Events = EventView::From(std::move(desc.Events)),
+			.Ref = desc.Ref,
 		};
 	}
 
@@ -116,6 +121,7 @@ namespace mocca
 			.Key = desc.Key,
 			.Style = desc.Style,
 			.Events = EventView::From(std::move(desc.Events)),
+			.Ref = desc.Ref,
 		};
 	}
 

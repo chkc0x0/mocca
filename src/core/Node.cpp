@@ -1,5 +1,6 @@
 #include "core/Node.h"
 #include "core/HookStore.h"
+#include "core/NodeRef.h"
 #include "style/StyleProperty.h"
 #include "text/Measure.h"
 #include "text/TextLayout.h"
@@ -692,6 +693,12 @@ namespace mocca::detail
 
 		oldNode->Events = newElement->Events;
 		oldNode->Declared.Assign(newElement->Style);
+
+		if (newElement->Ref != nullptr)
+		{
+			newElement->Ref->_id = oldNode->Id;
+			newElement->Ref->_surface = getCtx()->_currentSurface;
+		}
 
 		auto childElements = CollectChildElements(newElement, oldNode->Id);
 		oldNode->Children = ReconcileChildren(
