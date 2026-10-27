@@ -19,6 +19,44 @@ namespace mocca
 {
 	constexpr int TextureConsumerGrace = 4;
 
+	static void fireFocusEvent(
+		const std::shared_ptr<EventView>& events,
+		EventType type,
+		FocusReason reason
+	)
+	{
+		if (events == nullptr)
+		{
+			return;
+		}
+
+		FocusEvent ev{.Reason = reason};
+		events->Call(type, ev);
+	}
+
+	static auto nearestFocusable(detail::Node* node) -> detail::Node*
+	{
+		for (auto* n = node; n != nullptr; n = n->Parent)
+		{
+			if (n->Focus != FocusMode::None)
+			{
+				return n;
+			}
+		}
+
+		return nullptr;
+	}
+
+	static void
+	collectPreorder(detail::Node* node, std::vector<detail::Node*>& out)
+	{
+		out.push_back(node);
+		for (auto& child : node->Children)
+		{
+			collectPreorder(child.get(), out);
+		}
+	}
+
 	Surface::~Surface()
 	{
 		if (Application::main != nullptr && IsPlatformBacked())
@@ -45,6 +83,13 @@ namespace mocca
 		{
 			_rootId = detail::nextNodeId;
 		}
+		std::shared_ptr<EventView> focusedEvents;
+		if (auto* focused =
+				detail::Node::FindNodeById(_root.get(), _focusedNode))
+		{
+			focusedEvents = focused->Events;
+		}
+
 		auto tree = Element::Render(_desc.Root, _rootId);
 		_root = detail::Node::Reconcile(std::move(_root), &tree);
 
@@ -60,10 +105,19 @@ namespace mocca
 			_hoveredNode = 0;
 		}
 
-		if (_focusedNode != 0 &&
-			detail::Node::FindNodeById(_root.get(), _focusedNode) == nullptr)
+		if (_focusedNode != 0)
 		{
-			_focusedNode = 0;
+			auto* focused =
+				detail::Node::FindNodeById(_root.get(), _focusedNode);
+			if (focused == nullptr)
+			{
+				fireFocusEvent(focusedEvents, EventType::Blur, FocusReason::Programmatic);
+				_focusedNode = 0;
+			}
+			else if (focused->Focus == FocusMode::None)
+			{
+				ClearFocus();
+			}
 		}
 		if (_capturedNode != 0 &&
 			detail::Node::FindNodeById(_root.get(), _capturedNode) == nullptr)
@@ -539,9 +593,17 @@ namespace mocca
 			}
 		);
 
-		if (ev.EventType == PointerEvent::Type::Down && target != nullptr)
+		if (ev.EventType == PointerEvent::Type::Down && !ev.DefaultPrevented)
 		{
-			FocusNode(target->Id);
+			auto* focusTarget = nearestFocusable(target);
+			if (focusTarget != nullptr)
+			{
+				FocusNode(focusTarget->Id, FocusReason::Pointer);
+			}
+			else
+			{
+				ClearFocus(FocusReason::Pointer);
+			}
 		}
 
 		if (ev.EventType == PointerEvent::Type::Move ||
@@ -588,6 +650,12 @@ namespace mocca
 				n->Events->Call(type, e);
 			}
 		);
+
+		if (ev.Code == KeyCode::Tab &&
+			ev.EventType == KeyEvent::Type::Down && !ev.DefaultPrevented)
+		{
+			FocusNext(false);
+		}
 	}
 
 	void Surface::RouteText(TextEvent& ev)
@@ -638,14 +706,91 @@ namespace mocca
 		return consumed;
 	}
 
-	void Surface::FocusNode(detail::NodeId id)
+	void Surface::FocusNode(detail::NodeId id, FocusReason reason, bool force)
 	{
+		auto* target = detail::Node::FindNodeById(_root.get(), id);
+		if (target == nullptr)
+		{
+			return;
+		}
+
+		if (!force && target->Focus == FocusMode::None)
+		{
+			return;
+		}
+
+		if (_focusedNode == id)
+		{
+			return;
+		}
+
+		auto* old = detail::Node::FindNodeById(_root.get(), _focusedNode);
+		std::shared_ptr<EventView> oldEvents =
+			old != nullptr ? old->Events : nullptr;
+
 		_focusedNode = id;
+
+		fireFocusEvent(oldEvents, EventType::Blur, reason);
+		fireFocusEvent(target->Events, EventType::Focus, reason);
+
+		MarkDirty();
 	}
 
-	void Surface::ClearFocus()
+	void Surface::ClearFocus(FocusReason reason)
 	{
+		if (_focusedNode == 0)
+		{
+			return;
+		}
+
+		auto* old = detail::Node::FindNodeById(_root.get(), _focusedNode);
+		std::shared_ptr<EventView> oldEvents =
+			old != nullptr ? old->Events : nullptr;
+
 		_focusedNode = 0;
+
+		fireFocusEvent(oldEvents, EventType::Blur, reason);
+
+		MarkDirty();
+	}
+
+	void Surface::FocusNext(bool backward)
+	{
+		if (_root == nullptr)
+		{
+			return;
+		}
+
+		std::vector<detail::Node*> all;
+		collectPreorder(_root.get(), all);
+		if (all.empty())
+		{
+			return;
+		}
+
+		auto count = static_cast<int>(all.size());
+		int current = -1;
+		for (int i = 0; i < count; ++i)
+		{
+			if (all[i]->Id == _focusedNode)
+			{
+				current = i;
+				break;
+			}
+		}
+
+		int start = current >= 0 ? current : (backward ? count : -1);
+
+		for (int step = 1; step <= count; ++step)
+		{
+			int idx = backward ? (((start - step) % count) + count) % count
+							   : (start + step) % count;
+			if (all[idx]->Focus == FocusMode::Tab)
+			{
+				FocusNode(all[idx]->Id, FocusReason::Keyboard);
+				return;
+			}
+		}
 	}
 
 	void Surface::CapturePointer(detail::NodeId id)

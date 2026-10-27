@@ -14,6 +14,13 @@
 
 namespace mocca
 {
+	enum class FocusMode : uint8_t
+	{
+		None,
+		Program,
+		Tab,
+	};
+
 	struct Element;
 	class NodeRef;
 
@@ -43,6 +50,7 @@ namespace mocca
 		styles::StyleList Style;
 		std::shared_ptr<EventView> Events = nullptr;
 		NodeRef* Ref = nullptr;
+		FocusMode Focus = FocusMode::None;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -73,6 +81,7 @@ namespace mocca
 		EventHandlers Events;
 		std::vector<Element> Children;
 		NodeRef* Ref = nullptr;
+		FocusMode Focus = FocusMode::None;
 	};
 
 	struct TextDescriptor
@@ -83,6 +92,7 @@ namespace mocca
 		EventHandlers Events;
 		std::string Content;
 		NodeRef* Ref = nullptr;
+		FocusMode Focus = FocusMode::None;
 	};
 
 	struct ComponentDescriptor
@@ -102,6 +112,7 @@ namespace mocca
 			.Style = desc.Style,
 			.Events = EventView::From(std::move(desc.Events)),
 			.Ref = desc.Ref,
+			.Focus = desc.Focus,
 		};
 	}
 
@@ -122,6 +133,7 @@ namespace mocca
 			.Style = desc.Style,
 			.Events = EventView::From(std::move(desc.Events)),
 			.Ref = desc.Ref,
+			.Focus = desc.Focus,
 		};
 	}
 

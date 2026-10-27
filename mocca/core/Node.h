@@ -48,6 +48,7 @@ namespace mocca::detail
 		std::variant<std::monostate, TextElement, ComponentElement> Kind;
 
 		std::shared_ptr<EventView> Events;
+		FocusMode Focus = FocusMode::None;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{

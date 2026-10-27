@@ -11,6 +11,7 @@ namespace mocca
 	using PointerCallback = std::function<void(PointerEvent&)>;
 	using KeyCallback = std::function<void(KeyEvent&)>;
 	using TextCallback = std::function<void(TextEvent&)>;
+	using FocusCallback = std::function<void(FocusEvent&)>;
 
 	enum class EventType : uint8_t
 	{
@@ -23,6 +24,8 @@ namespace mocca
 		KeyUp,
 		KeyRepeat,
 		TextInput,
+		Focus,
+		Blur,
 	};
 
 	struct EventHandlers
@@ -36,12 +39,17 @@ namespace mocca
 		KeyCallback OnKeyUp;
 		KeyCallback OnKeyRepeat;
 		TextCallback OnTextInput;
+		FocusCallback OnFocus;
+		FocusCallback OnBlur;
 	};
 
 	struct EventView
 	{
-		using HandlerFn =
-			std::variant<PointerCallback, KeyCallback, TextCallback>;
+		using HandlerFn = std::variant<
+			PointerCallback,
+			KeyCallback,
+			TextCallback,
+			FocusCallback>;
 
 		[[nodiscard]] auto Has(EventType t) const -> bool
 		{
@@ -107,6 +115,8 @@ namespace mocca
 			add(EventType::KeyUp, h.OnKeyUp);
 			add(EventType::KeyRepeat, h.OnKeyRepeat);
 			add(EventType::TextInput, h.OnTextInput);
+			add(EventType::Focus, h.OnFocus);
+			add(EventType::Blur, h.OnBlur);
 			return out;
 		}
 

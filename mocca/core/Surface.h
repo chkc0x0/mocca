@@ -151,8 +151,13 @@ namespace mocca
 
 		void ProcessInput(const InputBatch& batch);
 
-		void FocusNode(detail::NodeId id);
-		void ClearFocus();
+		void FocusNode(
+			detail::NodeId id,
+			FocusReason reason = FocusReason::Programmatic,
+			bool force = false
+		);
+		void ClearFocus(FocusReason reason = FocusReason::Programmatic);
+		void FocusNext(bool backward = false);
 		[[nodiscard]] auto GetFocusedNode() const -> detail::NodeId
 		{
 			return _focusedNode;

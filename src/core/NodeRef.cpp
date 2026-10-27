@@ -92,6 +92,41 @@ namespace mocca
 		};
 	}
 
+	void NodeRef::Focus()
+	{
+		if (_surface != nullptr)
+		{
+			_surface->FocusNode(_id, FocusReason::Programmatic);
+		}
+	}
+
+	void NodeRef::Blur()
+	{
+		if (IsFocused() && _surface != nullptr)
+		{
+			_surface->ClearFocus();
+		}
+	}
+
+	auto NodeRef::IsFocused() const -> bool
+	{
+		if (_surface == nullptr)
+		{
+			return false;
+		}
+
+		auto* focused = findNode(_surface->GetFocusedNode(), _surface);
+		for (auto* n = focused; n != nullptr; n = n->Parent)
+		{
+			if (n->Id == _id)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	void NodeRef::ScrollIntoView()
 	{
 		ScrollRectIntoView(Rect());

@@ -25,6 +25,10 @@ namespace mocca
 		void ScrollIntoView();
 		void ScrollRectIntoView(Rectangle target);
 
+		void Focus();
+		void Blur();
+		[[nodiscard]] auto IsFocused() const -> bool;
+
 	private:
 		detail::NodeId _id = 0;
 		class Surface* _surface = nullptr;

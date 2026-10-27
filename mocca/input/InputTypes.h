@@ -5,6 +5,18 @@
 
 namespace mocca
 {
+	enum class FocusReason : uint8_t
+	{
+		Pointer,
+		Keyboard,
+		Programmatic,
+	};
+
+	struct FocusEvent
+	{
+		FocusReason Reason = FocusReason::Programmatic;
+	};
+
 	enum class KeyCode : uint8_t
 	{
 		Unknown = 0,
@@ -81,6 +93,12 @@ namespace mocca
 		float ScrollX = 0.0F;
 		float ScrollY = 0.0F;
 		bool StopPropagation = false;
+		bool DefaultPrevented = false;
+
+		void PreventDefault()
+		{
+			DefaultPrevented = true;
+		}
 	};
 
 	struct KeyEvent
@@ -96,6 +114,12 @@ namespace mocca
 		Type EventType = Type::Down;
 		KeyCode Code = KeyCode::Unknown;
 		bool StopPropagation = false;
+		bool DefaultPrevented = false;
+
+		void PreventDefault()
+		{
+			DefaultPrevented = true;
+		}
 	};
 
 	struct TextEvent

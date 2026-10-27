@@ -162,6 +162,7 @@ auto Editor() -> Element
 						}
 					),
 				},
+				.Focus = FocusMode::Tab,
 			}),
 		},
 	});
