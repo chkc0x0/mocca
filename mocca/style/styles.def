@@ -51,7 +51,8 @@
     mc_styleProperty(JustifyContent, Justification, false, Justification::FlexStart) \
     mc_styleProperty(JustifyItems, Justification, false, Justification::Stretch) \
     mc_styleProperty(JustifySelf, EnumValue<Justification>, false, Auto) \
-    mc_styleProperty(Overflow, OverflowType, false, OverflowType::Visible)
+    mc_styleProperty(Overflow, OverflowType, false, OverflowType::Visible) \
+	mc_styleProperty(Position, PositionType, false, PositionType::Relative)
 
 #define mc_layoutPropertiesReset \
     mc_layoutSizingProps mc_layoutSpacingProps mc_layoutFlexProps mc_layoutPosProps

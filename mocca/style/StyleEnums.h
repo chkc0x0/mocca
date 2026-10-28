@@ -80,7 +80,7 @@ namespace mocca::styles
 		Right,
 		Center,
 		Justify,
-        MatchParent,
+		MatchParent,
 	};
 
 	enum class FontStyleEnum : char
@@ -90,12 +90,20 @@ namespace mocca::styles
 		Oblique,
 	};
 
+	enum class PositionType : char
+	{
+		Relative,
+		Absolute,
+		Static,
+	};
+
 	struct FontStyleType
 	{
 		FontStyleEnum Style;
 		float Angle = 0;
 
 		FontStyleType(FontStyleEnum style) : Style(style) {};
-		FontStyleType(FontStyleEnum style, float angle) : Style(style), Angle(angle) {};
+		FontStyleType(FontStyleEnum style, float angle)
+			: Style(style), Angle(angle) {};
 	};
 }

@@ -674,4 +674,9 @@ namespace mocca::styles::detail::applying::layout
 	{
 		YGNodeStyleSetOverflow(ref, (YGOverflow)((int)value));
 	}
+
+	void applyPosition(YGNodeRef ref, PositionType value)
+	{
+		YGNodeStyleSetPositionType(ref, (YGPositionType)value);
+	}
 }
