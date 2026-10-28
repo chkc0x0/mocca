@@ -141,7 +141,7 @@ namespace mocca::styles::detail::applying::layout
 					switch (v)
 					{
 					case Auto:
-						YGNodeStyleSetMinHeight(ref, 0);
+						YGNodeStyleSetMinWidth(ref, 0);
 						mc_error(
 							ErrorCode::InvalidArgument,
 							"MinWidth cannot take Auto, defaulting to 0"
@@ -585,12 +585,12 @@ namespace mocca::styles::detail::applying::layout
 
 	void applyGapHorizontal(YGNodeRef ref, Length value)
 	{
-		applyGap(ref, value, YGGutterRow);
+		applyGap(ref, value, YGGutterColumn);
 	}
 
 	void applyGapVertical(YGNodeRef ref, Length value)
 	{
-		applyGap(ref, value, YGGutterColumn);
+		applyGap(ref, value, YGGutterRow);
 	}
 
 	void applyPositionEdge(YGNodeRef ref, EnumValue<Length> v, YGEdge edge)
