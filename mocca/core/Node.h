@@ -49,6 +49,7 @@ namespace mocca::detail
 
 		std::shared_ptr<EventView> Events;
 		FocusMode Focus = FocusMode::None;
+		CursorShape Cursor = CursorShape::Default;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{

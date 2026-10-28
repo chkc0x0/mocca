@@ -215,6 +215,7 @@ namespace mocca::detail
 
 		node->Events = element.Events;
 		node->Focus = element.Focus;
+		node->Cursor = element.Cursor;
 
 		if (!node->IsComponent())
 		{
@@ -694,6 +695,7 @@ namespace mocca::detail
 
 		oldNode->Events = newElement->Events;
 		oldNode->Focus = newElement->Focus;
+		oldNode->Cursor = newElement->Cursor;
 		oldNode->Declared.Assign(newElement->Style);
 
 		if (newElement->Ref != nullptr)

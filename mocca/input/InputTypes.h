@@ -17,6 +17,16 @@ namespace mocca
 		FocusReason Reason = FocusReason::Programmatic;
 	};
 
+	enum class CursorShape : uint8_t
+	{
+		Default,
+		Text,
+		Pointer,
+		Grab,
+		ResizeH,
+		ResizeV,
+	};
+
 	enum class KeyCode : uint8_t
 	{
 		Unknown = 0,

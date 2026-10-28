@@ -51,6 +51,7 @@ namespace mocca
 		std::shared_ptr<EventView> Events = nullptr;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
+		CursorShape Cursor = CursorShape::Default;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -82,6 +83,7 @@ namespace mocca
 		std::vector<Element> Children;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
+		CursorShape Cursor = CursorShape::Default;
 	};
 
 	struct TextDescriptor
@@ -93,6 +95,7 @@ namespace mocca
 		std::string Content;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
+		CursorShape Cursor = CursorShape::Default;
 	};
 
 	struct ComponentDescriptor
@@ -113,6 +116,7 @@ namespace mocca
 			.Events = EventView::From(std::move(desc.Events)),
 			.Ref = desc.Ref,
 			.Focus = desc.Focus,
+			.Cursor = desc.Cursor,
 		};
 	}
 
@@ -134,6 +138,7 @@ namespace mocca
 			.Events = EventView::From(std::move(desc.Events)),
 			.Ref = desc.Ref,
 			.Focus = desc.Focus,
+			.Cursor = desc.Cursor,
 		};
 	}
 
