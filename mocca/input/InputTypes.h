@@ -93,12 +93,7 @@ namespace mocca
 		float ScrollX = 0.0F;
 		float ScrollY = 0.0F;
 		bool StopPropagation = false;
-		bool DefaultPrevented = false;
-
-		void PreventDefault()
-		{
-			DefaultPrevented = true;
-		}
+		bool PreventDefault = false;
 	};
 
 	struct KeyEvent
@@ -114,12 +109,7 @@ namespace mocca
 		Type EventType = Type::Down;
 		KeyCode Code = KeyCode::Unknown;
 		bool StopPropagation = false;
-		bool DefaultPrevented = false;
-
-		void PreventDefault()
-		{
-			DefaultPrevented = true;
-		}
+		bool PreventDefault = false;
 	};
 
 	struct TextEvent

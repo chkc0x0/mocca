@@ -153,6 +153,16 @@ namespace mocca::styles
 			};
 		}
 
+		constexpr auto encodeStyleEntry(StyleProperty prop, PositionType d)
+			-> StyleEntry
+		{
+			return {
+				.Prop = prop,
+				.Type = StyleValueType::Enum,
+				.Payload = {.Enum = static_cast<uint8_t>(d)},
+			};
+		}
+
 		template <class T>
 		constexpr auto encodeStyleEntry(StyleProperty prop, EnumValue<T> k)
 			-> StyleEntry

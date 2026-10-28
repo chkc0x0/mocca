@@ -111,7 +111,11 @@ namespace mocca
 				detail::Node::FindNodeById(_root.get(), _focusedNode);
 			if (focused == nullptr)
 			{
-				fireFocusEvent(focusedEvents, EventType::Blur, FocusReason::Programmatic);
+				fireFocusEvent(
+					focusedEvents,
+					EventType::Blur,
+					FocusReason::Programmatic
+				);
 				_focusedNode = 0;
 			}
 			else if (focused->Focus == FocusMode::None)
@@ -593,7 +597,7 @@ namespace mocca
 			}
 		);
 
-		if (ev.EventType == PointerEvent::Type::Down && !ev.DefaultPrevented)
+		if (ev.EventType == PointerEvent::Type::Down && !ev.PreventDefault)
 		{
 			auto* focusTarget = nearestFocusable(target);
 			if (focusTarget != nullptr)
@@ -651,8 +655,8 @@ namespace mocca
 			}
 		);
 
-		if (ev.Code == KeyCode::Tab &&
-			ev.EventType == KeyEvent::Type::Down && !ev.DefaultPrevented)
+		if (ev.Code == KeyCode::Tab && ev.EventType == KeyEvent::Type::Down &&
+			!ev.PreventDefault)
 		{
 			FocusNext(false);
 		}
@@ -725,8 +729,8 @@ namespace mocca
 		}
 
 		auto* old = detail::Node::FindNodeById(_root.get(), _focusedNode);
-		std::shared_ptr<EventView> oldEvents =
-			old != nullptr ? old->Events : nullptr;
+		std::shared_ptr<EventView> oldEvents = old != nullptr ? old->Events
+															  : nullptr;
 
 		_focusedNode = id;
 
@@ -744,8 +748,8 @@ namespace mocca
 		}
 
 		auto* old = detail::Node::FindNodeById(_root.get(), _focusedNode);
-		std::shared_ptr<EventView> oldEvents =
-			old != nullptr ? old->Events : nullptr;
+		std::shared_ptr<EventView> oldEvents = old != nullptr ? old->Events
+															  : nullptr;
 
 		_focusedNode = 0;
 
