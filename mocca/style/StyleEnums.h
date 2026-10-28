@@ -92,9 +92,9 @@ namespace mocca::styles
 
 	enum class PositionType : char
 	{
+		Static,
 		Relative,
 		Absolute,
-		Static,
 	};
 
 	struct FontStyleType
