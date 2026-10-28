@@ -52,8 +52,5 @@ namespace mocca::platform
 				},
 			});
 		}
-
-	protected:
-		std::vector<ClipboardEntry> Entries;
 	};
 }
