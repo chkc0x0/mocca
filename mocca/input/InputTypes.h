@@ -17,14 +17,54 @@ namespace mocca
 		FocusReason Reason = FocusReason::Programmatic;
 	};
 
+	struct Modifiers
+	{
+		bool Shift = false;
+		bool Ctrl = false;
+		bool Alt = false;
+		bool Meta = false;
+	};
+
 	enum class CursorShape : uint8_t
 	{
+		None,
 		Default,
-		Text,
+		ContextMenu,
+		Help,
 		Pointer,
+		Progress,
+		Wait,
+		Cell,
+		Crosshair,
+		Text,
+		VerticalText, //?
+		Alias,
+		Copy,
+		Move,
+		NoDrop,
+		NotAllowed,
 		Grab,
+		Grabbing,
+		ResizeE,
+		ResizeN,
+		ResizeNE,
+		ResizeNW,
+		ResizeS,
+		ResizeSE,
+		ResizeSW,
+		ResizeW,
 		ResizeH,
 		ResizeV,
+		ResizeNESW,
+		ResizeNWSE,
+		ResizeCol,
+		ResizeRow,
+		ResizeAll, // so many resizings oh my god
+		ScrollAll,
+		ZoomIn,
+		ZoomOut,
+		DndAsk,
+		AllResize,
 	};
 
 	enum class KeyCode : uint8_t
@@ -71,6 +111,14 @@ namespace mocca
 		Tab = 44,
 		Backspace = 45,
 		Space = 48,
+		Grave = 53,
+		CapsLock = 57,
+		Insert = 73,
+		Home = 74,
+		PageUp = 75,
+		Delete = 76,
+		End = 77,
+		PageDown = 78,
 		Left = 80,
 		Right = 81,
 		Up = 82,
@@ -81,6 +129,8 @@ namespace mocca
 		RCtrl = 228,
 		LAlt = 229,
 		RAlt = 230,
+		LSuper = 231,
+		RSuper = 232,
 	};
 
 	struct PointerEvent
@@ -102,6 +152,7 @@ namespace mocca
 		int Button = 0;
 		float ScrollX = 0.0F;
 		float ScrollY = 0.0F;
+		Modifiers Mods{};
 		bool StopPropagation = false;
 		bool PreventDefault = false;
 	};
@@ -118,6 +169,7 @@ namespace mocca
 
 		Type EventType = Type::Down;
 		KeyCode Code = KeyCode::Unknown;
+		Modifiers Mods{};
 		bool StopPropagation = false;
 		bool PreventDefault = false;
 	};

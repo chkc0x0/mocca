@@ -21,5 +21,13 @@ namespace mocca
 		virtual void EndFrame() = 0;
 
 		virtual auto GfxHandle() -> gfx::GraphicsHandle = 0;
+
+		virtual void SetCursor(CursorShape shape)
+		{
+		}
+
+		virtual void SetImeCursorRect(Rectangle pos)
+		{
+		}
 	};
 }

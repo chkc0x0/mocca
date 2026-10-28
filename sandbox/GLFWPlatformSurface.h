@@ -2,8 +2,10 @@
 #include "input/InputTypes.h"
 #include "platform/PlatformSurface.h"
 #include "core/Surface.h"
+#include <array>
 
 struct GLFWwindow;
+struct GLFWcursor;
 
 namespace mocca
 {
@@ -39,10 +41,18 @@ public:
 
 	auto GfxHandle() -> mocca::gfx::GraphicsHandle override;
 
+	void SetCursor(mocca::CursorShape shape) override;
+	void SetImeCursorRect(mocca::Rectangle rect) override;
+
 private:
 	static auto ToKeyCode(int glfwKey) -> mocca::KeyCode;
+	static auto ToModifiers(int glfwMods) -> mocca::Modifiers;
+	static auto PollModifiers(GLFWwindow* window) -> mocca::Modifiers;
+	auto _cursorFor(mocca::CursorShape shape) -> GLFWcursor*;
 
 	GLFWwindow* _window = nullptr;
+	std::array<GLFWcursor*, 11> _cursors{};
+	mocca::CursorShape _cursor = mocca::CursorShape::Default;
 
 	mocca::InputBatch _pending;
 };

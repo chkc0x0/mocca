@@ -170,6 +170,10 @@ namespace mocca
 			return _capturedNode;
 		}
 
+		[[nodiscard]] auto GetClipboardText() -> std::string;
+		void SetClipboardText(std::string_view text);
+		void SetImeCursorRect(Rectangle rect);
+
 		// this surface (or a subsurface) is capturing
 		[[nodiscard]] auto IsCapturing() const -> bool
 		{
@@ -192,6 +196,7 @@ namespace mocca
 
 	private:
 		void _sweepChildren();
+		void _updateCursor(detail::Node* node);
 		static void AnnounceSubtreeDestroyed(Surface* s);
 		
 		SurfaceDesc _desc;
@@ -201,6 +206,7 @@ namespace mocca
 		SurfaceState _state = SurfaceState::Alive;
 		bool _dirty = true;
 		bool _animating = false;
+		CursorShape _cursor = CursorShape::Default;
 
 		int _zombieTimeout = 0;
 		int _zombieRemaining = 0;

@@ -47,6 +47,19 @@ namespace mocca
 		return nullptr;
 	}
 
+	static auto nearestCursor(detail::Node* node) -> CursorShape
+	{
+		for (auto* n = node; n != nullptr; n = n->Parent)
+		{
+			if (n->Cursor != CursorShape::Default)
+			{
+				return n->Cursor;
+			}
+		}
+
+		return CursorShape::Default;
+	}
+
 	static void
 	collectPreorder(detail::Node* node, std::vector<detail::Node*>& out)
 	{
@@ -103,6 +116,7 @@ namespace mocca
 		if (detail::Node::FindNodeById(_root.get(), _hoveredNode) == nullptr)
 		{
 			_hoveredNode = 0;
+			_updateCursor(nullptr);
 		}
 
 		if (_focusedNode != 0)
@@ -419,6 +433,8 @@ namespace mocca
 			detail::Node::FindNodeById(_root.get(), _hoveredNode)
 		);
 
+		_updateCursor(hit);
+
 		if (next == prev)
 		{
 			return;
@@ -658,7 +674,7 @@ namespace mocca
 		if (ev.Code == KeyCode::Tab && ev.EventType == KeyEvent::Type::Down &&
 			!ev.PreventDefault)
 		{
-			FocusNext(false);
+			FocusNext(ev.Mods.Shift);
 		}
 	}
 
@@ -805,6 +821,51 @@ namespace mocca
 	void Surface::ReleasePointer()
 	{
 		_capturedNode = 0;
+	}
+
+	auto Surface::GetClipboardText() -> std::string
+	{
+		auto* platform = Application::main->Platform();
+		if (platform == nullptr)
+		{
+			return {};
+		}
+
+		return platform->Clipboard()->GetText();
+	}
+
+	void Surface::SetClipboardText(std::string_view text)
+	{
+		auto* platform = Application::main->Platform();
+		if (platform == nullptr)
+		{
+			return;
+		}
+
+		platform->Clipboard()->SetText(text);
+	}
+
+	void Surface::SetImeCursorRect(Rectangle rect)
+	{
+		if (_platform != nullptr)
+		{
+			_platform->SetImeCursorRect(rect);
+		}
+	}
+
+	void Surface::_updateCursor(detail::Node* node)
+	{
+		auto shape = nearestCursor(node);
+		if (shape == _cursor)
+		{
+			return;
+		}
+
+		_cursor = shape;
+		if (_platform != nullptr)
+		{
+			_platform->SetCursor(shape);
+		}
 	}
 
 	void Surface::Print(int depth) const

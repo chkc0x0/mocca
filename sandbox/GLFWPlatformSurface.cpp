@@ -43,6 +43,14 @@ GLFWPlatformSurface::GLFWPlatformSurface(const mocca::SurfaceDesc& desc)
 
 GLFWPlatformSurface::~GLFWPlatformSurface()
 {
+	for (auto* cursor : _cursors)
+	{
+		if (cursor != nullptr)
+		{
+			glfwDestroyCursor(cursor);
+		}
+	}
+
 	if (_window != nullptr)
 	{
 		glfwDestroyWindow(_window);
@@ -122,6 +130,7 @@ void GLFWPlatformSurface::OnMouseMove(GLFWwindow* window, double x, double y)
 		.EventType = mocca::PointerEvent::Type::Move,
 		.X = static_cast<float>(x),
 		.Y = static_cast<float>(y),
+		.Mods = PollModifiers(window),
 	});
 }
 
@@ -135,7 +144,7 @@ void GLFWPlatformSurface::OnMouseButton(
 	auto* self = static_cast<GLFWPlatformSurface*>(
 		glfwGetWindowUserPointer(window)
 	);
-	(void)mods;
+	auto modifiers = ToModifiers(mods);
 
 	double x;
 	double y;
@@ -148,6 +157,7 @@ void GLFWPlatformSurface::OnMouseButton(
 			.X = static_cast<float>(x),
 			.Y = static_cast<float>(y),
 			.Button = button,
+			.Mods = modifiers,
 		});
 	}
 	else if (action == GLFW_RELEASE)
@@ -157,6 +167,7 @@ void GLFWPlatformSurface::OnMouseButton(
 			.X = static_cast<float>(x),
 			.Y = static_cast<float>(y),
 			.Button = button,
+			.Mods = modifiers,
 		});
 	}
 }
@@ -179,6 +190,7 @@ void GLFWPlatformSurface::OnScroll(
 		.Y = static_cast<float>(y),
 		.ScrollX = static_cast<float>(xoffset),
 		.ScrollY = static_cast<float>(yoffset),
+		.Mods = PollModifiers(window),
 	});
 }
 
@@ -194,27 +206,32 @@ void GLFWPlatformSurface::OnKey(
 		glfwGetWindowUserPointer(window)
 	);
 	(void)scancode;
-	(void)mods;
+
+	auto modifiers = ToModifiers(mods);
+	auto code = ToKeyCode(key);
 
 	if (action == GLFW_PRESS)
 	{
 		self->_pending.Keyboard.push_back({
 			.EventType = mocca::KeyEvent::Type::Down,
-			.Code = ToKeyCode(key),
+			.Code = code,
+			.Mods = modifiers,
 		});
 	}
 	if (action == GLFW_REPEAT)
 	{
 		self->_pending.Keyboard.push_back({
 			.EventType = mocca::KeyEvent::Type::Repeat,
-			.Code = ToKeyCode(key),
+			.Code = code,
+			.Mods = modifiers,
 		});
 	}
 	else if (action == GLFW_RELEASE)
 	{
 		self->_pending.Keyboard.push_back({
 			.EventType = mocca::KeyEvent::Type::Up,
-			.Code = ToKeyCode(key),
+			.Code = code,
+			.Mods = modifiers,
 		});
 	}
 }
@@ -343,6 +360,8 @@ auto GLFWPlatformSurface::ToKeyCode(int glfwKey) -> mocca::KeyCode
 		return mocca::KeyCode::Num8;
 	case GLFW_KEY_9:
 		return mocca::KeyCode::Num9;
+	case GLFW_KEY_GRAVE_ACCENT:
+		return mocca::KeyCode::Grave;
 	case GLFW_KEY_ESCAPE:
 		return mocca::KeyCode::Escape;
 	case GLFW_KEY_ENTER:
@@ -353,6 +372,20 @@ auto GLFWPlatformSurface::ToKeyCode(int glfwKey) -> mocca::KeyCode
 		return mocca::KeyCode::Backspace;
 	case GLFW_KEY_SPACE:
 		return mocca::KeyCode::Space;
+	case GLFW_KEY_INSERT:
+		return mocca::KeyCode::Insert;
+	case GLFW_KEY_DELETE:
+		return mocca::KeyCode::Delete;
+	case GLFW_KEY_HOME:
+		return mocca::KeyCode::Home;
+	case GLFW_KEY_END:
+		return mocca::KeyCode::End;
+	case GLFW_KEY_PAGE_UP:
+		return mocca::KeyCode::PageUp;
+	case GLFW_KEY_PAGE_DOWN:
+		return mocca::KeyCode::PageDown;
+	case GLFW_KEY_CAPS_LOCK:
+		return mocca::KeyCode::CapsLock;
 	case GLFW_KEY_LEFT:
 		return mocca::KeyCode::Left;
 	case GLFW_KEY_RIGHT:
@@ -373,9 +406,122 @@ auto GLFWPlatformSurface::ToKeyCode(int glfwKey) -> mocca::KeyCode
 		return mocca::KeyCode::LAlt;
 	case GLFW_KEY_RIGHT_ALT:
 		return mocca::KeyCode::RAlt;
+	case GLFW_KEY_LEFT_SUPER:
+		return mocca::KeyCode::LSuper;
+	case GLFW_KEY_RIGHT_SUPER:
+		return mocca::KeyCode::RSuper;
 	default:
 		return mocca::KeyCode::Unknown;
 	}
+}
+
+auto GLFWPlatformSurface::ToModifiers(int glfwMods) -> mocca::Modifiers
+{
+	return {
+		.Shift = (glfwMods & GLFW_MOD_SHIFT) != 0,
+		.Ctrl = (glfwMods & GLFW_MOD_CONTROL) != 0,
+		.Alt = (glfwMods & GLFW_MOD_ALT) != 0,
+		.Meta = (glfwMods & GLFW_MOD_SUPER) != 0,
+	};
+}
+
+auto GLFWPlatformSurface::PollModifiers(GLFWwindow* window) -> mocca::Modifiers
+{
+	auto pressed = [window](int key) -> bool
+	{ return glfwGetKey(window, key) == GLFW_PRESS; };
+
+	return {
+		.Shift = pressed(GLFW_KEY_LEFT_SHIFT) || pressed(GLFW_KEY_RIGHT_SHIFT),
+		.Ctrl = pressed(GLFW_KEY_LEFT_CONTROL) ||
+				pressed(GLFW_KEY_RIGHT_CONTROL),
+		.Alt = pressed(GLFW_KEY_LEFT_ALT) || pressed(GLFW_KEY_RIGHT_ALT),
+		.Meta = pressed(GLFW_KEY_LEFT_SUPER) || pressed(GLFW_KEY_RIGHT_SUPER),
+	};
+}
+
+auto GLFWPlatformSurface::_cursorFor(mocca::CursorShape shape) -> GLFWcursor*
+{
+	auto index = static_cast<size_t>(shape);
+	if (index >= _cursors.size() || shape == mocca::CursorShape::Default)
+	{
+		return nullptr;
+	}
+
+	if (_cursors[index] != nullptr)
+	{
+		return _cursors[index];
+	}
+
+	int cursorShape = GLFW_ARROW_CURSOR;
+	switch (shape)
+	{
+	case mocca::CursorShape::Text:
+		cursorShape = GLFW_IBEAM_CURSOR;
+		break;
+	case mocca::CursorShape::Crosshair:
+		cursorShape = GLFW_CROSSHAIR_CURSOR;
+		break;
+	case mocca::CursorShape::Pointer:
+		cursorShape = GLFW_POINTING_HAND_CURSOR;
+		break;
+	case mocca::CursorShape::Grab:
+		cursorShape = GLFW_RESIZE_ALL_CURSOR;
+		break;
+	case mocca::CursorShape::ResizeNWSE:
+		cursorShape = GLFW_RESIZE_NWSE_CURSOR;
+		break;
+	case mocca::CursorShape::ResizeNESW:
+		cursorShape = GLFW_RESIZE_NESW_CURSOR;
+		break;
+	case mocca::CursorShape::ResizeAll:
+		cursorShape = GLFW_RESIZE_ALL_CURSOR;
+		break;
+	case mocca::CursorShape::ResizeH:
+		cursorShape = GLFW_HRESIZE_CURSOR;
+		break;
+	case mocca::CursorShape::ResizeV:
+		cursorShape = GLFW_VRESIZE_CURSOR;
+		break;
+	case mocca::CursorShape::NotAllowed:
+		cursorShape = GLFW_NOT_ALLOWED_CURSOR;
+		break;
+	case mocca::CursorShape::Default:
+	default:
+		break;
+	}
+
+	_cursors[index] = glfwCreateStandardCursor(cursorShape);
+	return _cursors[index];
+}
+
+void GLFWPlatformSurface::SetCursor(mocca::CursorShape shape)
+{
+	if (_window == nullptr || shape == _cursor)
+	{
+		return;
+	}
+
+	if (shape == mocca::CursorShape::None)
+	{
+		glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	}
+	else if (
+		shape != mocca::CursorShape::None && _cursor == mocca::CursorShape::None
+	)
+	{
+		glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		glfwSetCursor(_window, _cursorFor(shape));
+	}
+	else
+	{
+		glfwSetCursor(_window, _cursorFor(shape));
+	}
+
+	_cursor = shape;
+}
+
+void GLFWPlatformSurface::SetImeCursorRect(mocca::Rectangle rect)
+{
 }
 
 auto GLFWPlatformSurface::GfxHandle() -> mocca::gfx::GraphicsHandle
