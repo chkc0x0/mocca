@@ -243,7 +243,7 @@ void GLFWPlatformSurface::OnChar(GLFWwindow* window, unsigned int codepoint)
 	);
 	self->_pending.Text.push_back({
 		.EventType = mocca::TextEvent::Type::Commit,
-		.Text = mocca::mtext::unicode::encode(static_cast<char32_t>(codepoint)),
+		.Text = mocca::mtext::Unicode::Encode(static_cast<char32_t>(codepoint)),
 	});
 }
 

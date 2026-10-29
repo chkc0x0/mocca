@@ -2,6 +2,7 @@
 #include "core/Logger.h"
 #include "hb.h"
 #include "text/FontCoverage.h"
+#include "text/Unicode.h"
 #include "utf8proc.h"
 #include <algorithm>
 #include <utility>
@@ -40,63 +41,54 @@ namespace mocca::mtext::detail
 	auto splitGraphemes(std::string_view content) -> std::vector<Grapheme>
 	{
 		hb_unicode_funcs_t* funcs = hb_unicode_funcs_get_default();
-		const auto* data = reinterpret_cast<const utf8proc_uint8_t*>(
-			content.data()
-		);
 		size_t size = content.size();
-		size_t offset = 0;
-		utf8proc_int32_t state = 0;
-		utf8proc_int32_t previous = -1;
 
 		std::vector<Grapheme> out;
-		Grapheme current;
+		uint32_t offset = 0;
 
 		while (offset < size)
 		{
-			utf8proc_int32_t cp = 0xFFFD;
-			utf8proc_ssize_t length = utf8proc_iterate(
-				data + offset,
-				static_cast<utf8proc_ssize_t>(size - offset),
-				&cp
-			);
-			if (length <= 0)
+			uint32_t end = Unicode::NextGraphemeBoundary(content, offset);
+
+			Grapheme current;
+			current.Start = offset;
+			current.End = end;
+
+			uint32_t cursor = offset;
+			while (cursor < end)
 			{
-				length = 1;
-				cp = 0xFFFD;
+				utf8proc_int32_t cp = 0xFFFD;
+				utf8proc_ssize_t length = utf8proc_iterate(
+					reinterpret_cast<const utf8proc_uint8_t*>(
+						content.data() + cursor
+					),
+					static_cast<utf8proc_ssize_t>(size - cursor),
+					&cp
+				);
+				if (length <= 0)
+				{
+					length = 1;
+					cp = 0xFFFD;
+				}
+
+				current.Codepoints.push_back(static_cast<uint32_t>(cp));
+
+				uint32_t script =
+					hb_unicode_script(funcs, static_cast<hb_codepoint_t>(cp));
+				if (script != HB_SCRIPT_COMMON &&
+					script != HB_SCRIPT_INHERITED && current.Script == 0)
+				{
+					current.Script = script;
+				}
+				current.Sticky = current.Script == 0;
+
+				cursor += static_cast<uint32_t>(length);
 			}
 
-			if (previous != -1 &&
-				utf8proc_grapheme_break_stateful(previous, cp, &state) &&
-				!current.Codepoints.empty())
-			{
-				out.push_back(std::move(current));
-				current = Grapheme{};
-			}
-
-			if (current.Codepoints.empty())
-			{
-				current.Start = static_cast<uint32_t>(offset);
-			}
-			current.End = static_cast<uint32_t>(offset + length);
-			current.Codepoints.push_back(static_cast<uint32_t>(cp));
-
-			uint32_t script =
-				hb_unicode_script(funcs, static_cast<hb_codepoint_t>(cp));
-			if (script != HB_SCRIPT_COMMON && script != HB_SCRIPT_INHERITED &&
-				current.Script == 0)
-			{
-				current.Script = script;
-			}
-			current.Sticky = current.Script == 0;
-
-			previous = cp;
-			offset += static_cast<size_t>(length);
-		}
-
-		if (!current.Codepoints.empty())
-		{
 			out.push_back(std::move(current));
+			offset = end;
 		}
+
 		return out;
 	}
 

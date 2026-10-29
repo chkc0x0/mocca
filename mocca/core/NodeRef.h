@@ -12,6 +12,11 @@ namespace mocca
 		struct Node;
 	}
 
+	namespace mtext
+	{
+		struct TextPosition;
+	}
+
 	class NodeRef
 	{
 	public:
@@ -28,6 +33,11 @@ namespace mocca
 		void Focus();
 		void Blur();
 		[[nodiscard]] auto IsFocused() const -> bool;
+
+		[[nodiscard]] auto PositionAtPoint(Vector2 surfacePoint) const
+			-> mtext::TextPosition;
+		[[nodiscard]] auto CaretRect(mtext::TextPosition position) const
+			-> Rectangle;
 
 	private:
 		detail::NodeId _id = 0;

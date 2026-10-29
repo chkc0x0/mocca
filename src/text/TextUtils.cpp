@@ -227,6 +227,48 @@ namespace mocca::mtext::detail
 		}
 		line.RunEnd = static_cast<uint32_t>(Layout.Runs.size());
 
+		line.ClusterBegin = static_cast<uint32_t>(Layout.Clusters.size());
+		for (uint32_t r = line.RunBegin; r < line.RunEnd; r++)
+		{
+			const ShapedRun& run = Layout.Runs[r];
+			for (size_t g = 0; g < run.Glyphs.size();)
+			{
+				uint32_t byte = run.Glyphs[g].Cluster;
+				size_t h = g;
+				while (h < run.Glyphs.size() && run.Glyphs[h].Cluster == byte)
+				{
+					h++;
+				}
+
+				float x0 = run.X + run.Glyphs[g].X;
+				float x1 = (h < run.Glyphs.size())
+							   ? run.X + run.Glyphs[h].X
+							   : run.X + run.Width;
+
+				auto it = std::lower_bound(
+					Clusters.begin(),
+					Clusters.end(),
+					byte,
+					[](const Cluster& c, uint32_t b) -> bool
+					{ return c.Start < b; }
+				);
+				uint32_t end =
+					(it != Clusters.end() && it->Start == byte) ? it->End : byte;
+
+				Layout.Clusters.push_back(
+					TextClusterBox{
+						.Start = byte,
+						.End = end,
+						.X = x0,
+						.Width = x1 - x0,
+						.Level = run.Level,
+					}
+				);
+				g = h;
+			}
+		}
+		line.ClusterEnd = static_cast<uint32_t>(Layout.Clusters.size());
+
 		Layout.Lines.push_back(line);
 		return line.Width;
 	}

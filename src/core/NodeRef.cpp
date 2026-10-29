@@ -3,6 +3,9 @@
 #include "core/Surface.h"
 #include "input/Scroll.h"
 #include "style/ComputedStyle.h"
+#include "text/TextGeometry.h"
+#include "text/TextLayout.h"
+#include "text/TextLayoutBuilder.h"
 #include "yoga/YGNodeLayout.h"
 #include <algorithm>
 #include <vector>
@@ -48,6 +51,18 @@ namespace mocca
 		return node != nullptr && node->IsBox() &&
 			   node->Style.Get<styles::StyleProperty::Overflow>() ==
 				   styles::OverflowType::Scroll;
+	}
+
+	auto textLayoutFor(const detail::Node& node)
+		-> std::shared_ptr<const mtext::TextLayout>
+	{
+		const auto& text = std::get<TextElement>(node.Kind);
+		return mtext::detail::TextLayoutBuilder::ResolveTextLayout(
+			node.Style,
+			text.Content,
+			YGNodeLayoutGetWidth(node.YogaNode),
+			true
+		);
 	}
 
 	auto NodeRef::Valid() const -> bool
@@ -216,5 +231,50 @@ namespace mocca
 		{
 			_surface->MarkDirty();
 		}
+	}
+
+	auto NodeRef::PositionAtPoint(Vector2 surfacePoint) const
+		-> mtext::TextPosition
+	{
+		auto* node = findNode(_id, _surface);
+		if (node == nullptr || !node->IsText())
+		{
+			return {};
+		}
+
+		auto layout = textLayoutFor(*node);
+		Rectangle rect = paintedRect(*node);
+
+		return mtext::TextGeometry::PositionAtPoint(
+			*layout,
+			{.X = surfacePoint.X - rect.X, .Y = surfacePoint.Y - rect.Y},
+			rect.Width,
+			node->Style.Get<styles::StyleProperty::TextAlign>()
+		);
+	}
+
+	auto NodeRef::CaretRect(mtext::TextPosition position) const -> Rectangle
+	{
+		auto* node = findNode(_id, _surface);
+		if (node == nullptr || !node->IsText())
+		{
+			return {};
+		}
+
+		auto layout = textLayoutFor(*node);
+		Rectangle rect = paintedRect(*node);
+		auto caret = mtext::TextGeometry::CaretAt(
+			*layout,
+			position,
+			rect.Width,
+			node->Style.Get<styles::StyleProperty::TextAlign>()
+		);
+
+		return Rectangle{
+			.X = rect.X + caret.X,
+			.Y = rect.Y + caret.Y,
+			.Width = 0.0F,
+			.Height = caret.Height,
+		};
 	}
 }

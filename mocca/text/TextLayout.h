@@ -44,6 +44,20 @@ namespace mocca::mtext
 		float Width = 0;
 	};
 
+	struct TextClusterBox
+	{
+		uint32_t Start = 0;
+		uint32_t End = 0;
+		float X = 0;
+		float Width = 0;
+		uint8_t Level = 0;
+
+		[[nodiscard]] auto IsRtl() const -> bool
+		{
+			return (Level & 1) != 0;
+		}
+	};
+
 	struct TextLine
 	{
 		uint32_t Start = 0;
@@ -52,6 +66,8 @@ namespace mocca::mtext
 		float Baseline = 0;
 		uint32_t RunBegin = 0;
 		uint32_t RunEnd = 0;
+		uint32_t ClusterBegin = 0;
+		uint32_t ClusterEnd = 0;
 		uint8_t BaseLevel = 0;
 
 		[[nodiscard]] auto XOffset(float boxWidth, styles::TextAlignment align) const
@@ -68,6 +84,7 @@ namespace mocca::mtext
 		float LetterSpacing = 0;
 		std::vector<ShapedRun> Runs;
 		std::vector<TextLine> Lines;
+		std::vector<TextClusterBox> Clusters;
 		Vector2 Size{.X = 0, .Y = 0};
 	};
 
