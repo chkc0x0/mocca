@@ -36,9 +36,13 @@ namespace mocca::mtext::detail
 		float resolvedWidth = widthMode == YGMeasureModeExactly
 								  ? width
 								  : std::ceil(layout->Size.X);
+
+		float naturalHeight = layout->Lines.empty()
+								  ? std::ceil(layout->LineHeight)
+								  : std::ceil(layout->Size.Y);
 		float resolvedHeight = heightMode == YGMeasureModeExactly
 								   ? height
-								   : std::ceil(layout->Size.Y);
+								   : naturalHeight;
 
 		if (widthMode == YGMeasureModeAtMost)
 		{

@@ -15,7 +15,7 @@
 
 namespace sandbox
 {
-	constexpr bool DebugRunBoxes = true;
+	constexpr bool DebugRunBoxes = false;
 
 	NVGRenderDevice::~NVGRenderDevice() = default;
 

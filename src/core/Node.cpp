@@ -529,7 +529,7 @@ namespace mocca::detail
 			}
 		}
 
-		if (textElement.Caret && !layout->Lines.empty())
+		if (textElement.Caret)
 		{
 			const auto& caret = *textElement.Caret;
 			double now = getCtx()->TimeMs();
@@ -561,7 +561,10 @@ namespace mocca::detail
 					w,
 					align
 				);
-				emit(box.X, box.Y, caret.Width, box.Height, caret.Color);
+				if (box.Height > 0.0F)
+				{
+					emit(box.X, box.Y, caret.Width, box.Height, caret.Color);
+				}
 			}
 		}
 	}

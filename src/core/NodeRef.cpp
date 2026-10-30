@@ -277,4 +277,15 @@ namespace mocca
 			.Height = caret.Height,
 		};
 	}
+
+	auto NodeRef::TextLayout() const -> std::shared_ptr<const mtext::TextLayout>
+	{
+		auto* node = findNode(_id, _surface);
+		if (node == nullptr || !node->IsText())
+		{
+			return nullptr;
+		}
+
+		return textLayoutFor(*node);
+	}
 }

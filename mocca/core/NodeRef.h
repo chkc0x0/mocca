@@ -1,6 +1,7 @@
 #pragma once
 #include "Identifiers.h"
 #include "utils/Math.h"
+#include <memory>
 
 namespace mocca
 {
@@ -15,6 +16,7 @@ namespace mocca
 	namespace mtext
 	{
 		struct TextPosition;
+		struct TextLayout;
 	}
 
 	class NodeRef
@@ -38,6 +40,8 @@ namespace mocca
 			-> mtext::TextPosition;
 		[[nodiscard]] auto CaretRect(mtext::TextPosition position) const
 			-> Rectangle;
+		[[nodiscard]] auto TextLayout() const
+			-> std::shared_ptr<const mtext::TextLayout>;
 
 	private:
 		detail::NodeId _id = 0;

@@ -1,5 +1,7 @@
 #include "TestSupport.h"
+#include "core/Hooks.h"
 #include "core/Node.h"
+#include "core/NodeRef.h"
 #include "style/ComputedStyle.h"
 #include "style/StyleHelpers.h"
 #include "text/Measure.h"
@@ -730,5 +732,84 @@ namespace mtest
 			}
 			EXPECT_EQ(cursor, content.size());
 		}
+	}
+
+	class NowrapTest : public SurfaceTest
+	{
+	public:
+		NowrapTest() : SurfaceTest("mocca.test.nowrap") {}
+
+	protected:
+		void SetUp() override
+		{
+			SurfaceTest::SetUp();
+			if (mc_testFont[0] == '\0')
+			{
+				GTEST_SKIP() << "test font path was not defined at build time";
+			}
+			App().Fonts().RegisterFile(
+				mc_testFont,
+				FontDescriptorOverrides{.Family = "sans-serif"}
+			);
+		}
+	};
+
+	TEST_F(NowrapTest, MaxContentTextKeepsIntrinsicWidth)
+	{
+		mocca::NodeRef* boxRef = nullptr;
+		mocca::NodeRef* textRef = nullptr;
+		std::string content =
+			"the quick brown fox jumps over the lazy dog";
+
+		auto* surface = AddSurface(
+			{.Width = 120, .Height = 60, .Title = "nowrap"},
+			[&]() -> mocca::Element
+			{
+				boxRef = mocca::useNode();
+				textRef = mocca::useNode();
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(120)),
+								Height(px(60)),
+								FlexDirection(FlexDirections::Row),
+								AlignItems(Alignment::FlexStart),
+								Overflow(OverflowType::Scroll),
+							},
+						.Children = {
+							mocca::text(
+								mocca::TextDescriptor{
+									.Style =
+										{
+											FontFamily("sans-serif"),
+											FontSize(px(16)),
+											Width(MaxContent),
+										},
+									.Content = content,
+									.Ref = textRef,
+								}
+							),
+						},
+						.Ref = boxRef,
+					}
+				);
+			}
+		);
+		Tick();
+
+		ASSERT_NE(textRef, nullptr);
+		ASSERT_TRUE(textRef->Valid());
+
+		float textWidth = textRef->LayoutRect().Width;
+		EXPECT_GT(textWidth, 120.0F)
+			<< "should not wrap";
+
+		EXPECT_LE(textRef->LayoutRect().Height, 32.0F)
+			<< "should stay one line tall";
+
+		textRef->ScrollIntoView();
+		EXPECT_GT(surface->Tree()->ScrollOffset.X, 0.0F)
+			<< "should scroll";
 	}
 }

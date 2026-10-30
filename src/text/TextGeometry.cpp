@@ -191,7 +191,12 @@ namespace mocca::mtext
 	{
 		if (layout.Lines.empty())
 		{
-			return TextCaret{};
+			return TextCaret{
+				.Line = 0,
+				.X = 0.0F,
+				.Y = 0.0F,
+				.Height = layout.LineHeight,
+			};
 		}
 
 		uint32_t lineIndex = LineOf(layout, position);
