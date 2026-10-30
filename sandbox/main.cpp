@@ -4,74 +4,13 @@
 #include "core/Hooks.h"
 #include "gfx/Texture.h"
 #include "sandbox/NVGRenderDevice.h"
+#include <fstream>
 #include <iostream>
 #include "style/StyleHelpers.h"
 #include "utils/Color.h"
 
 using namespace mocca;
-
-const char Placeholder[] = {
-	"[latin wrap]      Lorem ipsum dolor sit amet, consectetur adipiscing "
-	"elit, sed do eiusmod tempor incididunt ut labore et dolore magna "
-	"aliqua.\n[kerning]         AVATAR To Ty Wa Yo\n[ligatures]       office "
-	"affinity fluffy\n[tabular nums]    1111.11  8888.88  0123456789\n[long "
-	"word]       "
-	"Pneumonoultramicroscopicsilicovolcanoconiosis_and_a_very_long_snake_case_"
-	"identifier_with_no_spaces\n[url]             "
-	"https://example.com/a/very/long/path/with/no/break/"
-	"opportunities?query=string&another=value\n[soft hyphen]     "
-	"in­ter­na­tion­al­i­za­ti"
-	"on          (U+00AD between syllables)\n[nbsp / zwsp]     100 km/h "
-	"· a​b​c            (U+00A0 after 100, U+200B "
-	"between a b c)\n[tabs]            a\tb\t\tc\n[arabic]          "
-	"مرحبا "
-	"بالعالم\n[arabic marks]  "
-	"  "
-	"السَّلَام"
-	"ُ "
-	"عَلَيْكُم"
-	"ْ\n[lam-alef]        لا\n[hebrew]          "
-	"שלום עולם\n[bidi "
-	"mix]        The word سلام means \"peace\" and "
-	"v2.0 עברית 123 mixed.\n[bidi numbers]  "
-	"  الإصدار 2.0 "
-	"من 100\n[emoji basic]     😀 🎉 "
-	"❤️\n[emoji zwj]       "
-	"👨‍👩‍👧"
-	"‍👦 "
-	"🏳️‍🌈\n[emoji "
-	"modifier]  👍 👍🏽 "
-	"👍🏿\n[flags]           "
-	"🇯🇵 🇧🇷 "
-	"🇩🇪\n[keycaps]         "
-	"1️⃣ #️⃣ "
-	"*️⃣\n[combining]       é (U+00E9)  vs  "
-	"é (e + U+0301)  vs  "
-	"Z͎͍a̷l̶g̵o̸\n[cjk]             "
-	"你好，世界。"
-	"日本語のテキ"
-	"スト、折り返"
-	"しのテスト。\n"
-	"[chinese line]    "
-	"鑑於對人類家庭所有成員的固有尊嚴及其平等的和不\n"
-	"[chinese para]    "
-	"人人生而自由，在尊嚴和權利上一律平等。"
-	"他們賦有理性和良心，並應以兄弟關係的精神相對待。\n"
-	"[hangul]          "
-	"안녕하세요 "
-	"세계\n[devanagari]      "
-	"नमस्ते "
-	"दुनिया\n"
-	"[thai]            "
-	"สวัสดี"
-	"ชาวโลก\n"
-	"[cyrillic/greek]  Привет, "
-	"мир   Γειά "
-	"σου "
-	"Κόσμε\n[newlines]        line "
-	"one\nline two\n\nline four after a blank "
-	"line",
-};
+std::string Placeholder;
 
 auto Editor() -> Element
 {
@@ -209,6 +148,12 @@ auto main(int argc, const char** argv) -> int
 		{.Family = "Noto Sans TC"}
 	);
 
+	std::ifstream file("../sandbox/text.txt");
+	std::stringstream ss;
+	ss << file.rdbuf();
+	Placeholder = ss.str();
+	file.close();
+
 	app.RegisterSurface({
 		.Width = 800,
 		.Height = 600,
@@ -223,6 +168,7 @@ auto main(int argc, const char** argv) -> int
 	while (app.IsRunning())
 	{
 		app.Tick();
+		app.Render();
 	}
 
 	return 0;
