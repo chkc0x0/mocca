@@ -3,6 +3,7 @@
 #include "core/NodeRef.h"
 #include "style/StyleProperty.h"
 #include "text/Measure.h"
+#include "text/TextGeometry.h"
 #include "text/TextLayout.h"
 #include "text/TextLayoutBuilder.h"
 #include "style/StyleApply.h"
@@ -10,6 +11,7 @@
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <ranges>
 #include <vector>
@@ -406,8 +408,27 @@ namespace mocca::detail
 		}
 	}
 
+	auto lineDecorationY(
+		mtext::TextDecorationKind kind,
+		const mtext::TextLayout& layout,
+		const mtext::TextSpanBox& span
+	) -> float
+	{
+		switch (kind)
+		{
+		case mtext::TextDecorationKind::Overline:
+			return span.Baseline - layout.Ascent;
+		case mtext::TextDecorationKind::Strikethrough:
+			return span.Baseline - (layout.Ascent * 0.4F);
+		case mtext::TextDecorationKind::Selection:
+		case mtext::TextDecorationKind::Underline:
+		default:
+			return span.Baseline + (layout.Descent * 0.5F);
+		}
+	}
+
 	void paintText(
-		const Node& node,
+		Node& node,
 		Canvas& canvas,
 		float x,
 		float y,
@@ -415,7 +436,8 @@ namespace mocca::detail
 		float h
 	)
 	{
-		const std::string& content = std::get<TextElement>(node.Kind).Content;
+		const auto& textElement = std::get<TextElement>(node.Kind);
+		const std::string& content = textElement.Content;
 
 		canvas.DrawRect(
 			x,
@@ -433,6 +455,39 @@ namespace mocca::detail
 			true
 		);
 
+		auto align = node.Style.Get<styles::StyleProperty::TextAlign>();
+
+		auto emit = [&](float rx, float ry, float rw, float rh, Color color) -> void
+		{ canvas.DrawRect(x + rx, y + ry, rw, rh, color, RectStyle{}); };
+
+		if (textElement.Decorations)
+		{
+			for (const auto& decoration : *textElement.Decorations)
+			{
+				if (decoration.Kind != mtext::TextDecorationKind::Selection)
+				{
+					continue;
+				}
+
+				for (const auto& rect : mtext::TextGeometry::SelectionRects(
+						 *layout,
+						 decoration.Start,
+						 decoration.End,
+						 w,
+						 align
+					 ))
+				{
+					emit(
+						rect.X,
+						rect.Y,
+						rect.Width,
+						rect.Height,
+						decoration.Color
+					);
+				}
+			}
+		}
+
 		canvas.DrawText(
 			cmds::DrawTextCmd{
 				.Position = {.X = x, .Y = y},
@@ -442,9 +497,73 @@ namespace mocca::detail
 				.Face = layout->Face,
 				.Layout = layout,
 				.BoxWidth = w,
-				.Align = node.Style.Get<styles::StyleProperty::TextAlign>(),
+				.Align = align,
 			}
 		);
+
+		if (textElement.Decorations)
+		{
+			for (const auto& decoration : *textElement.Decorations)
+			{
+				if (decoration.Kind == mtext::TextDecorationKind::Selection)
+				{
+					continue;
+				}
+
+				for (const auto& span : mtext::TextGeometry::SpanBoxes(
+						 *layout,
+						 decoration.Start,
+						 decoration.End,
+						 w,
+						 align
+					 ))
+				{
+					emit(
+						span.X,
+						lineDecorationY(decoration.Kind, *layout, span),
+						span.Width,
+						decoration.Thickness,
+						decoration.Color
+					);
+				}
+			}
+		}
+
+		if (textElement.Caret && !layout->Lines.empty())
+		{
+			const auto& caret = *textElement.Caret;
+			double now = getCtx()->TimeMs();
+
+			if (caret.BlinkResetToken != node.BlinkToken)
+			{
+				node.BlinkToken = caret.BlinkResetToken;
+				node.BlinkEpochMs = now;
+			}
+
+			bool visible = caret.BlinkPeriodMs == 0;
+			if (!visible)
+			{
+				double period = static_cast<double>(caret.BlinkPeriodMs);
+				visible = std::fmod(now - node.BlinkEpochMs, period * 2.0) <
+						  period;
+				getCtx()->RequestRepaint();
+			}
+
+			if (visible)
+			{
+				auto position = mtext::TextPosition{
+					.Offset = caret.Offset,
+					.Affinity = caret.Affinity,
+				};
+				auto box = mtext::TextGeometry::CaretAt(
+					*layout,
+					position,
+					w,
+					align
+				);
+				emit(box.X, box.Y, caret.Width, box.Height, caret.Color);
+			}
+		}
 	}
 
 	void
@@ -677,14 +796,20 @@ namespace mocca::detail
 		if (oldNode->IsText())
 		{
 			const auto& incoming = std::get<TextElement>(newElement->Node);
-			bool contentChanged =
-				std::get<TextElement>(oldNode->Kind).Content !=
-				incoming.Content;
+			const auto& current = std::get<TextElement>(oldNode->Kind);
 
-			if (contentChanged)
+			bool contentChanged = current.Content != incoming.Content;
+			bool overlayChanged = current.Caret != incoming.Caret ||
+								  current.Decorations != incoming.Decorations;
+
+			if (contentChanged || overlayChanged)
 			{
 				oldNode->Kind = incoming;
-				YGNodeMarkDirty(oldNode->YogaNode);
+
+				if (contentChanged)
+				{
+					YGNodeMarkDirty(oldNode->YogaNode);
+				}
 			}
 
 			YGNodeSetMeasureFunc(

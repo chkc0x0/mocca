@@ -2,9 +2,11 @@
 #include "core/ElementEvents.h"
 #include "Identifiers.h"
 #include "style/StyleList.h"
+#include "text/TextDecoration.h"
 #include <any>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -35,6 +37,8 @@ namespace mocca
 	struct TextElement
 	{
 		std::string Content;
+		std::optional<mtext::CaretDecoration> Caret;
+		std::optional<std::vector<mtext::TextDecoration>> Decorations;
 	};
 
 	struct ComponentElement
@@ -93,6 +97,8 @@ namespace mocca
 		styles::StyleList Style;
 		EventHandlers Events;
 		std::string Content;
+		std::optional<mtext::CaretDecoration> Caret;
+		std::optional<std::vector<mtext::TextDecoration>> Decorations;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
 		CursorShape Cursor = CursorShape::Default;
@@ -103,7 +109,6 @@ namespace mocca
 	public:
 		ElementKey Key = mc_keyNone;
 		styles::StyleList Style;
-		EventHandlers Events; // maybe?
 		ComponentFn Fn;
 	};
 
@@ -132,7 +137,11 @@ namespace mocca
 	inline auto text(TextDescriptor desc) -> Element
 	{
 		return Element{
-			.Node = TextElement{.Content = std::move(desc.Content)},
+			.Node = TextElement{
+				.Content = std::move(desc.Content),
+				.Caret = desc.Caret,
+				.Decorations = std::move(desc.Decorations),
+			},
 			.Key = desc.Key,
 			.Style = desc.Style,
 			.Events = EventView::From(std::move(desc.Events)),

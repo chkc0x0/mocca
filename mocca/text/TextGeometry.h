@@ -27,6 +27,16 @@ namespace mocca::mtext
 		float Height = 0;
 	};
 
+	struct TextSpanBox
+	{
+		uint32_t Line = 0;
+		float X = 0;
+		float Width = 0;
+		float Top = 0;
+		float Baseline = 0;
+		float Height = 0;
+	};
+
 	class TextGeometry
 	{
 	public:
@@ -59,6 +69,14 @@ namespace mocca::mtext
 			const TextLayout& layout,
 			TextPosition position
 		) -> TextPosition;
+
+		[[nodiscard]] static auto SpanBoxes(
+			const TextLayout& layout,
+			uint32_t start,
+			uint32_t end,
+			float boxWidth,
+			styles::TextAlignment align
+		) -> std::vector<TextSpanBox>;
 
 		[[nodiscard]] static auto SelectionRects(
 			const TextLayout& layout,

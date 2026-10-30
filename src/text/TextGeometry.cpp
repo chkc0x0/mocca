@@ -209,41 +209,38 @@ namespace mocca::mtext
 		};
 	}
 
-	auto TextGeometry::SelectionRects(
+	auto TextGeometry::SpanBoxes(
 		const TextLayout& layout,
-		uint32_t anchor,
-		uint32_t active,
+		uint32_t start,
+		uint32_t end,
 		float boxWidth,
 		styles::TextAlignment align
-	) -> std::vector<Rectangle>
+	) -> std::vector<TextSpanBox>
 	{
-		std::vector<Rectangle> rects;
-		if (anchor == active || layout.Lines.empty())
+		std::vector<TextSpanBox> boxes;
+		if (start >= end || layout.Lines.empty())
 		{
-			return rects;
+			return boxes;
 		}
-
-		uint32_t lo = std::min(anchor, active);
-		uint32_t hi = std::max(anchor, active);
 
 		for (size_t i = 0; i < layout.Lines.size(); i++)
 		{
 			const TextLine& line = layout.Lines[i];
-			if (hi <= line.Start || lo >= line.End)
+			if (end <= line.Start || start >= line.End)
 			{
 				continue;
 			}
 
-			uint32_t start = std::max(lo, line.Start);
-			uint32_t end = std::min(hi, line.End);
-			if (start >= end)
+			uint32_t lo = std::max(start, line.Start);
+			uint32_t hi = std::min(end, line.End);
+			if (lo >= hi)
 			{
 				continue;
 			}
 
 			auto index = static_cast<uint32_t>(i);
-			float x1 = caretXInLine(layout, index, start, boxWidth, align);
-			float x2 = caretXInLine(layout, index, end, boxWidth, align);
+			float x1 = caretXInLine(layout, index, lo, boxWidth, align);
+			float x2 = caretXInLine(layout, index, hi, boxWidth, align);
 			if (x1 > x2)
 			{
 				std::swap(x1, x2);
@@ -253,12 +250,46 @@ namespace mocca::mtext
 				continue;
 			}
 
+			boxes.push_back(
+				TextSpanBox{
+					.Line = index,
+					.X = x1,
+					.Width = x2 - x1,
+					.Top = static_cast<float>(i) * layout.LineHeight,
+					.Baseline = line.Baseline,
+					.Height = layout.LineHeight,
+				}
+			);
+		}
+
+		return boxes;
+	}
+
+	auto TextGeometry::SelectionRects(
+		const TextLayout& layout,
+		uint32_t anchor,
+		uint32_t active,
+		float boxWidth,
+		styles::TextAlignment align
+	) -> std::vector<Rectangle>
+	{
+		std::vector<Rectangle> rects;
+		if (anchor == active)
+		{
+			return rects;
+		}
+
+		uint32_t lo = std::min(anchor, active);
+		uint32_t hi = std::max(anchor, active);
+
+		for (const TextSpanBox& span : SpanBoxes(layout, lo, hi, boxWidth, align))
+		{
 			rects.push_back(
 				Rectangle{
-					.X = x1,
-					.Y = static_cast<float>(i) * layout.LineHeight,
-					.Width = x2 - x1,
-					.Height = layout.LineHeight,
+					.X = span.X,
+					.Y = span.Top,
+					.Width = span.Width,
+					.Height = span.Height,
 				}
 			);
 		}

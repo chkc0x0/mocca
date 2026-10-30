@@ -278,6 +278,12 @@ namespace mocca
 		}
 
 		_canvas.Clear();
+		_repaint = false;
+
+		auto* ctx = getCtx();
+		Surface* previous = ctx->_currentSurface;
+		ctx->_currentSurface = this;
+
 		_root->Paint(_canvas);
 
 		for (auto& c : _children)
@@ -300,7 +306,7 @@ namespace mocca
 			_canvas.PopClip();
 		}
 
-		_repaint = false;
+		ctx->_currentSurface = previous;
 	}
 
 	void Surface::SyncTextureConsumers(gfx::TextureRegistry& registry)

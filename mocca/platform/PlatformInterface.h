@@ -23,11 +23,11 @@ namespace mocca::platform
 
 		auto Clipboard() -> PlatformClipboard*
 		{
-			return PlatformClipboard.get();
+			return PlatClipboard.get();
 		}
 
 	protected:
-		std::unique_ptr<PlatformClipboard> PlatformClipboard =
+		std::unique_ptr<PlatformClipboard> PlatClipboard =
 			std::make_unique<platform::PlatformClipboard>();
 	};
 }

@@ -63,7 +63,9 @@ auto Editor() -> Element
 			box({
 				.Style =
 					{
-						BackgroundImage({"../sandbox/cat.png", "../sandbox/star.png"}),
+						BackgroundImage(
+							{"../sandbox/cat.png", "../sandbox/star.png"}
+						),
 						BackgroundColor(Color(255, 255, 255, 40)),
 						BorderRadius(px(16)),
 						Width(px(600)),
@@ -86,21 +88,22 @@ auto Editor() -> Element
 						);
 					},
 				},
-				.Children = {
-					text(
-						TextDescriptor{
-							.Style =
-								{
-									TextColor(Color(255, 255, 255)),
-									FontWeight(500.0F),
-									LineHeight(px(26)),
-									LetterSpacing(px(0.25F)),
-									TextAlign(TextAlignment::Start),
-								},
-							.Content = draft,
-						}
-					),
-				},
+				.Children =
+					{
+						text(
+							TextDescriptor{
+								.Style =
+									{
+										TextColor(Color(255, 255, 255)),
+										FontWeight(500.0F),
+										LineHeight(px(26)),
+										LetterSpacing(px(0.25F)),
+										TextAlign(TextAlignment::Start),
+									},
+								.Content = draft,
+							}
+						),
+					},
 				.Focus = FocusMode::Tab,
 			}),
 		},

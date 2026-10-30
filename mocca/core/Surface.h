@@ -77,6 +77,15 @@ namespace mocca
 			_animating = true;
 		}
 
+		void RequestRepaint()
+		{
+			_repaint = true;
+			if (_desc.Parent != nullptr && !IsPlatformBacked())
+			{
+				_desc.Parent->RequestRepaint();
+			}
+		}
+
 		auto DetachChild(Surface* which) -> std::unique_ptr<Surface>;
 
 		[[nodiscard]] auto GetDrawData() const

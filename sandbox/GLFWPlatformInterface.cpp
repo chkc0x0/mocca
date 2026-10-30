@@ -54,7 +54,7 @@ namespace sandbox
 
 	GLFWPlatformInterface::GLFWPlatformInterface()
 	{
-		PlatformClipboard = std::make_unique<GLFWPlatformClipboard>();
+		PlatClipboard = std::make_unique<GLFWPlatformClipboard>();
 	}
 
 	GLFWPlatformInterface::~GLFWPlatformInterface()

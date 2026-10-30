@@ -124,6 +124,7 @@ namespace mocca
 		}
 
 		_inTick = true;
+		_context._timeMs += dt * 1000.0;
 
 		std::erase_if(
 			_surfaces,

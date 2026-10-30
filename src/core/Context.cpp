@@ -28,4 +28,12 @@ namespace mocca
 		d.Parent = _currentSurface;
 		return Application::main->RegisterSurface(d);
 	}
+
+	void Context::RequestRepaint()
+	{
+		if (_currentSurface != nullptr)
+		{
+			_currentSurface->RequestRepaint();
+		}
+	}
 }

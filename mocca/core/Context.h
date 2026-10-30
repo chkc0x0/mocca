@@ -26,9 +26,17 @@ namespace mocca
 
 		auto CreateSurface(const SurfaceDesc& desc) -> Surface*;
 
+		[[nodiscard]] auto TimeMs() const -> double
+		{
+			return _timeMs;
+		}
+
+		void RequestRepaint();
+
 	private:
 		std::unique_ptr<detail::HookStore> _store;
 		Surface* _currentSurface{nullptr};
+		double _timeMs{0.0};
 
 		[[nodiscard]] auto _beginComponent(detail::NodeId id)
 			-> detail::ComponentScope;
