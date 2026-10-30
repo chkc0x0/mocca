@@ -2,7 +2,6 @@
 #include "core/Application.h"
 #include "core/Logger.h"
 #include "text/FontRegistry.h"
-#include "text/TextLayout.h"
 #include <algorithm>
 #include <cstdlib>
 #include <string>
