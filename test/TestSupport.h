@@ -172,6 +172,7 @@ namespace mtest
 			for (int i = 0; i < n; ++i)
 			{
 				_app.Tick(0.016);
+				_app.Render();
 			}
 		}
 
@@ -180,6 +181,7 @@ namespace mtest
 			for (int i = 0; i < n; ++i)
 			{
 				_app.Tick(dt);
+				_app.Render();
 			}
 		}
 

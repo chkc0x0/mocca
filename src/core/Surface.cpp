@@ -19,7 +19,7 @@ namespace mocca
 {
 	constexpr int TextureConsumerGrace = 4;
 
-	static void fireFocusEvent(
+	static void FireFocusEvent(
 		const std::shared_ptr<EventView>& events,
 		EventType type,
 		FocusReason reason
@@ -34,7 +34,7 @@ namespace mocca
 		events->Call(type, ev);
 	}
 
-	static auto nearestFocusable(detail::Node* node) -> detail::Node*
+	static auto NearestFocusable(detail::Node* node) -> detail::Node*
 	{
 		for (auto* n = node; n != nullptr; n = n->Parent)
 		{
@@ -47,7 +47,7 @@ namespace mocca
 		return nullptr;
 	}
 
-	static auto nearestCursor(detail::Node* node) -> CursorShape
+	static auto NearestCursor(detail::Node* node) -> CursorShape
 	{
 		for (auto* n = node; n != nullptr; n = n->Parent)
 		{
@@ -61,12 +61,12 @@ namespace mocca
 	}
 
 	static void
-	collectPreorder(detail::Node* node, std::vector<detail::Node*>& out)
+	CollectPreorder(detail::Node* node, std::vector<detail::Node*>& out)
 	{
 		out.push_back(node);
 		for (auto& child : node->Children)
 		{
-			collectPreorder(child.get(), out);
+			CollectPreorder(child.get(), out);
 		}
 	}
 
@@ -125,7 +125,7 @@ namespace mocca
 				detail::Node::FindNodeById(_root.get(), _focusedNode);
 			if (focused == nullptr)
 			{
-				fireFocusEvent(
+				FireFocusEvent(
 					focusedEvents,
 					EventType::Blur,
 					FocusReason::Programmatic
@@ -260,21 +260,19 @@ namespace mocca
 			}
 
 			ctx->_currentSurface = nullptr;
-			Paint();
+			_repaint = true;
 		}
 
 		for (auto& i : _children)
 		{
 			i->Tick(dt);
 		}
-
-		Paint();
 	}
 
 	void Surface::Paint()
 	{
 		mc_profileFunction();
-		if (!_root)
+		if (!_root || !_repaint)
 		{
 			return;
 		}
@@ -296,12 +294,13 @@ namespace mocca
 				c->_desc.Height
 			);
 			_canvas.PushTransform(c->_desc.X, c->_desc.Y);
+			c->Paint();
 			_canvas.Append(c->_canvas);
 			_canvas.PopTransform();
 			_canvas.PopClip();
 		}
 
-		_dirty = false;
+		_repaint = false;
 	}
 
 	void Surface::SyncTextureConsumers(gfx::TextureRegistry& registry)
@@ -615,7 +614,7 @@ namespace mocca
 
 		if (ev.EventType == PointerEvent::Type::Down && !ev.PreventDefault)
 		{
-			auto* focusTarget = nearestFocusable(target);
+			auto* focusTarget = NearestFocusable(target);
 			if (focusTarget != nullptr)
 			{
 				FocusNode(focusTarget->Id, FocusReason::Pointer);
@@ -750,8 +749,8 @@ namespace mocca
 
 		_focusedNode = id;
 
-		fireFocusEvent(oldEvents, EventType::Blur, reason);
-		fireFocusEvent(target->Events, EventType::Focus, reason);
+		FireFocusEvent(oldEvents, EventType::Blur, reason);
+		FireFocusEvent(target->Events, EventType::Focus, reason);
 
 		MarkDirty();
 	}
@@ -769,7 +768,7 @@ namespace mocca
 
 		_focusedNode = 0;
 
-		fireFocusEvent(oldEvents, EventType::Blur, reason);
+		FireFocusEvent(oldEvents, EventType::Blur, reason);
 
 		MarkDirty();
 	}
@@ -782,7 +781,7 @@ namespace mocca
 		}
 
 		std::vector<detail::Node*> all;
-		collectPreorder(_root.get(), all);
+		CollectPreorder(_root.get(), all);
 		if (all.empty())
 		{
 			return;
@@ -855,7 +854,7 @@ namespace mocca
 
 	void Surface::_updateCursor(detail::Node* node)
 	{
-		auto shape = nearestCursor(node);
+		auto shape = NearestCursor(node);
 		if (shape == _cursor)
 		{
 			return;

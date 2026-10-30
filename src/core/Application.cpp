@@ -183,6 +183,18 @@ namespace mocca
 		_createPendingSurfaces();
 		_reparentPendingSurfaces();
 
+		mc_profileFrame();
+	}
+
+	void Application::Render()
+	{
+		mc_profileFunction();
+
+		for (auto& surf : _surfaces)
+		{
+			surf->Paint();
+		}
+
 		for (auto& surface : _platformSurfaces)
 		{
 			mc_profileScope("Surface::Render");
@@ -220,8 +232,6 @@ namespace mocca
 		}
 
 		_textures.FlushReleases();
-
-		mc_profileFrame();
 	}
 
 	void Application::_createPendingSurfaces()

@@ -206,6 +206,7 @@ namespace mocca
 		SurfaceState _state = SurfaceState::Alive;
 		bool _dirty = true;
 		bool _animating = false;
+		bool _repaint = true;
 		CursorShape _cursor = CursorShape::Default;
 
 		int _zombieTimeout = 0;

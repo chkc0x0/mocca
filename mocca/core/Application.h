@@ -54,6 +54,7 @@ namespace mocca
 
 		void Tick(double dt);
 		void Tick();
+		void Render();
 		void DumpTree();
 
 		static auto GetAppID() -> const ApplicationID&;
