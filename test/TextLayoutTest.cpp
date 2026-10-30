@@ -174,19 +174,10 @@ namespace mtest
 	{
 		mocca::mtext::TextLine line{.Width = 40.0F};
 
-		EXPECT_FLOAT_EQ(
-			line.XOffset(100.0F, TextAlignment::Start),
-			0.0F
-		);
+		EXPECT_FLOAT_EQ(line.XOffset(100.0F, TextAlignment::Start), 0.0F);
 		EXPECT_FLOAT_EQ(line.XOffset(100.0F, TextAlignment::End), 60.0F);
-		EXPECT_FLOAT_EQ(
-			line.XOffset(100.0F, TextAlignment::Right),
-			60.0F
-		);
-		EXPECT_FLOAT_EQ(
-			line.XOffset(100.0F, TextAlignment::Center),
-			30.0F
-		);
+		EXPECT_FLOAT_EQ(line.XOffset(100.0F, TextAlignment::Right), 60.0F);
+		EXPECT_FLOAT_EQ(line.XOffset(100.0F, TextAlignment::Center), 30.0F);
 	}
 
 	TEST_F(TextLayoutTest, EmptyContentHasNoLines)
@@ -564,12 +555,15 @@ namespace mtest
 
 	TEST_F(TextLayoutTest, GraphemeSequencesNotSplit)
 	{
-		using mocca::mtext::unicode::encode;
+		using namespace mocca::mtext;
 
-		std::string vs16 = encode(0x2764) + encode(0xFE0F);
-		std::string family = encode(0x1F468) + encode(0x200D) +
-							 encode(0x1F469) + encode(0x200D) +
-							 encode(0x1F467) + encode(0x200D) + encode(0x1F466);
+		std::string vs16 = Unicode::Encode(0x2764) + Unicode::Encode(0xFE0F);
+		std::string family = Unicode::Encode(0x1F468) +
+							 Unicode::Encode(0x200D) +
+							 Unicode::Encode(0x1F469) +
+							 Unicode::Encode(0x200D) +
+							 Unicode::Encode(0x1F467) +
+							 Unicode::Encode(0x200D) + Unicode::Encode(0x1F466);
 
 		for (const std::string& content : {vs16, family})
 		{
@@ -694,10 +688,11 @@ namespace mtest
 
 	TEST_F(TextLayoutTest, ItemsCoverContent)
 	{
-		using mocca::mtext::unicode::encode;
+		using namespace mocca::mtext;
 
-		std::string vs16 = encode(0x2764) + encode(0xFE0F);
-		std::string family = encode(0x1F468) + encode(0x200D) + encode(0x1F466);
+		std::string vs16 = Unicode::Encode(0x2764) + Unicode::Encode(0xFE0F);
+		std::string family = Unicode::Encode(0x1F468) +
+							 Unicode::Encode(0x200D) + Unicode::Encode(0x1F466);
 
 		std::vector<std::string> contents{
 			"Hello",
@@ -713,7 +708,7 @@ namespace mtest
 			"مرحبا بالعالم",
 			"שלום עולם",
 			"你好，世界。",
-			"e" + encode(0x0301),
+			"e" + Unicode::Encode(0x0301),
 			vs16,
 			family,
 		};

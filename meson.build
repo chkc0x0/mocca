@@ -35,6 +35,8 @@ sources = [
     'src/text/ShapeCache.cpp',
     'src/text/TextUtils.cpp',
     'src/text/TextGeometry.cpp',
+    'src/text/TextEditor.cpp',
+    'src/text/TextKeymap.cpp',
     'src/text/TextLayoutBuilder.cpp',
     'src/text/LayoutCache.cpp',
     'src/text/Bidi.cpp'
