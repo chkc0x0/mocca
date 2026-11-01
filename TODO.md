@@ -27,3 +27,4 @@
 - [x] added PlatformInterface to make platform surface creation (and platform in general) not so awkward
 - [x] add texture support (freetype kinda depends on this)
 - [x] enhance texture api part 1 (`BackgroundImage("cat.png")`)
+- [x] sparse event storage
