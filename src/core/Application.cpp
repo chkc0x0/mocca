@@ -527,6 +527,7 @@ namespace mocca
 
 	void Application::Print() const
 	{
+		mc_profileFunction();
 		mc_info("[Application id={}]", GetAppID().GetCompoundID());
 
 		for (const auto& surface : _surfaces)

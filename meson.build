@@ -109,6 +109,8 @@ if get_option('sandbox')
     )
 endif
 
+subdir('bench')
+
 if get_option('tests')
     test_exe = executable(
         'mocca_tests',
