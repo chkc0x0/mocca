@@ -253,4 +253,131 @@ namespace mtest
 		EXPECT_GE(transformPushCount(cmds), 1)
 			<< "a spliced child must be offset by its own position";
 	}
+
+	TEST_F(RenderTest, CullsOffscreenSubtree)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "cull",
+			},
+			[]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(100)),
+								Height(px(100)),
+							},
+						.Children =
+							{
+								mocca::box(
+									mocca::BoxDescriptor{
+										.Style =
+											{
+												Width(px(10)),
+												Height(px(10)),
+												BackgroundColor(
+													mocca::colors::Lime
+												),
+											},
+									}
+								),
+								mocca::box(
+									mocca::BoxDescriptor{
+										.Style =
+											{
+												Position(
+													PositionType::Absolute
+												),
+												Left(px(500)),
+												Top(px(500)),
+												Width(px(50)),
+												Height(px(50)),
+												BackgroundColor(
+													mocca::colors::Blue
+												),
+											},
+									}
+								),
+							},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		EXPECT_TRUE(rectHasColor(commandsOf(*s), mocca::colors::Lime))
+			<< "onscreen child must still paint";
+		EXPECT_FALSE(rectHasColor(commandsOf(*s), mocca::colors::Blue))
+			<< "offscreen child subtree must be culled";
+	}
+
+	TEST_F(RenderTest, ClippingParentHidesOverflow)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "clip",
+			},
+			[]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(100)),
+								Height(px(100)),
+								Overflow(OverflowType::Hidden),
+							},
+						.Children =
+							{
+								mocca::box(
+									mocca::BoxDescriptor{
+										.Style =
+											{
+												Width(px(10)),
+												Height(px(10)),
+												BackgroundColor(
+													mocca::colors::Lime
+												),
+											},
+									}
+								),
+								mocca::box(
+									mocca::BoxDescriptor{
+										.Style =
+											{
+												Position(
+													PositionType::Absolute
+												),
+												Left(px(500)),
+												Top(px(500)),
+												Width(px(50)),
+												Height(px(50)),
+												BackgroundColor(
+													mocca::colors::Blue
+												),
+											},
+									}
+								),
+							},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		EXPECT_TRUE(rectHasColor(commandsOf(*s), mocca::colors::Lime))
+			<< "content inside the clip must paint";
+		EXPECT_FALSE(rectHasColor(commandsOf(*s), mocca::colors::Blue))
+			<< "overflow beyond the clip must be culled";
+	}
 }

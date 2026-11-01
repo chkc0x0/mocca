@@ -171,6 +171,8 @@ namespace mocca
 		}
 
 		detail::reclampScrollOffsets(_root.get());
+
+		_root->UpdateSubtreeBounds();
 	}
 
 	void Surface::Tick(double dt)
@@ -286,7 +288,15 @@ namespace mocca
 		Surface* previous = ctx->_currentSurface;
 		ctx->_currentSurface = this;
 
-		_root->Paint(_canvas);
+		_root->Paint(
+			_canvas,
+			{
+				.X = 0.0F,
+				.Y = 0.0F,
+				.Width = _desc.Width,
+				.Height = _desc.Height,
+			}
+		);
 
 		for (auto& c : _children)
 		{

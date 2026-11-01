@@ -34,6 +34,18 @@ namespace mtest
 		);
 	}
 
+	inline auto rectHasColor(const Commands& cmds, mocca::Color color) -> bool
+	{
+		return std::ranges::any_of(
+			cmds,
+			[color](const auto& c) -> auto
+			{
+				const auto* r = std::get_if<mocca::cmds::DrawRectCmd>(&c);
+				return r != nullptr && r->Color == color;
+			}
+		);
+	}
+
 	inline auto firstRect(const Commands& cmds)
 		-> const mocca::cmds::DrawRectCmd*
 	{

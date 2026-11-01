@@ -44,6 +44,7 @@ namespace mocca::detail
 		bool Styled = false;
 
 		Vector2 ScrollOffset{.X = 0, .Y = 0};
+		Rectangle SubtreeBounds{};
 		std::vector<std::unique_ptr<Node>> Children;
 		std::variant<std::monostate, TextElement, ComponentElement> Kind;
 
@@ -88,6 +89,7 @@ namespace mocca::detail
 		static auto BuildNodeTree(const Element& element)
 			-> std::unique_ptr<Node>;
 		void BuildYogaTree();
+		void UpdateSubtreeBounds();
 		void ApplyLayoutStyles() const;
 		void ComputeStyle(styles::ComputedStyle& parentComputed, double dt);
 		void AdvanceTransitions(styles::ComputedStyle& target, double dt);
@@ -220,7 +222,7 @@ namespace mocca::detail
 		) -> std::unique_ptr<Node>;
 
 		void Print(int depth = 0) const;
-		void Paint(Canvas& canvas);
+		void Paint(Canvas& canvas, const Rectangle& cull);
 
 		static auto HitTest(Node* root, float x, float y) -> Node*;
 		static auto FindNodeById(Node* root, NodeId id) -> Node*;

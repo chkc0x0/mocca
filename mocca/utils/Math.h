@@ -37,6 +37,33 @@ namespace mocca
 			return {.X = x1, .Y = y1, .Width = x2 - x1, .Height = y2 - y1};
 		}
 
+		[[nodiscard]] auto Intersects(const Rectangle& other) const -> bool
+		{
+			return X < other.X + other.Width &&
+				   other.X < X + Width &&
+				   Y < other.Y + other.Height &&
+				   other.Y < Y + Height;
+		}
+
+		[[nodiscard]] auto Union(const Rectangle& other) const -> Rectangle
+		{
+			if (IsEmpty())
+			{
+				return other;
+			}
+			if (other.IsEmpty())
+			{
+				return *this;
+			}
+
+			float x1 = std::min(X, other.X);
+			float y1 = std::min(Y, other.Y);
+			float x2 = std::max(X + Width, other.X + other.Width);
+			float y2 = std::max(Y + Height, other.Y + other.Height);
+
+			return {.X = x1, .Y = y1, .Width = x2 - x1, .Height = y2 - y1};
+		}
+
 		[[nodiscard]] auto Contains(Vector2 p) const -> bool
 		{
 			return p.X >= X && p.X < X + Width && p.Y >= Y && p.Y < Y + Height;

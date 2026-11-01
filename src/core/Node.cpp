@@ -91,6 +91,46 @@ namespace mocca::detail
 		SyncYogaChildren();
 	}
 
+	static auto accumulateSubtreeBounds(Node& n, float parentX, float parentY)
+		-> Rectangle
+	{
+		float x = parentX;
+		float y = parentY;
+		if (n.YogaNode != nullptr)
+		{
+			x += YGNodeLayoutGetLeft(n.YogaNode);
+			y += YGNodeLayoutGetTop(n.YogaNode);
+		}
+
+		Rectangle bounds{};
+		if (n.YogaNode != nullptr)
+		{
+			bounds = {
+				.X = x,
+				.Y = y,
+				.Width = YGNodeLayoutGetWidth(n.YogaNode),
+				.Height = YGNodeLayoutGetHeight(n.YogaNode),
+			};
+		}
+
+		for (auto& child : n.Children)
+		{
+			if (child)
+			{
+				bounds = bounds.Union(accumulateSubtreeBounds(*child, x, y));
+			}
+		}
+
+		n.SubtreeBounds = bounds;
+		return bounds;
+	}
+
+	void Node::UpdateSubtreeBounds()
+	{
+		mc_profileFunction();
+		accumulateSubtreeBounds(*this, 0.0F, 0.0F);
+	}
+
 	void Node::ApplyLayoutStyles() const
 	{
 		mc_profileFunction();
@@ -588,8 +628,15 @@ namespace mocca::detail
 		}
 	}
 
-	void
-	paintBox(Node& node, Canvas& canvas, float x, float y, float w, float h)
+	void paintBox(
+		Node& node,
+		Canvas& canvas,
+		const Rectangle& cull,
+		float x,
+		float y,
+		float w,
+		float h
+	)
 	{
 		auto overflow = node.Style.Get<styles::StyleProperty::Overflow>();
 		bool clips = overflow == styles::OverflowType::Hidden ||
@@ -608,9 +655,22 @@ namespace mocca::detail
 			canvas.PushTransform(-node.ScrollOffset.X, -node.ScrollOffset.Y);
 		}
 
+		Rectangle childCull = cull;
+		if (clips)
+		{
+			childCull = childCull.Intersect(
+				{.X = x, .Y = y, .Width = w, .Height = h}
+			);
+		}
+		if (scrolls)
+		{
+			childCull.X += node.ScrollOffset.X;
+			childCull.Y += node.ScrollOffset.Y;
+		}
+
 		for (auto& child : node.Children)
 		{
-			child->Paint(canvas);
+			child->Paint(canvas, childCull);
 		}
 
 		if (scrolls)
@@ -624,15 +684,20 @@ namespace mocca::detail
 		}
 	}
 
-	void Node::Paint(Canvas& canvas)
+	void Node::Paint(Canvas& canvas, const Rectangle& cull)
 	{
 		mc_profileFunction();
+
+		if (!SubtreeBounds.IsEmpty() && !SubtreeBounds.Intersects(cull))
+		{
+			return;
+		}
 
 		if (IsComponent())
 		{
 			for (auto& child : Children)
 			{
-				child->Paint(canvas);
+				child->Paint(canvas, cull);
 			}
 			return;
 		}
@@ -644,7 +709,7 @@ namespace mocca::detail
 
 		if (IsBox())
 		{
-			paintBox(*this, canvas, x, y, w, h);
+			paintBox(*this, canvas, cull, x, y, w, h);
 		}
 		else if (IsText())
 		{
@@ -654,7 +719,7 @@ namespace mocca::detail
 		{
 			for (auto& child : Children)
 			{
-				child->Paint(canvas);
+				child->Paint(canvas, cull);
 			}
 		}
 	}
