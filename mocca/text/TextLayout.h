@@ -51,6 +51,7 @@ namespace mocca::mtext
 		float X = 0;
 		float Width = 0;
 		uint8_t Level = 0;
+		FontFaceId Face = SIZE_MAX;
 
 		[[nodiscard]] auto IsRtl() const -> bool
 		{

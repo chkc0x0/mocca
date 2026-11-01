@@ -205,7 +205,7 @@ namespace mocca::detail
 				}
 				else if constexpr (std::is_same_v<T, TextElement>)
 				{
-					node->Kind = TextElement{.Content = arm.Content};
+					node->Kind = arm;
 				}
 				else if constexpr (std::is_same_v<T, ComponentElement>)
 				{
@@ -223,6 +223,13 @@ namespace mocca::detail
 		{
 			node->YogaNode = YGNodeNew();
 			YGNodeSetContext(node->YogaNode, node.get());
+			if (node->IsText())
+			{
+				YGNodeSetMeasureFunc(
+					node->YogaNode,
+					&mocca::mtext::detail::measureFunc
+				);
+			}
 		}
 
 		return node;
@@ -448,10 +455,15 @@ namespace mocca::detail
 			RectStyle{}
 		);
 
+		float caretWidth = textElement.Caret
+							   ? std::max(0.0F, textElement.Caret->Width)
+							   : 0.0F;
+		float textWidth = std::max(0.0F, w - caretWidth);
+
 		auto layout = mtext::detail::TextLayoutBuilder::ResolveTextLayout(
 			node.Style,
 			content,
-			w,
+			textWidth,
 			true
 		);
 
@@ -473,7 +485,7 @@ namespace mocca::detail
 						 *layout,
 						 decoration.Start,
 						 decoration.End,
-						 w,
+						 textWidth,
 						 align
 					 ))
 				{
@@ -496,7 +508,7 @@ namespace mocca::detail
 				.Size = node.Style.Get<styles::StyleProperty::FontSize>().Value,
 				.Face = layout->Face,
 				.Layout = layout,
-				.BoxWidth = w,
+				.BoxWidth = textWidth,
 				.Align = align,
 			}
 		);
@@ -514,7 +526,7 @@ namespace mocca::detail
 						 *layout,
 						 decoration.Start,
 						 decoration.End,
-						 w,
+						 textWidth,
 						 align
 					 ))
 				{
@@ -543,7 +555,7 @@ namespace mocca::detail
 			bool visible = caret.BlinkPeriodMs == 0;
 			if (!visible)
 			{
-				double period = static_cast<double>(caret.BlinkPeriodMs);
+				auto period = static_cast<double>(caret.BlinkPeriodMs);
 				visible = std::fmod(now - node.BlinkEpochMs, period * 2.0) <
 						  period;
 				getCtx()->RequestRepaint();
@@ -558,12 +570,23 @@ namespace mocca::detail
 				auto box = mtext::TextGeometry::CaretAt(
 					*layout,
 					position,
-					w,
+					textWidth,
 					align
 				);
 				if (box.Height > 0.0F)
 				{
-					emit(box.X, box.Y, caret.Width, box.Height, caret.Color);
+					float drawX = std::round(x + box.X);
+					float drawY = std::round(y + box.Y);
+					float drawW = std::max(1.0F, std::round(caret.Width));
+					float drawH = std::round(box.Height);
+					canvas.DrawRect(
+						drawX,
+						drawY,
+						drawW,
+						drawH,
+						caret.Color,
+						RectStyle{}
+					);
 				}
 			}
 		}
@@ -802,6 +825,16 @@ namespace mocca::detail
 			const auto& current = std::get<TextElement>(oldNode->Kind);
 
 			bool contentChanged = current.Content != incoming.Content;
+			bool caretWidthChanged = false;
+			if (current.Caret.has_value() != incoming.Caret.has_value())
+			{
+				caretWidthChanged = true;
+			}
+			else if (current.Caret.has_value() && incoming.Caret.has_value())
+			{
+				caretWidthChanged = current.Caret->Width != incoming.Caret->Width;
+			}
+
 			bool overlayChanged = current.Caret != incoming.Caret ||
 								  current.Decorations != incoming.Decorations;
 
@@ -809,7 +842,7 @@ namespace mocca::detail
 			{
 				oldNode->Kind = incoming;
 
-				if (contentChanged)
+				if (contentChanged || caretWidthChanged)
 				{
 					YGNodeMarkDirty(oldNode->YogaNode);
 				}

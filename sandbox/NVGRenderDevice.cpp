@@ -229,7 +229,7 @@ namespace sandbox
 							return;
 						}
 
-						nvgTextLetterSpacing(_vg, c.Layout->LetterSpacing);
+						nvgTextLetterSpacing(_vg, 0.0F);
 						nvgTextAlign(_vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
 						nvgFillColor(
 							_vg,
@@ -240,24 +240,32 @@ namespace sandbox
 						{
 							float lineX = c.Position.X +
 										  line.XOffset(c.BoxWidth, c.Align);
-							for (uint32_t r = line.RunBegin; r < line.RunEnd;
-								 r++)
+							float lineY = c.Position.Y + line.Baseline;
+							for (uint32_t ci = line.ClusterBegin;
+								 ci < line.ClusterEnd;
+								 ci++)
 							{
-								const auto& run = c.Layout->Runs[r];
-								int font = _fontIdFor(run.Face);
+								const auto& cluster =
+									c.Layout->Clusters[ci];
+								if (cluster.End <= cluster.Start)
+								{
+									continue;
+								}
+
+								int font = _fontIdFor(cluster.Face);
 								if (font < 0)
 								{
 									continue;
 								}
 
 								nvgFontFaceId(_vg, font);
-								nvgFontSize(_vg, run.Size);
+								nvgFontSize(_vg, c.Layout->FontSize);
 								nvgText(
 									_vg,
-									lineX + run.X,
-									c.Position.Y + line.Baseline,
-									c.Content.data() + run.Start,
-									c.Content.data() + run.End
+									lineX + cluster.X,
+									lineY,
+									c.Content.data() + cluster.Start,
+									c.Content.data() + cluster.End
 								);
 							}
 						}

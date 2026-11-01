@@ -1,6 +1,5 @@
 #include "input/Scroll.h"
 #include "core/Context.h"
-#include "core/Application.h"
 #include "core/Node.h"
 #include "style/ComputedStyle.h"
 #include "yoga/YGNodeLayout.h"

@@ -191,24 +191,41 @@ namespace mocca::mtext
 	{
 		if (layout.Lines.empty())
 		{
+			float x = 0.0F;
+			switch (align)
+			{
+			case styles::TextAlignment::End:
+			case styles::TextAlignment::Right:
+				x = boxWidth;
+				break;
+			case styles::TextAlignment::Center:
+				x = boxWidth * 0.5F;
+				break;
+			default:
+				x = 0.0F;
+				break;
+			}
+
 			return TextCaret{
 				.Line = 0,
-				.X = 0.0F,
+				.X = x,
 				.Y = 0.0F,
 				.Height = layout.LineHeight,
 			};
 		}
 
 		uint32_t lineIndex = LineOf(layout, position);
+		float rawX = caretXInLine(
+			layout,
+			lineIndex,
+			position.Offset,
+			boxWidth,
+			align
+		);
+
 		return TextCaret{
 			.Line = lineIndex,
-			.X = caretXInLine(
-				layout,
-				lineIndex,
-				position.Offset,
-				boxWidth,
-				align
-			),
+			.X = std::clamp(std::round(rawX), 0.0F, boxWidth),
 			.Y = static_cast<float>(lineIndex) * layout.LineHeight,
 			.Height = layout.LineHeight,
 		};

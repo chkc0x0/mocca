@@ -57,10 +57,17 @@ namespace mocca
 		-> std::shared_ptr<const mtext::TextLayout>
 	{
 		const auto& text = std::get<TextElement>(node.Kind);
+		float caretWidth = text.Caret
+							   ? std::max(0.0F, text.Caret->Width)
+							   : 0.0F;
+		float textWidth = std::max(
+			0.0F,
+			YGNodeLayoutGetWidth(node.YogaNode) - caretWidth
+		);
 		return mtext::detail::TextLayoutBuilder::ResolveTextLayout(
 			node.Style,
 			text.Content,
-			YGNodeLayoutGetWidth(node.YogaNode),
+			textWidth,
 			true
 		);
 	}
@@ -209,8 +216,8 @@ namespace mocca
 				sy = cy + target.Height - viewport.Height;
 			}
 
-			sx = std::clamp(sx, 0.0F, maxSx);
-			sy = std::clamp(sy, 0.0F, maxSy);
+			sx = std::round(std::clamp(sx, 0.0F, maxSx));
+			sy = std::round(std::clamp(sy, 0.0F, maxSy));
 
 			float dx = sx - scrollable->ScrollOffset.X;
 			float dy = sy - scrollable->ScrollOffset.Y;
@@ -244,11 +251,16 @@ namespace mocca
 
 		auto layout = textLayoutFor(*node);
 		Rectangle rect = paintedRect(*node);
+		const auto& text = std::get<TextElement>(node->Kind);
+		float caretWidth = text.Caret
+							   ? std::max(0.0F, text.Caret->Width)
+							   : 0.0F;
+		float textWidth = std::max(0.0F, rect.Width - caretWidth);
 
 		return mtext::TextGeometry::PositionAtPoint(
 			*layout,
 			{.X = surfacePoint.X - rect.X, .Y = surfacePoint.Y - rect.Y},
-			rect.Width,
+			textWidth,
 			node->Style.Get<styles::StyleProperty::TextAlign>()
 		);
 	}
@@ -263,18 +275,26 @@ namespace mocca
 
 		auto layout = textLayoutFor(*node);
 		Rectangle rect = paintedRect(*node);
+		const auto& text = std::get<TextElement>(node->Kind);
+		float caretWidth = text.Caret
+							   ? std::max(0.0F, text.Caret->Width)
+							   : 1.0F;
+		float textWidth = std::max(
+			0.0F,
+			rect.Width - (text.Caret ? std::max(0.0F, text.Caret->Width) : 0.0F)
+		);
 		auto caret = mtext::TextGeometry::CaretAt(
 			*layout,
 			position,
-			rect.Width,
+			textWidth,
 			node->Style.Get<styles::StyleProperty::TextAlign>()
 		);
 
 		return Rectangle{
-			.X = rect.X + caret.X,
-			.Y = rect.Y + caret.Y,
-			.Width = 0.0F,
-			.Height = caret.Height,
+			.X = std::round(rect.X + caret.X),
+			.Y = std::round(rect.Y + caret.Y),
+			.Width = std::max(1.0F, std::round(caretWidth)),
+			.Height = std::round(caret.Height),
 		};
 	}
 

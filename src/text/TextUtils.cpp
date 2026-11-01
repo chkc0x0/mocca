@@ -262,6 +262,7 @@ namespace mocca::mtext::detail
 						.X = x0,
 						.Width = x1 - x0,
 						.Level = run.Level,
+						.Face = run.Face,
 					}
 				);
 				g = h;

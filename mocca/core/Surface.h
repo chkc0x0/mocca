@@ -196,11 +196,11 @@ namespace mocca
 			_onOutsidePress = cb;
 		}
 
+		void RouteKey(KeyEvent& ev);
+		void RouteText(TextEvent& ev);
 	protected:
 		void RoutePointer(PointerEvent ev);
 		void UpdateHover(const PointerEvent& ev);
-		void RouteKey(KeyEvent& ev);
-		void RouteText(TextEvent& ev);
 		auto NotifyOutsidePress(const PointerEvent& ev) -> bool;
 
 	private:

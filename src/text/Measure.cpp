@@ -21,10 +21,15 @@ namespace mocca::mtext::detail
 			return YGSize{.width = 0, .height = 0};
 		}
 
-		const std::string& content = std::get<TextElement>(self->Kind).Content;
+		const auto& textElement = std::get<TextElement>(self->Kind);
+		const std::string& content = textElement.Content;
+
+		float caretWidth = textElement.Caret
+							   ? std::max(0.0F, textElement.Caret->Width)
+							   : 0.0F;
 
 		bool wrap = widthMode != YGMeasureModeUndefined;
-		float maxWidth = wrap ? width : INFINITY;
+		float maxWidth = wrap ? std::max(0.0F, width - caretWidth) : INFINITY;
 
 		auto layout = TextLayoutBuilder::ResolveTextLayout(
 			self->Style,
@@ -35,7 +40,7 @@ namespace mocca::mtext::detail
 
 		float resolvedWidth = widthMode == YGMeasureModeExactly
 								  ? width
-								  : std::ceil(layout->Size.X);
+								  : std::ceil(layout->Size.X) + caretWidth;
 
 		float naturalHeight = layout->Lines.empty()
 								  ? std::ceil(layout->LineHeight)
