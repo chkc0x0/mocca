@@ -15,7 +15,7 @@
 - [ ] tab width prop
 - [ ] dedupe styles in node
 - [ ] skia backend and better platform specific to linux/wayland
-- [ ] enhance texture api (`BackgroundImage("cat.png")`, dirty rects and other stuff)
+- [ ] enhance texture api part 2 (dirty rects and other stuff)
 - [ ] freetype module (should i though?)
 - [ ] make color space a choice in anim (currently only oklab)
 - [ ] flip for properties without anim
@@ -26,3 +26,4 @@
 - [x] decouple platform and renderer
 - [x] added PlatformInterface to make platform surface creation (and platform in general) not so awkward
 - [x] add texture support (freetype kinda depends on this)
+- [x] enhance texture api part 1 (`BackgroundImage("cat.png")`)
