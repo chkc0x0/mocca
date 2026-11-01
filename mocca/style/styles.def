@@ -72,7 +72,7 @@
 
 #define mc_textPropertiesInh \
     mc_styleProperty(FontSize, Length, true, (Length{16})) \
-    mc_styleProperty(TextColor, Color, true, mocca::colors::AlmostBlack) \
+    mc_styleProperty(TextColor, Color, true, mocca::colors::Text) \
     mc_styleProperty(FontFamily, uint32_t, true, 0U) \
     mc_styleProperty(FontWeight, float, true, 400.0F) \
     mc_styleProperty(FontStretch, float, true, 100.0F) \
