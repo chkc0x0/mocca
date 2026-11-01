@@ -4,9 +4,32 @@
 #include "NodeRef.h"
 #include "anim/AnimatedValue.h"
 #include "anim/Curve.h"
+#include <memory>
 
 namespace mocca
 {
+	template <typename T> struct Ref
+	{
+		T& Current;
+
+		auto operator->() -> T*
+		{
+			return std::addressof(Current);
+		}
+		auto operator->() const -> const T*
+		{
+			return std::addressof(Current);
+		}
+		auto operator*() -> T&
+		{
+			return Current;
+		}
+		auto operator*() const -> const T&
+		{
+			return Current;
+		}
+	};
+
 	template <typename T> struct AnimationControl
 	{
 	private:
@@ -185,25 +208,27 @@ namespace mocca
 		};
 	}
 
-	template <typename T> auto useRef(T initial) -> T&
+	template <typename T> auto useRef(T initial) -> Ref<T>
 	{
 		auto& f = detail::currentFrame();
 		std::uint32_t hook = f.NextHook++;
 
-		return f.Store->GetOrCreate<T>(f.Component, hook, std::move(initial));
+		return Ref<T>{
+			f.Store->GetOrCreate<T>(f.Component, hook, std::move(initial)),
+		};
 	}
 
-	template <typename T> auto useRef() -> T&
+	template <typename T> auto useRef() -> Ref<T>
 	{
 		auto& f = detail::currentFrame();
 		std::uint32_t hook = f.NextHook++;
 
-		return f.Store->GetOrCreate<T>(f.Component, hook, T{});
+		return Ref<T>{f.Store->GetOrCreate<T>(f.Component, hook, T{})};
 	}
 
 	inline auto useNode() -> NodeRef*
 	{
-		return &useRef<NodeRef>();
+		return std::addressof(useRef<NodeRef>().Current);
 	}
 
 	template <typename... Args>

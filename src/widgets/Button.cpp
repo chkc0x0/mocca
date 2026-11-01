@@ -10,7 +10,7 @@ namespace mocca::widgets::basic
 	auto usePress(const PressOptions& opts) -> PressResult
 	{
 		auto [state, setState] = useState(PressState{});
-		auto& armed = useRef(false);
+		auto armed = useRef(false);
 
 		auto disabled = opts.Disabled;
 		auto onPress = opts.OnPress;
@@ -25,26 +25,26 @@ namespace mocca::widgets::basic
 						setState({.Hovered = true, .Pressed = state.Pressed});
 					}
 				},
-				.OnPointerLeave = [&armed, setState](auto&) -> auto
+				.OnPointerLeave = [armed, setState](auto&) -> auto
 				{
-					armed = false;
+					armed.Current = false;
 					setState(PressState{});
 				},
-				.OnPointerDown = [&armed, setState, disabled](auto&) -> auto
+				.OnPointerDown = [armed, setState, disabled](auto&) -> auto
 				{
 					if (disabled)
 					{
 						return;
 					}
-					armed = true;
+					armed.Current = true;
 					setState({.Hovered = true, .Pressed = true});
 				},
-				.OnPointerUp = [&armed, setState, disabled, onPress, state](
+				.OnPointerUp = [armed, setState, disabled, onPress, state](
 								   auto& ev
 							   ) -> auto
 				{
-					bool fire = armed && !disabled;
-					armed = false;
+					bool fire = armed.Current && !disabled;
+					armed.Current = false;
 					setState({.Hovered = state.Hovered, .Pressed = false});
 					if (fire && onPress)
 					{

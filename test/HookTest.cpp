@@ -217,4 +217,53 @@ namespace mtest
 		EXPECT_EQ(C().Effects, 1)
 			<< "unchanged deps must not re-run the effect";
 	}
+
+	TEST_F(HookTest, RefSurvivesCallback)
+	{
+		Reset();
+
+		int renders = 0;
+		int* slot = nullptr;
+		std::function<void()> fire;
+
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "ref",
+			},
+			[&]() -> mocca::Element
+			{
+				auto ref = mocca::useRef(0);
+				if (renders == 0)
+				{
+					slot = &ref.Current;
+					fire = [ref]() -> void { ref.Current++; };
+					ref.Current = 1;
+				}
+				else
+				{
+					EXPECT_EQ(&ref.Current, slot)
+						<< "ref must stay in same hook slot";
+				}
+
+				C().LastValue = ref.Current;
+				++renders;
+				return box(50, 50);
+			}
+		);
+
+		Tick();
+
+		ASSERT_NE(slot, nullptr);
+		ASSERT_TRUE(fire);
+		EXPECT_EQ(C().LastValue, 1);
+
+		fire();
+		s->MarkDirty();
+		Tick();
+
+		EXPECT_EQ(C().LastValue, 2)
+			<< "a copied ref must still address the hook slot";
+	}
 }
