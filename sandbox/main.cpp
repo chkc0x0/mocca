@@ -1,6 +1,7 @@
 #include "GLFWPlatformInterface.h"
 #include "core/Application.h"
 #include "core/Element.h"
+#include "core/Hooks.h"
 #include "sandbox/NVGRenderDevice.h"
 #include <iostream>
 #include "style/StyleHelpers.h"
@@ -13,6 +14,8 @@ using namespace mocca;
 auto Sandbox() -> Element
 {
 	using namespace mocca::styles;
+
+	auto [counter, setCounter] = useState(0);
 
 	std::vector<widgets::basic::ButtonProps> buttons = {
 		{.State = widgets::ButtonVariant::Default},
@@ -84,6 +87,14 @@ auto Sandbox() -> Element
 						GapVertical(px(16)),
 					},
 				.Children = disabledChildren,
+			}),
+			widgets::basic::button({
+				.Children =
+					{
+						text("Counter: " + std::to_string(counter)),
+					},
+				.OnPress = [setCounter](auto& ev) -> auto
+				{ setCounter([](auto& c) -> auto { return c + 1; }); },
 			}),
 		},
 	});
