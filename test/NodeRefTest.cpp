@@ -364,4 +364,65 @@ namespace mtest
 		EXPECT_FALSE(target->Valid());
 		EXPECT_TRUE(target->Rect().IsEmpty());
 	}
+
+	TEST_F(NodeRefTest, IsFocusedDuringRender)
+	{
+		mocca::NodeRef* target = nullptr;
+
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "focus",
+			},
+			[&]() -> mocca::Element
+			{
+				auto* node = mocca::useNode();
+				target = node;
+
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(50)),
+								Height(px(50)),
+								BorderColor(
+									node->IsFocused() ? mocca::Color(0, 255, 0)
+													  : mocca::Color(255, 0, 0)
+								),
+							},
+						.Ref = node,
+						.Focus = mocca::FocusMode::Tab,
+					}
+				);
+			}
+		);
+
+		Tick();
+		ASSERT_NE(target, nullptr);
+		ASSERT_TRUE(target->Valid());
+
+		auto* before =
+			mocca::detail::Node::FindNodeById(s->Tree(), target->Id());
+		ASSERT_NE(before, nullptr);
+		EXPECT_EQ(
+			before->Style.Get<mocca::styles::StyleProperty::BorderColor>().R,
+			255
+		);
+
+		target->Focus();
+		Tick();
+
+		EXPECT_EQ(s->GetFocusedNode(), target->Id());
+		EXPECT_TRUE(target->IsFocused());
+
+		auto* after =
+			mocca::detail::Node::FindNodeById(s->Tree(), target->Id());
+		ASSERT_NE(after, nullptr);
+		auto color =
+			after->Style.Get<mocca::styles::StyleProperty::BorderColor>();
+		EXPECT_EQ(color.R, 0);
+		EXPECT_EQ(color.G, 255);
+		EXPECT_EQ(color.B, 0);
+	}
 }

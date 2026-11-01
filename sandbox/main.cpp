@@ -3,8 +3,10 @@
 #include "core/Element.h"
 #include "sandbox/NVGRenderDevice.h"
 #include <iostream>
+#include "style/StyleHelpers.h"
 #include "utils/Color.h"
 #include "widgets/Button.h"
+#include "widgets/ComponentTypes.h"
 
 using namespace mocca;
 
@@ -12,18 +14,76 @@ auto Sandbox() -> Element
 {
 	using namespace mocca::styles;
 
+	std::vector<widgets::basic::ButtonProps> buttons = {
+		{.State = widgets::ButtonVariant::Default},
+		{.State = widgets::ButtonVariant::Secondary},
+		{.State = widgets::ButtonVariant::Outline},
+		{.State = widgets::ButtonVariant::Ghost},
+		{.State = widgets::ButtonVariant::Destructive},
+	};
+
+	auto press = [](auto& ev) -> auto { mc_info("clicked"); };
+
+	std::vector<Element> childrenNormal;
+	std::vector<Element> disabledChildren;
+
+	childrenNormal.reserve(buttons.size());
+
+	for (auto& btn : buttons)
+	{
+		childrenNormal.push_back(
+			widgets::basic::button({
+				.State = btn.State,
+				.Children =
+					{
+						text("Click me!"),
+					},
+				.OnPress = press,
+			})
+		);
+	}
+
+	disabledChildren.reserve(buttons.size());
+	for (auto& btn : buttons)
+	{
+		disabledChildren.push_back(
+			widgets::basic::button({
+				.State = btn.State,
+				.Disabled = true,
+				.Children =
+					{
+						text("Click me!"),
+					},
+				.OnPress = press,
+			})
+		);
+	}
+
 	return box({
 		.Style =
 			{
-				BackgroundColor(Color::Oklch(0.7, 0.1036, 171)),
+				BackgroundColor(Color(0x191919)),
 				FontFamily("Inter"),
+				Padding(px(16)),
+				GapHorizontal(px(16)),
 			},
 		.Children = {
-			widgets::basic::button({
-				.Children = {
-					text("Click me!"),
-				},
-				.OnPress = [](auto& ev) { mc_info("clicked"); },
+			box({
+				.Style =
+					{
+
+						FlexDirection(FlexDirections::Column),
+						GapVertical(px(16)),
+					},
+				.Children = childrenNormal,
+			}),
+			box({
+				.Style =
+					{
+						FlexDirection(FlexDirections::Column),
+						GapVertical(px(16)),
+					},
+				.Children = disabledChildren,
 			}),
 		},
 	});

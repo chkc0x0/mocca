@@ -9,7 +9,7 @@ namespace mocca::widgets::basic
 	struct ButtonProps
 	{
 		ComponentSize Size = ComponentSize::Default;
-		ButtonState State = ButtonState::Default;
+		ButtonVariant State = ButtonVariant::Default;
 		bool Disabled = false;
 		std::vector<Element> Children;
 		std::function<void(PointerEvent&)> OnPress;

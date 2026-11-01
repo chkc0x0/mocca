@@ -30,15 +30,15 @@
     mc_styleProperty(MarginRight, EnumValue<Length>, false, (EnumValue<Length>{0})) 
 
 #define mc_layoutFlexProps \
-    mc_styleProperty(AlignContent, Alignment, false, Alignment::FlexStart) \
+    mc_styleProperty(AlignContent, Alignment, false, Alignment::Stretch) \
     mc_styleProperty(AlignItems, Alignment, false, Alignment::Stretch) \
     mc_styleProperty(AlignSelf, EnumValue<Alignment>, false, Auto) \
     mc_styleProperty(Display, DisplayType, false, DisplayType::Flex) \
     mc_styleProperty(FlexBasis, SizingValue, false, (SizingValue{Auto})) \
     mc_styleProperty(FlexGrow, float, false, 0.0F) \
-    mc_styleProperty(FlexShrink, float, false, 0.0F) \
+    mc_styleProperty(FlexShrink, float, false, 1.0F) \
     mc_styleProperty(Flex, float, false, std::numeric_limits<double>::quiet_NaN()) \
-    mc_styleProperty(FlexDirection, FlexDirections, false, FlexDirections::Column) \
+    mc_styleProperty(FlexDirection, FlexDirections, false, FlexDirections::Row) \
     mc_styleProperty(FlexWrap, WrappingType, false, WrappingType::None) \
     mc_styleProperty(GapHorizontal, Length, false, (Length{0})) \
     mc_styleProperty(GapVertical, Length, false, (Length{0}))
@@ -52,7 +52,7 @@
     mc_styleProperty(JustifyItems, Justification, false, Justification::Stretch) \
     mc_styleProperty(JustifySelf, EnumValue<Justification>, false, Auto) \
     mc_styleProperty(Overflow, OverflowType, false, OverflowType::Visible) \
-	mc_styleProperty(Position, PositionType, false, PositionType::Relative)
+	mc_styleProperty(Position, PositionType, false, PositionType::Static)
 
 #define mc_layoutPropertiesReset \
     mc_layoutSizingProps mc_layoutSpacingProps mc_layoutFlexProps mc_layoutPosProps

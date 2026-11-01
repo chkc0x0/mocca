@@ -46,6 +46,7 @@ namespace mocca
 	private:
 		detail::NodeId _id = 0;
 		class Surface* _surface = nullptr;
+		detail::Node* _node = nullptr;
 		friend struct detail::Node;
 		friend struct Element;
 	};

@@ -859,6 +859,7 @@ namespace mocca::detail
 		{
 			newElement->Ref->_id = oldNode->Id;
 			newElement->Ref->_surface = getCtx()->_currentSurface;
+			newElement->Ref->_node = oldNode.get();
 		}
 
 		auto childElements = CollectChildElements(newElement, oldNode->Id);

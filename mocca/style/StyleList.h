@@ -39,6 +39,22 @@ namespace mocca::styles
 			}
 		}
 
+		void Add(const StyleList& g)
+		{
+			for (const StyleEntry& e : g._entries)
+			{
+				Add(e);
+			}
+		}
+
+		void AddIf(bool cond, const StyleList& item)
+		{
+			if (cond)
+			{
+				Add(item);
+			}
+		}
+
 		auto operator+=(const StyleList& rhs) -> StyleList&
 		{
 			for (const StyleEntry& e : rhs._entries)

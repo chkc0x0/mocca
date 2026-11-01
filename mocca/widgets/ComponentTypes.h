@@ -11,9 +11,10 @@ namespace mocca::widgets
 		XL,
 	};
 
-	enum class ButtonState : char
+	enum class ButtonVariant : char
 	{
 		Default,
+		Secondary,
 		Outline,
 		Ghost,
 		Destructive,

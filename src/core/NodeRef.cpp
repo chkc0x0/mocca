@@ -22,6 +22,29 @@ namespace mocca
 		return detail::Node::FindNodeById(surface->Tree(), id);
 	}
 
+	auto subtreeContainsId(const detail::Node* node, detail::NodeId id) -> bool
+	{
+		if (node == nullptr)
+		{
+			return false;
+		}
+
+		if (node->Id == id)
+		{
+			return true;
+		}
+
+		for (const auto& child : node->Children)
+		{
+			if (subtreeContainsId(child.get(), id))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	auto paintedRect(const detail::Node& node) -> Rectangle
 	{
 		Rectangle rect{
@@ -57,13 +80,10 @@ namespace mocca
 		-> std::shared_ptr<const mtext::TextLayout>
 	{
 		const auto& text = std::get<TextElement>(node.Kind);
-		float caretWidth = text.Caret
-							   ? std::max(0.0F, text.Caret->Width)
-							   : 0.0F;
-		float textWidth = std::max(
-			0.0F,
-			YGNodeLayoutGetWidth(node.YogaNode) - caretWidth
-		);
+		float caretWidth = text.Caret ? std::max(0.0F, text.Caret->Width)
+									  : 0.0F;
+		float textWidth =
+			std::max(0.0F, YGNodeLayoutGetWidth(node.YogaNode) - caretWidth);
 		return mtext::detail::TextLayoutBuilder::ResolveTextLayout(
 			node.Style,
 			text.Content,
@@ -137,7 +157,19 @@ namespace mocca
 			return false;
 		}
 
-		auto* focused = findNode(_surface->GetFocusedNode(), _surface);
+		auto focusedId = _surface->GetFocusedNode();
+		if (focusedId == 0)
+		{
+			return false;
+		}
+
+		if (_surface->Tree() == nullptr)
+		{
+			return subtreeContainsId(_node, focusedId);
+		}
+
+		auto* focused = findNode(focusedId, _surface);
+
 		for (auto* n = focused; n != nullptr; n = n->Parent)
 		{
 			if (n->Id == _id)
@@ -252,9 +284,8 @@ namespace mocca
 		auto layout = textLayoutFor(*node);
 		Rectangle rect = paintedRect(*node);
 		const auto& text = std::get<TextElement>(node->Kind);
-		float caretWidth = text.Caret
-							   ? std::max(0.0F, text.Caret->Width)
-							   : 0.0F;
+		float caretWidth = text.Caret ? std::max(0.0F, text.Caret->Width)
+									  : 0.0F;
 		float textWidth = std::max(0.0F, rect.Width - caretWidth);
 
 		return mtext::TextGeometry::PositionAtPoint(
@@ -276,9 +307,8 @@ namespace mocca
 		auto layout = textLayoutFor(*node);
 		Rectangle rect = paintedRect(*node);
 		const auto& text = std::get<TextElement>(node->Kind);
-		float caretWidth = text.Caret
-							   ? std::max(0.0F, text.Caret->Width)
-							   : 1.0F;
+		float caretWidth = text.Caret ? std::max(0.0F, text.Caret->Width)
+									  : 1.0F;
 		float textWidth = std::max(
 			0.0F,
 			rect.Width - (text.Caret ? std::max(0.0F, text.Caret->Width) : 0.0F)
