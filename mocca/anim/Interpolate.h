@@ -13,7 +13,38 @@ namespace mocca::anim
 
 	inline auto lerp(const Color& a, const Color& b, float t) -> Color
 	{
-		return Color::MixOklab(a, b, std::clamp(t, 0.0F, 1.0F));
+		float clamped = std::clamp(t, 0.0F, 1.0F);
+
+		auto withAlpha8 = [](const Color& color, float alpha8) -> Color
+		{ return color.WithAlpha8(static_cast<uint8_t>(alpha8 + 0.5F)); };
+
+		if (a.A == 0 && b.A != 0)
+		{
+			if (clamped <= 0.0F)
+			{
+				return a;
+			}
+			if (clamped >= 1.0F)
+			{
+				return b;
+			}
+			return withAlpha8(b, clamped * static_cast<float>(b.A));
+		}
+
+		if (b.A == 0 && a.A != 0)
+		{
+			if (clamped <= 0.0F)
+			{
+				return a;
+			}
+			if (clamped >= 1.0F)
+			{
+				return b;
+			}
+			return withAlpha8(a, (1.0F - clamped) * static_cast<float>(a.A));
+		}
+
+		return Color::MixOklab(a, b, clamped);
 	}
 
 	inline auto lerp(const Length& a, const Length& b, float t) -> Length

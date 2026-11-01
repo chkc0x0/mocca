@@ -3,6 +3,7 @@
 #include "core/Identifiers.h"
 #include <cstdint>
 #include <functional>
+#include <vector>
 
 namespace mocca::styles
 {
@@ -14,6 +15,15 @@ namespace mocca::styles
 		anim::Curve Curve{};
 
 		constexpr auto operator==(const TransitionType&) const
+			-> bool = default;
+	};
+
+	struct TransitionList
+	{
+	public:
+		std::vector<TransitionType> Specs;
+
+		constexpr auto operator==(const TransitionList&) const
 			-> bool = default;
 	};
 }
@@ -44,6 +54,23 @@ namespace std
 				h,
 				std::hash<mocca::anim::Curve>{}(t.Curve)
 			);
+			return h;
+		}
+	};
+
+	template <> struct hash<mocca::styles::TransitionList>
+	{
+		auto operator()(const mocca::styles::TransitionList& l) const noexcept
+			-> size_t
+		{
+			size_t h = std::hash<size_t>{}(l.Specs.size());
+			for (const auto& spec : l.Specs)
+			{
+				mocca::detail::hashCombine(
+					h,
+					std::hash<mocca::styles::TransitionType>{}(spec)
+				);
+			}
 			return h;
 		}
 	};

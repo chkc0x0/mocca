@@ -9,7 +9,7 @@ namespace mocca::detail
 	struct TypeInterners
 	{
 	public:
-		Interner<styles::TransitionType> Transitions;
+		Interner<styles::TransitionList> Transitions;
 		Interner<styles::FontFamilyType> FontFamilies;
 		Interner<styles::FontVariationsType> FontVariations;
 		Interner<styles::FontFeaturesType> FontFeatures;

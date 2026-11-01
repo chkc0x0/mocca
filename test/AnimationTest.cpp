@@ -3,6 +3,7 @@
 #include "anim/Interpolate.h"
 #include "anim/Spring.h"
 #include "core/Hooks.h"
+#include "style/StyleValue.h"
 #include <optional>
 
 namespace mtest
@@ -85,6 +86,150 @@ namespace mtest
 			mocca::anim::interpolate(mocca::Length{10}, mocca::Length{20}, -2.0F),
 			(mocca::Length{0})
 		);
+	}
+
+	TEST(AnimationMath, FadesAlphaWithoutDarkening)
+	{
+		auto fromTransparent = mocca::anim::interpolate(
+			mocca::colors::Transparent,
+			mocca::colors::Red,
+			0.5F
+		);
+		EXPECT_EQ(fromTransparent.R, 255);
+		EXPECT_EQ(fromTransparent.G, 0);
+		EXPECT_EQ(fromTransparent.B, 0);
+		EXPECT_EQ(fromTransparent.A, 128);
+
+		auto toTransparent = mocca::anim::interpolate(
+			mocca::colors::Red,
+			mocca::colors::Transparent,
+			0.5F
+		);
+		EXPECT_EQ(toTransparent.R, 255);
+		EXPECT_EQ(toTransparent.G, 0);
+		EXPECT_EQ(toTransparent.B, 0);
+		EXPECT_EQ(toTransparent.A, 128);
+
+		auto partial = mocca::anim::interpolate(
+			mocca::colors::Transparent,
+			mocca::Color{0, 0, 255, 100},
+			0.5F
+		);
+		EXPECT_EQ(partial.R, 0);
+		EXPECT_EQ(partial.G, 0);
+		EXPECT_EQ(partial.B, 255);
+		EXPECT_EQ(partial.A, 50);
+	}
+
+	TEST_F(AnimationTest, MergesPerPropertyTransitionSpecs)
+	{
+		using namespace mocca::styles;
+
+		StyleList style{
+			Transition(
+				StyleProperty::BackgroundColor,
+				0.2F,
+				mocca::anim::LinearCurve
+			),
+			Transition(
+				StyleProperty::BorderColor,
+				0.4F,
+				mocca::anim::LinearCurve
+			),
+		};
+
+		const StyleEntry* entry = style.Find(StyleProperty::Transition);
+		ASSERT_NE(entry, nullptr);
+
+		const auto& specs =
+			detail::resolveTransition(entry->Payload.Handle).Specs;
+		ASSERT_EQ(specs.size(), 2U);
+		EXPECT_NE(
+			specs[0].Props & propertyBit<StyleProperty::BackgroundColor>(),
+			0U
+		);
+		EXPECT_NE(
+			specs[1].Props & propertyBit<StyleProperty::BorderColor>(),
+			0U
+		);
+		EXPECT_FLOAT_EQ(specs[0].Duration, 0.2F);
+		EXPECT_FLOAT_EQ(specs[1].Duration, 0.4F);
+	}
+
+	namespace
+	{
+		std::optional<mocca::StateSetter<bool>> perPropToggler;
+	}
+
+	TEST_F(AnimationTest, PerPropertyTransitionsUseOwnTiming)
+	{
+		perPropToggler.reset();
+
+		auto* s = AddSurface(
+			{.Width = 40, .Height = 40, .Title = "per-property"},
+			[]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				auto [on, setOn] = mocca::useState(false);
+				if (!perPropToggler)
+				{
+					perPropToggler.emplace(setOn);
+				}
+
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(40)),
+								Height(px(40)),
+								Border(px(6)),
+								BackgroundColor(
+									on ? mocca::colors::Red
+									   : mocca::colors::Transparent
+								),
+								BorderColor(
+									on ? mocca::colors::Blue
+									   : mocca::colors::Transparent
+								),
+								Transition(
+									StyleProperty::BackgroundColor,
+									ms(100),
+									mocca::anim::LinearCurve
+								),
+								Transition(
+									StyleProperty::BorderColor,
+									ms(400),
+									mocca::anim::LinearCurve
+								),
+							},
+					}
+				);
+			}
+		);
+
+		Tick();
+		const auto* initial = firstRect(commandsOf(*s));
+		ASSERT_NE(initial, nullptr);
+		EXPECT_EQ(initial->Color, mocca::colors::Transparent);
+		EXPECT_EQ(initial->BorderColor, mocca::colors::Transparent);
+
+		(*perPropToggler)(true);
+		Tick(0.05, 1);
+
+		const auto* mid = firstRect(commandsOf(*s));
+		ASSERT_NE(mid, nullptr);
+		EXPECT_EQ(mid->Color.R, 255);
+		EXPECT_EQ(mid->Color.G, 0);
+		EXPECT_EQ(mid->Color.B, 0);
+		EXPECT_GT(mid->Color.A, mid->BorderColor.A);
+		EXPECT_GT(mid->Color.A, 0);
+		EXPECT_GT(mid->BorderColor.A, 0);
+
+		Tick(0.05, 8);
+		const auto* settled = firstRect(commandsOf(*s));
+		ASSERT_NE(settled, nullptr);
+		EXPECT_EQ(settled->Color, mocca::colors::Red);
+		EXPECT_EQ(settled->BorderColor, mocca::colors::Blue);
 	}
 
 	namespace

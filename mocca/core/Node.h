@@ -101,19 +101,32 @@ namespace mocca::detail
 			bool& anyActive
 		)
 		{
-			if (target.Get<styles::StyleProperty::Transition>() == 0)
+			uint32_t transitionRef =
+				target.Get<styles::StyleProperty::Transition>();
+			if (transitionRef == 0)
 			{
+				RemoveTransition(P);
 				return;
 			}
-			
+
 			using Value = styles::PropTraits<P>::Value;
 
-			const styles::TransitionType& trans =
-				styles::detail::resolveTransition(
-					target.Get<styles::StyleProperty::Transition>()
-				);
+			const styles::TransitionList& transitions =
+				styles::detail::resolveTransition(transitionRef);
 
-			if ((trans.Props & styles::propertyBit<P>()) == 0)
+			const styles::TransitionType* spec = nullptr;
+			for (auto it = transitions.Specs.rbegin();
+				 it != transitions.Specs.rend();
+				 ++it)
+			{
+				if ((it->Props & styles::propertyBit<P>()) != 0)
+				{
+					spec = &*it;
+					break;
+				}
+			}
+
+			if (spec == nullptr)
 			{
 				RemoveTransition(P);
 				return;
@@ -134,8 +147,8 @@ namespace mocca::detail
 				fresh.Prop = P;
 				fresh.From = styles::detail::encodeStyleEntry(P, present);
 				fresh.Goal = styles::detail::encodeStyleEntry(P, goal);
-				fresh.Duration = trans.Duration;
-				fresh.Curve = trans.Curve;
+				fresh.Duration = spec->Duration;
+				fresh.Curve = spec->Curve;
 				Transitions.push_back(fresh);
 				tr = &Transitions.back();
 			}
@@ -146,8 +159,8 @@ namespace mocca::detail
 				tr->Elapsed = 0.0F;
 				tr->Progress = 0.0F;
 				tr->Spring = {};
-				tr->Duration = trans.Duration;
-				tr->Curve = trans.Curve;
+				tr->Duration = spec->Duration;
+				tr->Curve = spec->Curve;
 			}
 
 			float t = 1.0F;

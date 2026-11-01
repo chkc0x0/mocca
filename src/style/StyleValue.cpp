@@ -19,12 +19,12 @@ namespace mocca::styles
 
 namespace mocca::styles::detail
 {
-	auto internTransition(const TransitionType& type) -> uint32_t
+	auto internTransition(const TransitionList& list) -> uint32_t
 	{
-		return Application::main->GetInterners()->Transitions.Intern(type);
+		return Application::main->GetInterners()->Transitions.Intern(list);
 	}
 
-	auto resolveTransition(uint32_t ref) -> const TransitionType&
+	auto resolveTransition(uint32_t ref) -> const TransitionList&
 	{
 		return Application::main->GetInterners()->Transitions.Get(ref);
 	}

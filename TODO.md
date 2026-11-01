@@ -2,7 +2,6 @@
 
 ## Content
 
-- [ ] make transitions per property instead of "global"
 - [ ] add font fallback outside the font stack (registered fonts and FontProvider)
 - [ ] a11y: aria struct
 - [ ] a11y: [accesskit](https://github.com/AccessKit/accesskit-c)
@@ -28,3 +27,5 @@
 - [x] add texture support (freetype kinda depends on this)
 - [x] enhance texture api part 1 (`BackgroundImage("cat.png")`)
 - [x] sparse event storage
+- [x] make transitions per property instead of "global"
+- [x] fade colors through alpha instead of oklab when an endpoint is transparent

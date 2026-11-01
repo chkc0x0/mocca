@@ -301,12 +301,17 @@ namespace mocca::styles
 			);
 		}
 
-		inline auto makeTransition(const TransitionType& type) -> StyleEntry
+		inline auto makeTransition(const TransitionList& list) -> StyleEntry
 		{
 			return encodeStyleEntry(
 				StyleProperty::Transition,
-				detail::internTransition(type)
+				detail::internTransition(list)
 			);
+		}
+
+		inline auto makeTransition(const TransitionType& type) -> StyleEntry
+		{
+			return makeTransition(TransitionList{.Specs = {type}});
 		}
 
 		inline auto makeFontFamily(const FontFamilyType& family) -> StyleEntry

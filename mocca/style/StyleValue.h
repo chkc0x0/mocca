@@ -27,8 +27,8 @@ namespace mocca::styles
 
 	namespace detail
 	{
-		auto internTransition(const TransitionType& type) -> uint32_t;
-		auto resolveTransition(uint32_t ref) -> const TransitionType&;
+		auto internTransition(const TransitionList& list) -> uint32_t;
+		auto resolveTransition(uint32_t ref) -> const TransitionList&;
 
 		auto internFontFamily(const FontFamilyType& family) -> uint32_t;
 		auto resolveFontFamily(uint32_t ref) -> const FontFamilyType&;
