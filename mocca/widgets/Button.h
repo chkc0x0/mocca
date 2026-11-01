@@ -31,7 +31,7 @@ namespace mocca::widgets::basic
 	struct PressResult
 	{
 		PressState State;
-		EventHandlers Events;
+		EventView Events;
 	};
 
 	auto button(ButtonProps props) -> Element;

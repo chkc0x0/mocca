@@ -181,6 +181,19 @@ namespace mocca
 		return false;
 	}
 
+	void NodeRef::_emitImpl(
+		uint32_t id,
+		const std::type_info& type,
+		void* event
+	) const
+	{
+		auto* node = findNode(_id, _surface);
+		if (node != nullptr && node->Events != nullptr)
+		{
+			node->Events->_callRaw(id, type, event);
+		}
+	}
+
 	void NodeRef::ScrollIntoView()
 	{
 		ScrollRectIntoView(Rect());

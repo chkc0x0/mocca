@@ -117,6 +117,7 @@ if get_option('tests')
             'test/AnimationTest.cpp',
             'test/ApplicationIdTest.cpp',
             'test/EventBusTest.cpp',
+            'test/EventViewTest.cpp',
             'test/HookTest.cpp',
             'test/LayoutTest.cpp',
             'test/NodeRefTest.cpp',

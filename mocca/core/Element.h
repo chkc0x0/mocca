@@ -82,7 +82,7 @@ namespace mocca
 	public:
 		ElementKey Key = mc_keyNone;
 		styles::StyleList Style;
-		EventHandlers Events;
+		EventView Events;
 		std::vector<Element> Children;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
@@ -93,7 +93,7 @@ namespace mocca
 	public:
 		ElementKey Key = mc_keyNone;
 		styles::StyleList Style;
-		EventHandlers Events;
+		EventView Events;
 		std::string Content;
 		std::optional<mtext::CaretDecoration> Caret;
 		std::optional<std::vector<mtext::TextDecoration>> Decorations;

@@ -1,7 +1,9 @@
 #pragma once
+#include "core/ElementEvents.h"
 #include "Identifiers.h"
 #include "utils/Math.h"
 #include <memory>
+#include <typeinfo>
 
 namespace mocca
 {
@@ -36,6 +38,16 @@ namespace mocca
 		void Blur();
 		[[nodiscard]] auto IsFocused() const -> bool;
 
+		template <class E> void Emit(EventKey<E> key, E& event) const
+		{
+			_emitImpl(key.Id, typeid(E), &event);
+		}
+
+		template <class E> void Emit(CustomEvent<E> ev, E& event) const
+		{
+			Emit(CustomEvent<E>::Key(), event);
+		}
+
 		[[nodiscard]] auto PositionAtPoint(Vector2 surfacePoint) const
 			-> mtext::TextPosition;
 		[[nodiscard]] auto CaretRect(mtext::TextPosition position) const
@@ -44,6 +56,8 @@ namespace mocca
 			-> std::shared_ptr<const mtext::TextLayout>;
 
 	private:
+		void _emitImpl(uint32_t id, const std::type_info& type, void* event) const;
+
 		detail::NodeId _id = 0;
 		class Surface* _surface = nullptr;
 		detail::Node* _node = nullptr;

@@ -20,39 +20,43 @@ namespace mocca::widgets::basic
 		return {
 			.State = state,
 			.Events = {
-				.OnPointerEnter = [=](auto&) -> auto
-				{
-					if (!disabled && !state.Hovered)
-					{
-						setState({.Hovered = true, .Pressed = state.Pressed});
-					}
-				},
-				.OnPointerLeave = [armed, setState](auto&) -> auto
-				{
-					armed.Current = false;
-					setState(PressState{});
-				},
-				.OnPointerDown = [armed, setState, disabled](auto&) -> auto
-				{
-					if (disabled)
-					{
-						return;
-					}
-					armed.Current = true;
-					setState({.Hovered = true, .Pressed = true});
-				},
-				.OnPointerUp = [armed, setState, disabled, onPress, state](
-								   auto& ev
-							   ) -> auto
-				{
-					bool fire = armed.Current && !disabled;
-					armed.Current = false;
-					setState({.Hovered = state.Hovered, .Pressed = false});
-					if (fire && onPress)
-					{
-						onPress(ev);
-					}
-				},
+				on(events::PointerEnter,
+				   [=](PointerEvent&) -> auto
+				   {
+					   if (!disabled && !state.Hovered)
+					   {
+						   setState({.Hovered = true, .Pressed = state.Pressed});
+					   }
+				   }),
+				on(events::PointerLeave,
+				   [armed, setState](PointerEvent&) -> auto
+				   {
+					   armed.Current = false;
+					   setState(PressState{});
+				   }),
+				on(events::PointerDown,
+				   [armed, setState, disabled](PointerEvent&) -> auto
+				   {
+					   if (disabled)
+					   {
+						   return;
+					   }
+					   armed.Current = true;
+					   setState({.Hovered = true, .Pressed = true});
+				   }),
+				on(events::PointerUp,
+				   [armed, setState, disabled, onPress, state](
+					   PointerEvent& ev
+				   ) -> auto
+				   {
+					   bool fire = armed.Current && !disabled;
+					   armed.Current = false;
+					   setState({.Hovered = state.Hovered, .Pressed = false});
+					   if (fire && onPress)
+					   {
+						   onPress(ev);
+					   }
+				   }),
 			},
 		};
 	}
@@ -185,7 +189,7 @@ namespace mocca::widgets::basic
 
 		return box({
 			.Style = base + props.Style,
-			.Events = press.Events,
+			.Events = std::move(press.Events),
 			.Children = props.Children,
 			.Ref = node,
 			.Focus = props.Disabled ? FocusMode::None : FocusMode::Tab,

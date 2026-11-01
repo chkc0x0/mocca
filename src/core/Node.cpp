@@ -930,6 +930,7 @@ namespace mocca::detail
 		return hitTestImpl(root, x, y, {});
 	}
 
+	// we should also add an id -> node* mapping in the surface later
 	auto Node::FindNodeById(Node* root, NodeId id) -> Node*
 	{
 		mc_profileFunction();
