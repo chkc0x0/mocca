@@ -97,7 +97,7 @@ namespace mocca::styles
 
 		switch (e.Prop)
 		{
-			mc_textProperties mc_layoutProperties mc_renderProperties default
+			mc_textProperties mc_layoutProperties mc_renderProperties mc_miscProperties default
 				: mc_error(
 					  ErrorCode::InvalidArgument,
 					  "how did we get to this style? ({})",

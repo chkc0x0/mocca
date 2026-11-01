@@ -25,7 +25,7 @@ namespace mocca
 		bool Meta = false;
 	};
 
-	enum class CursorShape : uint8_t
+	enum class CursorShapeType : uint8_t
 	{
 		None,
 		Default,

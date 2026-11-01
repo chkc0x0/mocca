@@ -22,7 +22,7 @@ namespace mocca
 
 		virtual auto GfxHandle() -> gfx::GraphicsHandle = 0;
 
-		virtual void SetCursor(CursorShape shape)
+		virtual void SetCursor(CursorShapeType shape)
 		{
 		}
 

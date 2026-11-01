@@ -9,8 +9,9 @@ namespace mocca::styles
 #undef mc_styleProperty
 #define mc_styleProperty(name, ...) name,
 		mc_textProperties mc_layoutProperties mc_renderProperties
+			mc_miscProperties
 #undef mc_styleProperty
-			StylePropertyCount,
+				StylePropertyCount,
 	};
 
 	enum class StylePropertyGroup : char

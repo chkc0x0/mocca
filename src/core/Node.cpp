@@ -217,7 +217,6 @@ namespace mocca::detail
 
 		node->Events = element.Events;
 		node->Focus = element.Focus;
-		node->Cursor = element.Cursor;
 
 		if (!node->IsComponent())
 		{
@@ -374,7 +373,9 @@ namespace mocca::detail
 		{
 			canvas
 				.DrawRect(x, y, w, h, background, RectStyle{.Radius = radius});
-			const auto& image = styles::detail::resolveBackgroundImage(imageRef);
+			const auto& image = styles::detail::resolveBackgroundImage(
+				imageRef
+			);
 			for (const auto& layer : image.Layers)
 			{
 				canvas.DrawImage(
@@ -434,14 +435,8 @@ namespace mocca::detail
 		}
 	}
 
-	void paintText(
-		Node& node,
-		Canvas& canvas,
-		float x,
-		float y,
-		float w,
-		float h
-	)
+	void
+	paintText(Node& node, Canvas& canvas, float x, float y, float w, float h)
 	{
 		const auto& textElement = std::get<TextElement>(node.Kind);
 		const std::string& content = textElement.Content;
@@ -469,7 +464,8 @@ namespace mocca::detail
 
 		auto align = node.Style.Get<styles::StyleProperty::TextAlign>();
 
-		auto emit = [&](float rx, float ry, float rw, float rh, Color color) -> void
+		auto emit =
+			[&](float rx, float ry, float rw, float rh, Color color) -> void
 		{ canvas.DrawRect(x + rx, y + ry, rw, rh, color, RectStyle{}); };
 
 		if (textElement.Decorations)
@@ -832,7 +828,8 @@ namespace mocca::detail
 			}
 			else if (current.Caret.has_value() && incoming.Caret.has_value())
 			{
-				caretWidthChanged = current.Caret->Width != incoming.Caret->Width;
+				caretWidthChanged = current.Caret->Width !=
+									incoming.Caret->Width;
 			}
 
 			bool overlayChanged = current.Caret != incoming.Caret ||
@@ -856,7 +853,6 @@ namespace mocca::detail
 
 		oldNode->Events = newElement->Events;
 		oldNode->Focus = newElement->Focus;
-		oldNode->Cursor = newElement->Cursor;
 		oldNode->Declared.Assign(newElement->Style);
 
 		if (newElement->Ref != nullptr)

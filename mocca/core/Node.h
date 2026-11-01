@@ -49,7 +49,6 @@ namespace mocca::detail
 
 		std::shared_ptr<EventView> Events;
 		FocusMode Focus = FocusMode::None;
-		CursorShape Cursor = CursorShape::Default;
 
 		uint64_t BlinkToken = 0;
 		double BlinkEpochMs = 0.0;

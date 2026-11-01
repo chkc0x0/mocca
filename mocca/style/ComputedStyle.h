@@ -4,6 +4,7 @@
 #include "StyleValue.h"
 #include "StyleEntry.h"
 #include "Length.h"
+#include "input/InputTypes.h"
 #include "utils/Color.h"
 
 namespace mocca::styles
@@ -46,7 +47,7 @@ namespace mocca::styles
 		// if it's a problem
 		struct InheritedProps
 		{
-			mc_layoutPropertiesInh mc_textPropertiesInh
+			mc_inheritProperties
 		} Inherited;
 #undef mc_styleProperty
 

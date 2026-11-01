@@ -9,6 +9,7 @@
 #include "core/Logger.h"
 #include "gfx/TextureRegistry.h"
 #include "style/ComputedStyle.h"
+#include "style/StyleProperty.h"
 #include "utils/ScopedProfiler.h"
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
@@ -47,17 +48,18 @@ namespace mocca
 		return nullptr;
 	}
 
-	static auto NearestCursor(detail::Node* node) -> CursorShape
+	static auto NearestCursor(detail::Node* node) -> CursorShapeType
 	{
 		for (auto* n = node; n != nullptr; n = n->Parent)
 		{
-			if (n->Cursor != CursorShape::Default)
+			auto cur = n->Style.Get<styles::StyleProperty::CursorShape>();
+			if (cur != CursorShapeType::Default)
 			{
-				return n->Cursor;
+				return cur;
 			}
 		}
 
-		return CursorShape::Default;
+		return CursorShapeType::Default;
 	}
 
 	static void

@@ -41,18 +41,18 @@ public:
 
 	auto GfxHandle() -> mocca::gfx::GraphicsHandle override;
 
-	void SetCursor(mocca::CursorShape shape) override;
+	void SetCursor(mocca::CursorShapeType shape) override;
 	void SetImeCursorRect(mocca::Rectangle rect) override;
 
 private:
 	static auto ToKeyCode(int glfwKey) -> mocca::KeyCode;
 	static auto ToModifiers(int glfwMods) -> mocca::Modifiers;
 	static auto PollModifiers(GLFWwindow* window) -> mocca::Modifiers;
-	auto _cursorFor(mocca::CursorShape shape) -> GLFWcursor*;
+	auto _cursorFor(mocca::CursorShapeType shape) -> GLFWcursor*;
 
 	GLFWwindow* _window = nullptr;
 	std::array<GLFWcursor*, 11> _cursors{};
-	mocca::CursorShape _cursor = mocca::CursorShape::Default;
+	mocca::CursorShapeType _cursor = mocca::CursorShapeType::Default;
 
 	mocca::InputBatch _pending;
 };

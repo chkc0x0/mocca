@@ -7,6 +7,7 @@
 #include "Transition.h"
 #include "StyleEnums.h"
 #include "Length.h"
+#include "input/InputTypes.h"
 #include "utils/Color.h"
 #include <cassert>
 #include <concepts>
@@ -144,6 +145,16 @@ namespace mocca::styles
 		}
 
 		constexpr auto encodeStyleEntry(StyleProperty prop, TextAlignment d)
+			-> StyleEntry
+		{
+			return {
+				.Prop = prop,
+				.Type = StyleValueType::Enum,
+				.Payload = {.Enum = static_cast<uint8_t>(d)},
+			};
+		}
+
+		constexpr auto encodeStyleEntry(StyleProperty prop, CursorShapeType d)
 			-> StyleEntry
 		{
 			return {
@@ -357,7 +368,7 @@ namespace mocca::styles
 	{                                                                          \
 		return detail::encodeStyleEntry(StyleProperty::name, val);             \
 	}
-	mc_textProperties mc_layoutProperties mc_renderProperties
+	mc_textProperties mc_layoutProperties mc_renderProperties mc_miscProperties
 #undef mc_styleProperty
 
 #undef mc_stylePropertyEdge
@@ -386,13 +397,15 @@ namespace mocca::styles
 	{
 		return detail::encodeStyleEntry(
 			StyleProperty::BackgroundImage,
-			detail::internBackgroundImage(BackgroundImageType{BackgroundImageEntry{id}})
+			detail::internBackgroundImage(
+				BackgroundImageType{BackgroundImageEntry{id}}
+			)
 		);
 	}
 
-		inline auto
-		BackgroundImage(std::initializer_list<BackgroundImageEntry> layers)
-			-> StyleEntry
+	inline auto BackgroundImage(
+		std::initializer_list<BackgroundImageEntry> layers
+	) -> StyleEntry
 	{
 		return detail::encodeStyleEntry(
 			StyleProperty::BackgroundImage,
@@ -400,8 +413,8 @@ namespace mocca::styles
 		);
 	}
 
-		inline auto BackgroundImage(std::string_view path, uint32_t flags = 0)
-			-> StyleEntry
+	inline auto BackgroundImage(std::string_view path, uint32_t flags = 0)
+		-> StyleEntry
 	{
 		return detail::encodeStyleEntry(
 			StyleProperty::BackgroundImage,
@@ -411,25 +424,23 @@ namespace mocca::styles
 		);
 	}
 
-		inline auto BackgroundImage(
-			std::string_view name,
-			std::span<const std::byte> data,
-			uint32_t flags = 0
-		) -> StyleEntry
+	inline auto BackgroundImage(
+		std::string_view name,
+		std::span<const std::byte> data,
+		uint32_t flags = 0
+	) -> StyleEntry
 	{
 		return detail::encodeStyleEntry(
 			StyleProperty::BackgroundImage,
 			detail::internBackgroundImage(
-				BackgroundImageType{
-					BackgroundImageEntry{
-						detail::loadImageMemory(name, data, flags)
-					}
-				}
+				BackgroundImageType{BackgroundImageEntry{
+					detail::loadImageMemory(name, data, flags)
+				}}
 			)
 		);
 	}
 
-		constexpr auto ms(float milliseconds) -> float
+	constexpr auto ms(float milliseconds) -> float
 	{
 		return milliseconds / 1000.0F;
 	}

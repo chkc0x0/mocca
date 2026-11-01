@@ -439,10 +439,11 @@ auto GLFWPlatformSurface::PollModifiers(GLFWwindow* window) -> mocca::Modifiers
 	};
 }
 
-auto GLFWPlatformSurface::_cursorFor(mocca::CursorShape shape) -> GLFWcursor*
+auto GLFWPlatformSurface::_cursorFor(mocca::CursorShapeType shape)
+	-> GLFWcursor*
 {
 	auto index = static_cast<size_t>(shape);
-	if (index >= _cursors.size() || shape == mocca::CursorShape::Default)
+	if (index >= _cursors.size() || shape == mocca::CursorShapeType::Default)
 	{
 		return nullptr;
 	}
@@ -452,61 +453,62 @@ auto GLFWPlatformSurface::_cursorFor(mocca::CursorShape shape) -> GLFWcursor*
 		return _cursors[index];
 	}
 
-	int cursorShape = GLFW_ARROW_CURSOR;
+	int CursorShapeType = GLFW_ARROW_CURSOR;
 	switch (shape)
 	{
-	case mocca::CursorShape::Text:
-		cursorShape = GLFW_IBEAM_CURSOR;
+	case mocca::CursorShapeType::Text:
+		CursorShapeType = GLFW_IBEAM_CURSOR;
 		break;
-	case mocca::CursorShape::Crosshair:
-		cursorShape = GLFW_CROSSHAIR_CURSOR;
+	case mocca::CursorShapeType::Crosshair:
+		CursorShapeType = GLFW_CROSSHAIR_CURSOR;
 		break;
-	case mocca::CursorShape::Pointer:
-		cursorShape = GLFW_POINTING_HAND_CURSOR;
+	case mocca::CursorShapeType::Pointer:
+		CursorShapeType = GLFW_POINTING_HAND_CURSOR;
 		break;
-	case mocca::CursorShape::Grab:
-		cursorShape = GLFW_RESIZE_ALL_CURSOR;
+	case mocca::CursorShapeType::Grab:
+		CursorShapeType = GLFW_RESIZE_ALL_CURSOR;
 		break;
-	case mocca::CursorShape::ResizeNWSE:
-		cursorShape = GLFW_RESIZE_NWSE_CURSOR;
+	case mocca::CursorShapeType::ResizeNWSE:
+		CursorShapeType = GLFW_RESIZE_NWSE_CURSOR;
 		break;
-	case mocca::CursorShape::ResizeNESW:
-		cursorShape = GLFW_RESIZE_NESW_CURSOR;
+	case mocca::CursorShapeType::ResizeNESW:
+		CursorShapeType = GLFW_RESIZE_NESW_CURSOR;
 		break;
-	case mocca::CursorShape::ResizeAll:
-		cursorShape = GLFW_RESIZE_ALL_CURSOR;
+	case mocca::CursorShapeType::ResizeAll:
+		CursorShapeType = GLFW_RESIZE_ALL_CURSOR;
 		break;
-	case mocca::CursorShape::ResizeH:
-		cursorShape = GLFW_HRESIZE_CURSOR;
+	case mocca::CursorShapeType::ResizeH:
+		CursorShapeType = GLFW_HRESIZE_CURSOR;
 		break;
-	case mocca::CursorShape::ResizeV:
-		cursorShape = GLFW_VRESIZE_CURSOR;
+	case mocca::CursorShapeType::ResizeV:
+		CursorShapeType = GLFW_VRESIZE_CURSOR;
 		break;
-	case mocca::CursorShape::NotAllowed:
-		cursorShape = GLFW_NOT_ALLOWED_CURSOR;
+	case mocca::CursorShapeType::NotAllowed:
+		CursorShapeType = GLFW_NOT_ALLOWED_CURSOR;
 		break;
-	case mocca::CursorShape::Default:
+	case mocca::CursorShapeType::Default:
 	default:
 		break;
 	}
 
-	_cursors[index] = glfwCreateStandardCursor(cursorShape);
+	_cursors[index] = glfwCreateStandardCursor(CursorShapeType);
 	return _cursors[index];
 }
 
-void GLFWPlatformSurface::SetCursor(mocca::CursorShape shape)
+void GLFWPlatformSurface::SetCursor(mocca::CursorShapeType shape)
 {
 	if (_window == nullptr || shape == _cursor)
 	{
 		return;
 	}
 
-	if (shape == mocca::CursorShape::None)
+	if (shape == mocca::CursorShapeType::None)
 	{
 		glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	}
 	else if (
-		shape != mocca::CursorShape::None && _cursor == mocca::CursorShape::None
+		shape != mocca::CursorShapeType::None &&
+		_cursor == mocca::CursorShapeType::None
 	)
 	{
 		glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);

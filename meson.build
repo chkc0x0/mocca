@@ -39,7 +39,9 @@ sources = [
     'src/text/TextKeymap.cpp',
     'src/text/TextLayoutBuilder.cpp',
     'src/text/LayoutCache.cpp',
-    'src/text/Bidi.cpp'
+    'src/text/Bidi.cpp',
+
+	'src/widgets/Button.cpp'
 ]
 
 cmake = import('cmake')

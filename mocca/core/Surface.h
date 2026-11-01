@@ -22,7 +22,7 @@ namespace mocca
 	namespace SurfaceFlags
 	{
 		using FlagType = uint64_t;
-		
+
 		constexpr FlagType None = 0;
 		constexpr FlagType External = 1 << 0;
 		constexpr FlagType AutomaticSize = 1 << 1;
@@ -198,6 +198,7 @@ namespace mocca
 
 		void RouteKey(KeyEvent& ev);
 		void RouteText(TextEvent& ev);
+
 	protected:
 		void RoutePointer(PointerEvent ev);
 		void UpdateHover(const PointerEvent& ev);
@@ -207,7 +208,7 @@ namespace mocca
 		void _sweepChildren();
 		void _updateCursor(detail::Node* node);
 		static void AnnounceSubtreeDestroyed(Surface* s);
-		
+
 		SurfaceDesc _desc;
 		std::unique_ptr<PlatformSurface> _platform;
 		detail::NodeId _rootId = 0;
@@ -216,7 +217,7 @@ namespace mocca
 		bool _dirty = true;
 		bool _animating = false;
 		bool _repaint = true;
-		CursorShape _cursor = CursorShape::Default;
+		CursorShapeType _cursor = CursorShapeType::Default;
 
 		int _zombieTimeout = 0;
 		int _zombieRemaining = 0;
