@@ -102,7 +102,7 @@ namespace mocca::detail
 			y += YGNodeLayoutGetTop(n.YogaNode);
 		}
 
-		n.LayoutPos = {.X=x, .Y=y};
+		n.LayoutPos = {.X = x, .Y = y};
 
 		Rectangle bounds{};
 		if (n.YogaNode != nullptr)
@@ -228,7 +228,7 @@ namespace mocca::detail
 	{
 		mc_profileFunction();
 		mc_profilePlotFunction();
-		
+
 		auto node = std::make_unique<Node>();
 		node->Id = nextNodeId++;
 		node->Key = element.Key;
@@ -752,33 +752,9 @@ namespace mocca::detail
 		}
 	}
 
-	auto Node::CollectChildElements(const Element* newElement, NodeId ownerId)
-		-> std::vector<Element>
-	{
-		mc_profileFunction();
-		
-		std::vector<Element> childElements;
-
-		if (std::holds_alternative<BoxElement>(newElement->Node))
-		{
-			childElements = std::get<BoxElement>(newElement->Node).Children;
-		}
-		else if (std::holds_alternative<ComponentElement>(newElement->Node))
-		{
-			const auto& component = std::get<ComponentElement>(
-				newElement->Node
-			);
-			auto produced =
-				Element::Render(component.Fn, component.Props, ownerId);
-			childElements.push_back(std::move(produced));
-		}
-
-		return childElements;
-	}
-
-	auto Node::ReconcileChildren(
+	auto Node::ReconcileChildrenSlow(
 		std::vector<std::unique_ptr<Node>> oldChildren,
-		const std::vector<Element>& childElements,
+		std::span<const Element> childElements,
 		Node* parent
 	) -> std::vector<std::unique_ptr<Node>>
 	{
@@ -799,6 +775,8 @@ namespace mocca::detail
 		}
 
 		std::vector<std::unique_ptr<Node>> newChildren;
+		newChildren.reserve(childElements.size());
+
 		size_t unkeyedCursor = 0;
 		for (const auto& child : childElements)
 		{
@@ -839,6 +817,55 @@ namespace mocca::detail
 		}
 
 		return newChildren;
+	}
+
+	auto Node::ReconcileChildren(
+		std::vector<std::unique_ptr<Node>> old,
+		std::span<const Element> kids,
+		Node* parent
+	) -> std::vector<std::unique_ptr<Node>>
+	{
+		mc_profileFunction();
+
+		size_t common = std::min(old.size(), kids.size());
+		bool aligned = true;
+		for (size_t i = 0; i < common; ++i)
+		{
+			if (!old[i] || old[i]->Key != kids[i].Key)
+			{
+				aligned = false;
+				break;
+			}
+		}
+
+		if (aligned)
+		{
+			std::vector<std::unique_ptr<Node>> out;
+			out.reserve(kids.size());
+			for (size_t i = 0; i < kids.size(); ++i)
+			{
+				std::unique_ptr<Node> prev;
+				if (i < old.size())
+				{
+					prev = std::move(old[i]);
+				}
+				if (auto n = Reconcile(std::move(prev), &kids[i]))
+				{
+					n->Parent = parent;
+					out.push_back(std::move(n));
+				}
+			}
+			for (size_t i = kids.size(); i < old.size(); ++i)
+			{
+				if (old[i])
+				{
+					getCtx()->_store->RemoveComponent(old[i]->Id);
+				}
+			}
+			return out;
+		}
+
+		return ReconcileChildrenSlow(std::move(old), kids, parent);
 	}
 
 	auto Node::Reconcile(
@@ -894,7 +921,7 @@ namespace mocca::detail
 			if (contentChanged || overlayChanged)
 			{
 				mc_profilePlot("content/OverlayChanged");
-				
+
 				oldNode->Kind = incoming;
 
 				if (contentChanged || caretWidthChanged)
@@ -920,10 +947,26 @@ namespace mocca::detail
 			newElement->Ref->_node = oldNode.get();
 		}
 
-		auto childElements = CollectChildElements(newElement, oldNode->Id);
+		std::optional<Element> produced;
+		std::span<const Element> kids;
+
+		if (const auto* box = std::get_if<BoxElement>(&newElement->Node))
+		{
+			kids = box->Children;
+		}
+		else if (
+			const auto* comp = std::get_if<ComponentElement>(&newElement->Node)
+		)
+		{
+			produced.emplace(
+				Element::Render(comp->Fn, comp->Props, oldNode->Id)
+			);
+			kids = std::span<const Element>(&*produced, 1);
+		}
+
 		oldNode->Children = ReconcileChildren(
 			std::move(oldNode->Children),
-			childElements,
+			kids,
 			oldNode.get()
 		);
 
@@ -949,7 +992,7 @@ namespace mocca::detail
 	auto hitTestImpl(Node* node, float x, float y, Vector2 scroll) -> Node*
 	{
 		mc_profileFunction();
-		
+
 		if (node == nullptr)
 		{
 			return nullptr;

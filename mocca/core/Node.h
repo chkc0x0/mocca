@@ -206,14 +206,9 @@ namespace mocca::detail
 		[[nodiscard]] auto GetX() const -> float;
 		[[nodiscard]] auto GetY() const -> float;
 
-		static auto CollectChildElements(
-			const Element* newElement,
-			NodeId ownerId
-		) -> std::vector<Element>;
-
 		static auto ReconcileChildren(
-			std::vector<std::unique_ptr<Node>> oldChildren,
-			const std::vector<Element>& childElements,
+			std::vector<std::unique_ptr<Node>> old,
+			std::span<const Element> kids,
 			Node* parent
 		) -> std::vector<std::unique_ptr<Node>>;
 
@@ -227,5 +222,12 @@ namespace mocca::detail
 
 		static auto HitTest(Node* root, float x, float y) -> Node*;
 		static auto FindNodeById(Node* root, NodeId id) -> Node*;
+
+	private:
+		static auto ReconcileChildrenSlow(
+			std::vector<std::unique_ptr<Node>> oldChildren,
+			std::span<const Element> childElements,
+			Node* parent
+		) -> std::vector<std::unique_ptr<Node>>;
 	};
 }

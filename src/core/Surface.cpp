@@ -170,9 +170,8 @@ namespace mocca
 			_desc.Height = YGNodeLayoutGetHeight(_root->YogaNode);
 		}
 
-		detail::reclampScrollOffsets(_root.get());
-
 		_root->UpdateSubtreeBounds();
+		detail::reclampScrollOffsets(_root.get());
 	}
 
 	void Surface::Tick(double dt)
