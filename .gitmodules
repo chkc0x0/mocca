@@ -10,3 +10,6 @@
 [submodule "subprojects/SheenBidi"]
 	path = subprojects/SheenBidi
 	url = https://github.com/Tehreer/SheenBidi
+[submodule "subprojects/tracy"]
+	path = subprojects/tracy
+	url = https://github.com/wolfpld/tracy

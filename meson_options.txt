@@ -10,4 +10,9 @@ option(
     value: true,
     description: 'build the tests',
 )
-option('profile', type: 'boolean', value: false, description: 'build with profiling instrumentation')
+option(
+    'tracy',
+    type: 'boolean',
+    value: false,
+    description: 'build with Tracy profiling instrumentation',
+)

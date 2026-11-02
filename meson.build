@@ -66,9 +66,12 @@ if get_option('debug')
     add_project_arguments('-DDEBUG', language: 'cpp')
 endif
 
-if get_option('profile')
-    add_project_arguments('-DMC_PROFILER', language: 'cpp')
-    sources += ['src/utils/ScopedProfiler.cpp']
+if get_option('tracy')
+    add_project_arguments('-DMC_TRACY', language: 'cpp')
+    dependencies += dependency(
+        'tracy',
+        default_options: ['tracy_enable=true', 'on_demand=true'],
+    )
 endif
 
 

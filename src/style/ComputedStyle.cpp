@@ -2,6 +2,7 @@
 #include "core/Logger.h"
 #include "anim/Interpolate.h"
 #include "style/StyleHelpers.h"
+#include "utils/ScopedProfiler.h"
 #include <variant>
 
 namespace mocca::styles
@@ -86,6 +87,8 @@ namespace mocca::styles
 
 	void ComputedStyle::Apply(const StyleEntry& e, ComputedStyle& parent)
 	{
+		mc_profileFunction();
+		
 #undef mc_styleProperty
 #define mc_styleProperty(name, ...)                                            \
 	case StyleProperty::name:                                                  \

@@ -11,90 +11,124 @@
 
 using namespace mocca;
 
-auto Sandbox() -> Element
+struct Row
 {
+	int Id;
+	std::string Label;
+};
+
+struct RowProps
+{
+	struct Row Row;
+	std::function<void(mocca::PointerEvent&)> OnRemove;
+};
+
+std::vector<Row> brows;
+
+auto RowComp(const RowProps& r) -> mocca::Element
+{
+	using namespace mocca;
 	using namespace mocca::styles;
 
-	auto [counter, setCounter] = useState(0);
-
-	std::vector<widgets::basic::ButtonProps> buttons = {
-		{.State = widgets::ButtonVariant::Default},
-		{.State = widgets::ButtonVariant::Secondary},
-		{.State = widgets::ButtonVariant::Outline},
-		{.State = widgets::ButtonVariant::Ghost},
-		{.State = widgets::ButtonVariant::Destructive},
-	};
-
-	auto press = [](auto& ev) -> auto { mc_info("clicked"); };
-
-	std::vector<Element> childrenNormal;
-	std::vector<Element> disabledChildren;
-
-	childrenNormal.reserve(buttons.size());
-
-	for (auto& btn : buttons)
-	{
-		childrenNormal.push_back(
-			widgets::basic::button({
-				.State = btn.State,
-				.Children =
+	return mocca::component(
+		[](auto& r) -> Element
+		{
+			return box({
+				.Style =
 					{
-						text("Click me!"),
+						AlignSelf(Alignment::FlexStart),
+						FlexShrink(0),
+						BackgroundColor(mocca::colors::White),
+						FlexDirection(FlexDirections::Row),
+						JustifyContent(Justification::SpaceBetween),
+						Width(percent(100)),
+						MinHeight(FitContent),
+						Padding(px(10)),
+						BorderRadius(px(10)),
+						AlignItems(Alignment::Center),
 					},
-				.OnPress = press,
-			})
-		);
-	}
+				.Children = {
+					box({
+						.Style =
+							{
+								GapHorizontal(px(10)),
+							},
+						.Children =
+							{
+								box({
+									.Style =
+										{
+											Width(px(24)),
+											Height(px(24)),
+											BackgroundImage(
+												"../sandbox/cat.png"
+											),
+										},
+								}),
+								text(r.Row.Label),
+							},
+					}),
+					widgets::basic::button({
+						.State = widgets::ButtonVariant::Destructive,
+						.Children = {text("✗")},
+						.OnPress = r.OnRemove,
+					}),
+				},
+			});
+		},
+		r,
+		{
+			.Key = r.Row.Id,
+		}
+	);
+}
 
-	disabledChildren.reserve(buttons.size());
-	for (auto& btn : buttons)
-	{
-		disabledChildren.push_back(
-			widgets::basic::button({
-				.State = btn.State,
-				.Disabled = true,
-				.Children =
-					{
-						text("Click me!"),
-					},
-				.OnPress = press,
-			})
-		);
-	}
+auto Bench() -> mocca::Element
+{
+	using namespace mocca;
+	using namespace mocca::styles;
 
-	return box({
+	auto [rows, setRows] = useState<std::vector<Row>>(brows);
+
+	return mocca::box({
 		.Style =
 			{
-				BackgroundColor(Color(0x191919)),
-				FontFamily("Inter"),
+				TextColor(mocca::colors::AlmostBlack),
 				Padding(px(16)),
-				GapHorizontal(px(16)),
+				FontFamily("Inter"),
 			},
 		.Children = {
 			box({
 				.Style =
 					{
-
 						FlexDirection(FlexDirections::Column),
-						GapVertical(px(16)),
+						GapVertical(px(10)),
+						Width(percent(100)),
+						Overflow(OverflowType::Scroll),
 					},
-				.Children = childrenNormal,
-			}),
-			box({
-				.Style =
+				.Children = mapElements(
+					rows,
+					[setRows](auto& r) -> auto
 					{
-						FlexDirection(FlexDirections::Column),
-						GapVertical(px(16)),
-					},
-				.Children = disabledChildren,
-			}),
-			widgets::basic::button({
-				.Children =
-					{
-						text("Counter: " + std::to_string(counter)),
-					},
-				.OnPress = [setCounter](auto& ev) -> auto
-				{ setCounter([](auto& c) -> auto { return c + 1; }); },
+						return RowComp({
+							.Row = r,
+							.OnRemove = [setRows, r](auto& ev) -> auto
+							{
+								setRows(
+									[id = r.Id](std::vector<Row> cur) -> auto
+									{
+										std::erase_if(
+											cur,
+											[&](const Row& r) -> auto
+											{ return r.Id == id; }
+										);
+										return cur;
+									}
+								);
+							},
+						});
+					}
+				),
 			}),
 		},
 	});
@@ -121,12 +155,17 @@ auto main(int argc, const char** argv) -> int
 		}
 	);
 
+	for (int i = 0; i < 1000; i++)
+	{
+		brows.push_back({.Id = i, .Label = "Label " + std::to_string(i + 1)});
+	}
+
 	app.RegisterSurface({
 		.Width = 800,
 		.Height = 600,
 		.Title = "Sandbox",
 		.Flags = SurfaceFlags::External,
-		.Root = Sandbox,
+		.Root = Bench,
 	});
 
 	app.Tick(0);

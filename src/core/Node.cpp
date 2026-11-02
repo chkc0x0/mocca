@@ -91,7 +91,7 @@ namespace mocca::detail
 		SyncYogaChildren();
 	}
 
-	static auto accumulateSubtreeBounds(Node& n, float parentX, float parentY)
+	static auto AccumulateSubtreeBounds(Node& n, float parentX, float parentY)
 		-> Rectangle
 	{
 		float x = parentX;
@@ -117,7 +117,7 @@ namespace mocca::detail
 		{
 			if (child)
 			{
-				bounds = bounds.Union(accumulateSubtreeBounds(*child, x, y));
+				bounds = bounds.Union(AccumulateSubtreeBounds(*child, x, y));
 			}
 		}
 
@@ -128,7 +128,7 @@ namespace mocca::detail
 	void Node::UpdateSubtreeBounds()
 	{
 		mc_profileFunction();
-		accumulateSubtreeBounds(*this, 0.0F, 0.0F);
+		AccumulateSubtreeBounds(*this, 0.0F, 0.0F);
 	}
 
 	void Node::ApplyLayoutStyles() const
@@ -224,6 +224,8 @@ namespace mocca::detail
 
 	auto Node::BuildNodeTree(const Element& element) -> std::unique_ptr<Node>
 	{
+		mc_profileFunction();
+		
 		auto node = std::make_unique<Node>();
 		node->Id = nextNodeId++;
 		node->Key = element.Key;
@@ -478,6 +480,8 @@ namespace mocca::detail
 	void
 	paintText(Node& node, Canvas& canvas, float x, float y, float w, float h)
 	{
+		mc_profileFunction();
+
 		const auto& textElement = std::get<TextElement>(node.Kind);
 		const std::string& content = textElement.Content;
 
@@ -638,6 +642,8 @@ namespace mocca::detail
 		float h
 	)
 	{
+		mc_profileFunction();
+
 		auto overflow = node.Style.Get<styles::StyleProperty::Overflow>();
 		bool clips = overflow == styles::OverflowType::Hidden ||
 					 overflow == styles::OverflowType::Scroll;
