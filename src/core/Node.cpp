@@ -102,6 +102,8 @@ namespace mocca::detail
 			y += YGNodeLayoutGetTop(n.YogaNode);
 		}
 
+		n.LayoutPos = {.X=x, .Y=y};
+
 		Rectangle bounds{};
 		if (n.YogaNode != nullptr)
 		{
@@ -278,32 +280,12 @@ namespace mocca::detail
 
 	auto Node::GetX() const -> float
 	{
-		mc_profileFunction();
-		float pos = 0.0F;
-		if (YogaNode != nullptr)
-		{
-			pos = YGNodeLayoutGetLeft(YogaNode);
-		}
-		if (Parent != nullptr)
-		{
-			pos += Parent->GetX();
-		}
-		return pos;
+		return LayoutPos.X;
 	}
 
 	auto Node::GetY() const -> float
 	{
-		mc_profileFunction();
-		float pos = 0.0F;
-		if (YogaNode != nullptr)
-		{
-			pos = YGNodeLayoutGetTop(YogaNode);
-		}
-		if (Parent != nullptr)
-		{
-			pos += Parent->GetY();
-		}
-		return pos;
+		return LayoutPos.Y;
 	}
 
 	auto resolveLength(const Length& length, float basis) -> float

@@ -44,6 +44,7 @@ namespace mocca::detail
 		bool Styled = false;
 
 		Vector2 ScrollOffset{.X = 0, .Y = 0};
+		Vector2 LayoutPos{.X = 0, .Y = 0};
 		Rectangle SubtreeBounds{};
 		std::vector<std::unique_ptr<Node>> Children;
 		std::variant<std::monostate, TextElement, ComponentElement> Kind;
