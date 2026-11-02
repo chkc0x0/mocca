@@ -89,6 +89,7 @@ auto Bench() -> mocca::Element
 	using namespace mocca::styles;
 
 	auto [rows, setRows] = useState<std::vector<Row>>(brows);
+	auto [counter, setCounter] = useState(0);
 
 	return mocca::box({
 		.Style =
@@ -98,6 +99,22 @@ auto Bench() -> mocca::Element
 				FontFamily("Inter"),
 			},
 		.Children = {
+			box({
+				.Events =
+					{
+						on(events::PointerDown,
+						   [setCounter](auto& ev) -> auto
+						   {
+							   setCounter(
+								   [](auto& c) -> auto { return c + 1; }
+							   );
+						   }),
+					},
+				.Children =
+					{
+						text("Counter: " + std::to_string(counter)),
+					},
+			}),
 			box({
 				.Style =
 					{

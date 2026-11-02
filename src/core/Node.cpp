@@ -227,6 +227,7 @@ namespace mocca::detail
 	auto Node::BuildNodeTree(const Element& element) -> std::unique_ptr<Node>
 	{
 		mc_profileFunction();
+		mc_profilePlotFunction();
 		
 		auto node = std::make_unique<Node>();
 		node->Id = nextNodeId++;
@@ -754,6 +755,8 @@ namespace mocca::detail
 	auto Node::CollectChildElements(const Element* newElement, NodeId ownerId)
 		-> std::vector<Element>
 	{
+		mc_profileFunction();
+		
 		std::vector<Element> childElements;
 
 		if (std::holds_alternative<BoxElement>(newElement->Node))
@@ -890,6 +893,8 @@ namespace mocca::detail
 
 			if (contentChanged || overlayChanged)
 			{
+				mc_profilePlot("content/OverlayChanged");
+				
 				oldNode->Kind = incoming;
 
 				if (contentChanged || caretWidthChanged)
@@ -943,6 +948,8 @@ namespace mocca::detail
 
 	auto hitTestImpl(Node* node, float x, float y, Vector2 scroll) -> Node*
 	{
+		mc_profileFunction();
+		
 		if (node == nullptr)
 		{
 			return nullptr;

@@ -1,4 +1,5 @@
 #include "style/StyleSet.h"
+#include "utils/ScopedProfiler.h"
 #include <algorithm>
 #include <cstring>
 
@@ -9,21 +10,35 @@ namespace mocca::styles
 		const auto& src = list.Entries();
 		if (src.size() == _entries.size())
 		{
-			if (src.empty() || memcmp(
-								   _entries.data(),
-								   src.data(),
-								   src.size() * sizeof(StyleEntry)
-							   ) == 0)
+			if (src.empty())
 			{
 				return false;
 			}
+
+			bool same = true;
+			for (size_t i = 0; i < src.size(); ++i)
+			{
+				if (!entryEqual(_entries[i], src[i]))
+				{
+					same = false;
+					break;
+				}
+			}
+			if (same)
+			{
+				return false;
+			}
+
 			memcpy(
 				static_cast<void*>(_entries.data()),
 				src.data(),
 				src.size() * sizeof(StyleEntry)
 			);
+			mc_profilePlot("Assign -> true (bytes differ)");
 			return true;
 		}
+
+		mc_profilePlot("Assign -> true (size differs)");
 		_entries = std::vector<StyleEntry>(src.begin(), src.end());
 		return true;
 	}

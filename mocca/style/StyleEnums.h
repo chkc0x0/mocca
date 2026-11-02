@@ -105,5 +105,7 @@ namespace mocca::styles
 		FontStyleType(FontStyleEnum style) : Style(style) {};
 		FontStyleType(FontStyleEnum style, float angle)
 			: Style(style), Angle(angle) {};
+
+		auto operator==(const FontStyleType& b) const -> bool = default;
 	};
 }

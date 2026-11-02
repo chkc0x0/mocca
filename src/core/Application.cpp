@@ -109,6 +109,8 @@ namespace mocca
 	{
 		mc_profileFunction();
 
+		detail::ProfilerPlot::Reset();
+
 		if (!_init)
 		{
 			_init = true;

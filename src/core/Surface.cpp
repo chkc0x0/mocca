@@ -411,8 +411,20 @@ namespace mocca
 			}
 		}
 
-		for (auto ev : batch.Pointer)
+		for (size_t i = 0; i < batch.Pointer.size(); i++)
 		{
+			const auto& ev = batch.Pointer[i];
+
+			// skip consecutive moves cause otherwise we get 70
+			if (ev.EventType == PointerEvent::Type::Move)
+			{
+				if (i + 1 < batch.Pointer.size() &&
+					batch.Pointer[i].EventType == PointerEvent::Type::Move)
+				{
+					continue;
+				}
+			}
+
 			RoutePointer(ev);
 		}
 
@@ -429,6 +441,8 @@ namespace mocca
 
 	auto hoverChain(detail::Node* node) -> std::vector<detail::NodeId>
 	{
+		mc_profileFunction();
+
 		std::vector<detail::NodeId> chain;
 		for (auto* n = node; n != nullptr; n = n->Parent)
 		{
@@ -439,6 +453,8 @@ namespace mocca
 
 	void Surface::UpdateHover(const PointerEvent& ev)
 	{
+		mc_profileFunction();
+
 		if (_root == nullptr)
 		{
 			return;
@@ -497,6 +513,8 @@ namespace mocca
 	// TODO refactor; it now moved to this lol
 	void Surface::RoutePointer(PointerEvent ev)
 	{
+		mc_profileFunction();
+
 		if (_captureSurface != nullptr)
 		{
 			if (_captureSurface->GetState() != SurfaceState::Alive)
@@ -563,6 +581,7 @@ namespace mocca
 				auto* scrollable = detail::findScrollableAncestor(scrollTarget);
 				if (scrollable != nullptr)
 				{
+					mc_profileScope("RouterPointer.Scroll");
 					scrollable->ScrollOffset.X += ev.ScrollX * mc_scrollStep;
 					scrollable->ScrollOffset.Y -= ev.ScrollY * mc_scrollStep;
 
@@ -653,6 +672,8 @@ namespace mocca
 
 	void Surface::RouteKey(KeyEvent& ev)
 	{
+		mc_profileFunction();
+
 		if (_focusSurface != nullptr)
 		{
 			_focusSurface->RouteKey(ev);
@@ -697,6 +718,8 @@ namespace mocca
 
 	void Surface::RouteText(TextEvent& ev)
 	{
+		mc_profileFunction();
+
 		if (_focusSurface != nullptr)
 		{
 			_focusSurface->RouteText(ev);

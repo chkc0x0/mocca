@@ -2,12 +2,15 @@
 #include "core/Context.h"
 #include "core/Node.h"
 #include "style/ComputedStyle.h"
+#include "utils/ScopedProfiler.h"
 #include "yoga/YGNodeLayout.h"
 
 namespace mocca::detail
 {
 	auto findScrollableAncestor(Node* node) -> Node*
 	{
+		mc_profileFunction();
+		
 		for (Node* n = node; n != nullptr; n = n->Parent)
 		{
 			if (n->IsBox() && n->Style.Get<styles::StyleProperty::Overflow>() ==

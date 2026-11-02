@@ -1,4 +1,5 @@
 #include "core/HookStore.h"
+#include "utils/ScopedProfiler.h"
 
 namespace mocca::detail
 {
@@ -159,6 +160,8 @@ namespace mocca::detail
 
 	void HookStore::RemoveComponent(NodeId id)
 	{
+		mc_profileFunction();
+		
 		std::erase_if(
 			_animations,
 			[id](const AnimationFunction& a) -> auto { return a.Id == id; }

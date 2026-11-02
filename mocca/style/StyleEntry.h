@@ -52,11 +52,10 @@ namespace mocca::styles
 		{
 			StyleKeyword Keyword;
 			float Float;
-			int Int = 0;
 			uint8_t Enum;
 			struct Length Length;
 			struct Color Color;
-			uint32_t Handle;
+			uint32_t Handle = 0;
 			FontStyleType FontStyle;
 		} Payload;
 
@@ -130,14 +129,6 @@ namespace mocca::styles
 		}
 	};
 
-	template <> struct StyleEntryReader<int>
-	{
-		static auto Read(const StyleEntry& s) -> int
-		{
-			return s.Payload.Int;
-		}
-	};
-
 	template <typename T>
 		requires std::is_enum_v<T>
 	struct StyleEntryReader<T>
@@ -193,6 +184,33 @@ namespace mocca::styles
 
 	inline auto entryEqual(const StyleEntry& a, const StyleEntry& b) -> bool
 	{
-		return memcmp(&a, &b, sizeof(StyleEntry)) == 0;
+		if (a.Prop != b.Prop || a.Type != b.Type)
+		{
+			return false;
+		}
+
+		const auto& x = a.Payload;
+		const auto& y = b.Payload;
+		switch (a.Type)
+		{
+		case StyleValueType::Keyword:
+			return x.Keyword == y.Keyword;
+		case StyleValueType::Value:
+			return x.Float == y.Float;
+		case StyleValueType::Enum:
+			return x.Enum == y.Enum;
+		case StyleValueType::Length:
+			return x.Length.Value == y.Length.Value &&
+				   x.Length.Unit == y.Length.Unit;
+		case StyleValueType::Color:
+			return std::memcmp(&x.Color, &y.Color, sizeof(Color)) == 0;
+		case StyleValueType::Handle:
+			return x.Handle == y.Handle;
+		case StyleValueType::FontStyle:
+			return x.FontStyle == y.FontStyle;
+		case StyleValueType::AuxKeyword:
+			return a.Aux == b.Aux;
+		}
+		return false;
 	}
 }

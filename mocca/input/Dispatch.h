@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "core/Node.h"
+#include "utils/ScopedProfiler.h"
 
 namespace mocca::detail
 {
@@ -12,6 +13,8 @@ namespace mocca::detail
 		Fn callback
 	) -> Node*
 	{
+		mc_profileFunction();
+		
 		Node* target = nullptr;
 		if (capturedNode != 0)
 		{
@@ -46,6 +49,8 @@ namespace mocca::detail
 	void
 	dispatchKeyTextEvent(Node* root, NodeId focusedNode, Ev& ev, Fn callback)
 	{
+		mc_profileFunction();
+		
 		Node* target = nullptr;
 		if (focusedNode != 0)
 		{
