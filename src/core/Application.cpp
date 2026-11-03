@@ -42,26 +42,18 @@ namespace mocca
 			[this](detail::NodeId id) -> void
 			{
 				_context._store->InsertDirty(id);
-				Surface* owner = nullptr;
-
-				for (auto& surface : _surfaces)
-				{
-					owner = surface->FindSurfaceContaining(id);
-					if (owner != nullptr)
-					{
-						owner->MarkDirty();
-						return;
-					}
-				}
-
-				if (owner == nullptr)
-				{
-					owner = _context._currentSurface;
-				}
-
+				Surface* owner = _context._currentSurface == nullptr
+									 ? _context.FindNodeById(id)->Surface
+									 : _context._currentSurface;
+				
 				if (owner != nullptr)
 				{
-					owner->MarkDirty();
+					owner->MarkComponentDirty(id);
+					if (!owner->IsPlatformBacked() &&
+						owner->GetParent() != nullptr)
+					{
+						owner->GetParent()->MarkDirty();
+					}
 				}
 			}
 		);
@@ -108,6 +100,7 @@ namespace mocca
 	void Application::Tick(double dt)
 	{
 		mc_profileFunction();
+		mc_profileFrame();
 
 		detail::ProfilerPlot::Reset();
 
@@ -185,8 +178,6 @@ namespace mocca
 
 		_createPendingSurfaces();
 		_reparentPendingSurfaces();
-
-		mc_profileFrame();
 	}
 
 	void Application::Render()
@@ -231,7 +222,10 @@ namespace mocca
 				});
 			}
 
-			plat->EndFrame();
+			{
+				mc_profileScope("EndFrame");
+				plat->EndFrame();
+			}
 		}
 
 		_textures.FlushReleases();

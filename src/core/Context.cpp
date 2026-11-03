@@ -36,4 +36,14 @@ namespace mocca
 			_currentSurface->RequestRepaint();
 		}
 	}
+
+	auto Context::FindNodeById(detail::NodeId id) -> detail::Node*
+	{
+		if (!_nodes.contains(id))
+		{
+			return nullptr;
+		}
+
+		return _nodes[id];
+	}
 }

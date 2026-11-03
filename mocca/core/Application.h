@@ -117,7 +117,9 @@ namespace mocca
 			_gfxDevice = std::make_unique<T>(std::forward<Args>(args)...);
 		}
 
-		void SetPlatformInterface(std::unique_ptr<platform::PlatformInterface> plat);
+		void SetPlatformInterface(
+			std::unique_ptr<platform::PlatformInterface> plat
+		);
 
 	private:
 		void _createPendingSurfaces();
@@ -140,11 +142,11 @@ namespace mocca
 
 		bool _inTick = false;
 		bool _init = false;
-		uint32_t _stateOnEffectStreak = 0;
 		bool _stateOnEffectWarned = false;
+		bool _hasLast = false;
+		uint32_t _stateOnEffectStreak = 0;
 
 		std::chrono::steady_clock::time_point _last;
-		bool _hasLast = false;
 		std::size_t _animationsActive = 0;
 
 		std::unique_ptr<detail::TypeInterners> _interners;

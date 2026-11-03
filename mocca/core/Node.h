@@ -10,6 +10,11 @@
 #include <memory>
 #include <vector>
 
+namespace mocca
+{
+	class Surface;
+}
+
 namespace mocca::detail
 {
 	inline NodeId nextNodeId = 1;
@@ -36,6 +41,7 @@ namespace mocca::detail
 		ElementKey Key = mc_keyNone;
 
 		Node* Parent = nullptr;
+		Surface* Surface = nullptr;
 		YGNodeRef YogaNode{nullptr};
 
 		styles::StyleSet Declared;

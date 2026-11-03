@@ -31,7 +31,7 @@ namespace mocca::detail
 			  .Store = &store,
 			  .CurrentSurface = surface,
 			  .Component = id,
-			  .NextHook = 0
+			  .NextHook = 0,
 		  },
 		  _prev(current)
 	{

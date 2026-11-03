@@ -6,6 +6,7 @@
 #include "gfx/Texture.h"
 #include "input/InputTypes.h"
 #include "platform/PlatformSurface.h"
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -57,6 +58,7 @@ namespace mocca
 
 		~Surface();
 
+		void UpdateTree(double dt);
 		void Update(double dt);
 		void Tick(double dt);
 		void Paint();
@@ -69,6 +71,16 @@ namespace mocca
 			if (_desc.Parent != nullptr && !IsPlatformBacked())
 			{
 				_desc.Parent->MarkDirty();
+			}
+		}
+
+		void MarkComponentDirty(detail::NodeId id)
+		{
+			if (std::find(
+					_dirtyComponents.begin(), _dirtyComponents.end(), id
+				) == _dirtyComponents.end())
+			{
+				_dirtyComponents.push_back(id);
 			}
 		}
 
@@ -206,6 +218,10 @@ namespace mocca
 
 	private:
 		void _sweepChildren();
+		void _updateDirtyComponents(
+			const std::vector<detail::NodeId>& components,
+			double dt
+		);
 		void _updateCursor(detail::Node* node);
 		static void AnnounceSubtreeDestroyed(Surface* s);
 
@@ -215,6 +231,7 @@ namespace mocca
 		std::unique_ptr<detail::Node> _root = nullptr;
 		SurfaceState _state = SurfaceState::Alive;
 		bool _dirty = true;
+		std::vector<detail::NodeId> _dirtyComponents;
 		bool _animating = false;
 		bool _repaint = true;
 		CursorShapeType _cursor = CursorShapeType::Default;

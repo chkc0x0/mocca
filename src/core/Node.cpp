@@ -22,6 +22,8 @@ namespace mocca::detail
 {
 	Node::~Node()
 	{
+		getCtx()->_nodes.erase(Id);
+
 		if (YogaNode != nullptr)
 		{
 			YGNodeFree(YogaNode);
@@ -233,6 +235,9 @@ namespace mocca::detail
 		node->Id = nextNodeId++;
 		node->Key = element.Key;
 		node->Declared.Assign(element.Style);
+		node->Surface = getCtx()->_currentSurface;
+
+		getCtx()->_nodes[node->Id] = node.get();
 
 		std::visit(
 			[&](const auto& arm) -> auto
@@ -254,7 +259,10 @@ namespace mocca::detail
 				}
 				else if constexpr (std::is_same_v<T, ComponentElement>)
 				{
-					node->Kind = ComponentElement{.Fn = arm.Fn};
+					node->Kind = ComponentElement{
+						.Fn = arm.Fn,
+						.Props = arm.Props,
+					};
 				}
 			},
 			element.Node
@@ -940,6 +948,16 @@ namespace mocca::detail
 		oldNode->Focus = newElement->Focus;
 		oldNode->Declared.Assign(newElement->Style);
 
+		if (oldNode->IsComponent())
+		{
+			if (const auto* comp =
+					std::get_if<ComponentElement>(&newElement->Node))
+			{
+				oldNode->Kind =
+					ComponentElement{.Fn = comp->Fn, .Props = comp->Props};
+			}
+		}
+
 		if (newElement->Ref != nullptr)
 		{
 			newElement->Ref->_id = oldNode->Id;
@@ -1036,29 +1054,11 @@ namespace mocca::detail
 	// we should also add an id -> node* mapping in the surface later
 	auto Node::FindNodeById(Node* root, NodeId id) -> Node*
 	{
-		mc_profileFunction();
-
-		if (id == 0)
+		if (getCtx() == nullptr)
 		{
 			return nullptr;
 		}
 
-		if (root == nullptr)
-		{
-			return nullptr;
-		}
-		if (root->Id == id)
-		{
-			return root;
-		}
-		for (const auto& child : root->Children)
-		{
-			auto* found = FindNodeById(child.get(), id);
-			if (found != nullptr)
-			{
-				return found;
-			}
-		}
-		return nullptr;
+		return getCtx()->FindNodeById(id);
 	}
 }

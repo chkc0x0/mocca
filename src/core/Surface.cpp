@@ -1,5 +1,6 @@
 #include "core/Surface.h"
 #include <algorithm>
+#include <optional>
 #include <ranges>
 #include "core/Application.h"
 #include "core/HookStore.h"
@@ -91,7 +92,7 @@ namespace mocca
 		}
 	}
 
-	void Surface::Update(double dt)
+	void Surface::UpdateTree(double dt)
 	{
 		mc_profileFunction();
 		if (_root == nullptr)
@@ -147,6 +148,77 @@ namespace mocca
 
 		_root->ComputeStyle(styles::getDefaultStyle(), dt);
 
+		_root->BuildYogaTree();
+		{
+			mc_profileScope("YGNodeCalculateLayout");
+			YGNodeCalculateLayout(
+				_root->YogaNode,
+				_desc.Width,
+				_desc.Height,
+				static_cast<YGDirection>(
+					static_cast<int>(
+						_root->Style
+							.Get<styles::StyleProperty::LayoutDirection>()
+					) +
+					1
+				)
+			);
+		}
+
+		if (IsAutomaticSize())
+		{
+			_desc.Width = YGNodeLayoutGetWidth(_root->YogaNode);
+			_desc.Height = YGNodeLayoutGetHeight(_root->YogaNode);
+		}
+
+		_root->UpdateSubtreeBounds();
+		detail::reclampScrollOffsets(_root.get());
+	}
+
+	void Surface::_updateDirtyComponents(
+		const std::vector<detail::NodeId>& components,
+		double dt
+	)
+	{
+		mc_profileFunction();
+		if (_root == nullptr)
+		{
+			return;
+		}
+
+		for (detail::NodeId id : components)
+		{
+			if (id == _rootId)
+			{
+				auto tree = mocca::Element::Render(_desc.Root, _rootId);
+				_root = detail::Node::Reconcile(std::move(_root), &tree);
+				if (_root)
+				{
+					_rootId = _root->Id;
+				}
+				continue;
+			}
+
+			detail::Node* node = detail::Node::FindNodeById(_root.get(), id);
+			if (node == nullptr || !node->IsComponent())
+			{
+				continue;
+			}
+
+			auto& comp = std::get<ComponentElement>(node->Kind);
+			std::optional<mocca::Element> produced;
+			produced.emplace(
+				mocca::Element::Render(comp.Fn, comp.Props, node->Id)
+			);
+
+			node->Children = detail::Node::ReconcileChildren(
+				std::move(node->Children),
+				std::span<const mocca::Element>(&*produced, 1),
+				node
+			);
+		}
+
+		_root->ComputeStyle(styles::getDefaultStyle(), dt);
 		_root->BuildYogaTree();
 		{
 			mc_profileScope("YGNodeCalculateLayout");
@@ -234,42 +306,57 @@ namespace mocca
 			}
 		}
 
-		if (IsDirty() || _animating)
+		if (IsDirty() || _animating || !_dirtyComponents.empty())
 		{
-			auto* ctx = getCtx();
-			ctx->_currentSurface = this;
-
-			_animating = false;
-
-			int settle = 0;
-			do
-			{
-				_dirty = false;
-				// only the first pass advances animations; re-entrant passes from
-				// the settle loop must not step them again
-				Update(settle == 0 ? dt : 0.0);
-				ctx->_store->FlushLayoutEffects(this);
-			} while (_dirty && ++settle < 16);
-
-			if (_dirty)
-			{
-				mc_error(
-					ErrorCode::InvalidState,
-					"layout effects re-dirtied this surface 16 times "
-					"without settling (last dirty component: #{})",
-					ctx->_store->LastDirty()
-				);
-				_dirty = false;
-			}
-
-			ctx->_currentSurface = nullptr;
-			_repaint = true;
+			Update(dt);
 		}
 
 		for (auto& i : _children)
 		{
 			i->Tick(dt);
 		}
+	}
+
+	void Surface::Update(double dt)
+	{
+		auto* ctx = getCtx();
+		ctx->_currentSurface = this;
+
+		_animating = false;
+
+		int settle = 0;
+		do
+		{
+			bool wasDirty = _dirty;
+			_dirty = false;
+			std::vector<detail::NodeId> comps = std::move(_dirtyComponents);
+			_dirtyComponents.clear();
+
+			if (wasDirty || comps.empty())
+			{
+				UpdateTree(settle == 0 ? dt : 0.0);
+			}
+			else
+			{
+				_updateDirtyComponents(comps, settle == 0 ? dt : 0.0);
+			}
+			ctx->_store->FlushLayoutEffects(this);
+		} while ((_dirty || !_dirtyComponents.empty()) && ++settle < 16);
+
+		if (_dirty || !_dirtyComponents.empty())
+		{
+			mc_error(
+				ErrorCode::InvalidState,
+				"layout effects re-dirtied this surface 16 times "
+				"without settling (last dirty component: #{})",
+				ctx->_store->LastDirty()
+			);
+			_dirty = false;
+			_dirtyComponents.clear();
+		}
+
+		ctx->_currentSurface = nullptr;
+		_repaint = true;
 	}
 
 	void Surface::Paint()
