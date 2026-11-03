@@ -45,7 +45,7 @@ namespace mocca
 				Surface* owner = _context._currentSurface == nullptr
 									 ? _context.FindNodeById(id)->Surface
 									 : _context._currentSurface;
-				
+
 				if (owner != nullptr)
 				{
 					owner->MarkComponentDirty(id);
@@ -101,6 +101,7 @@ namespace mocca
 	{
 		mc_profileFunction();
 		mc_profileFrame();
+		mocca::detail::plotMemory();
 
 		detail::ProfilerPlot::Reset();
 

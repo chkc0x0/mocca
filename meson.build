@@ -70,8 +70,10 @@ if get_option('tracy')
     add_project_arguments('-DMC_TRACY', language: 'cpp')
     dependencies += dependency(
         'tracy',
-        default_options: ['tracy_enable=true', 'on_demand=true'],
+        default_options: ['tracy_enable=true', 'on_demand=false'],
     )
+
+	sources += ['src/utils/TracyAlloc.cpp']
 endif
 
 

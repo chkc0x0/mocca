@@ -3,6 +3,7 @@
 #include "Identifiers.h"
 #include "style/StyleList.h"
 #include "text/TextDecoration.h"
+#include "utils/ScopedProfiler.h"
 #include <any>
 #include <cstdint>
 #include <functional>
@@ -111,6 +112,7 @@ namespace mocca
 
 	inline auto box(BoxDescriptor desc = {}) -> Element
 	{
+		mc_profilePlot("box");
 		return Element{
 			.Node = BoxElement{.Children = std::move(desc.Children)},
 			.Key = desc.Key,
@@ -124,6 +126,7 @@ namespace mocca
 	inline auto box(std::vector<Element> children, ElementKey key = mc_keyNone)
 		-> Element
 	{
+		mc_profilePlot("box");
 		return Element{
 			.Node = BoxElement{.Children = std::move(children)},
 			.Key = key,
@@ -132,6 +135,7 @@ namespace mocca
 
 	inline auto text(TextDescriptor desc) -> Element
 	{
+		mc_profilePlot("text");
 		return Element{
 			.Node = TextElement{
 				.Content = std::move(desc.Content),
@@ -149,6 +153,7 @@ namespace mocca
 	inline auto text(std::string content, ElementKey key = mc_keyNone)
 		-> Element
 	{
+		mc_profilePlot("text");
 		return Element{
 			.Node = TextElement{.Content = std::move(content)},
 			.Key = key,
@@ -157,6 +162,7 @@ namespace mocca
 
 	inline auto component(ComponentDescriptor& desc) -> Element
 	{
+		mc_profilePlot("component");
 		ComponentPropsFn erased = [desc](const std::any&) -> auto
 		{ return desc.Fn(); };
 		return Element{
@@ -169,6 +175,7 @@ namespace mocca
 	inline auto component(const ComponentFn& fn, ElementKey key = mc_keyNone)
 		-> Element
 	{
+		mc_profilePlot("component");
 		ComponentPropsFn erased = [fn](const std::any&) -> auto
 		{ return fn(); };
 		return Element{.Node = ComponentElement{.Fn = erased}, .Key = key};
@@ -180,6 +187,7 @@ namespace mocca
 	component(Fn fn, Props props, const ComponentDescriptor& desc = {})
 		-> Element
 	{
+		mc_profilePlot("component");
 		ComponentPropsFn erased = [fn](const std::any& boxed) -> auto
 		{ return fn(std::any_cast<const Props&>(boxed)); };
 		return Element{

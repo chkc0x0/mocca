@@ -36,6 +36,8 @@ namespace mocca::detail
 		inline static std::unordered_map<std::string_view, Entry> data;
 		inline static uint32_t gen = 0;
 	};
+
+	void plotMemory();
 }
 
 #	define mc_profileScope(name) ZoneScopedN(name)

@@ -172,7 +172,7 @@ auto main(int argc, const char** argv) -> int
 		}
 	);
 
-	for (int i = 0; i < 1000; i++)
+	for (int i = 0; i < 8000; i++)
 	{
 		brows.push_back({.Id = i, .Label = "Label " + std::to_string(i + 1)});
 	}

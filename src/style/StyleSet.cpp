@@ -49,12 +49,10 @@ namespace mocca::styles
 				src.data(),
 				src.size() * sizeof(StyleEntry)
 			);
-			mc_profilePlot("Assign -> true (bytes differ)");
 			_depGroups = computeDependentGroups(_entries);
 			return true;
 		}
 
-		mc_profilePlot("Assign -> true (size differs)");
 		_entries = std::vector<StyleEntry>(src.begin(), src.end());
 		_depGroups = computeDependentGroups(_entries);
 		return true;
