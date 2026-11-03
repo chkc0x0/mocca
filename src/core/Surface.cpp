@@ -95,6 +95,7 @@ namespace mocca
 	void Surface::UpdateTree(double dt)
 	{
 		mc_profileFunction();
+
 		if (_root == nullptr)
 		{
 			_rootId = detail::nextNodeId;
@@ -146,33 +147,7 @@ namespace mocca
 			_capturedNode = 0;
 		}
 
-		_root->ComputeStyle(styles::getDefaultStyle(), dt, 0);
-
-		_root->BuildYogaTree();
-		{
-			mc_profileScope("YGNodeCalculateLayout");
-			YGNodeCalculateLayout(
-				_root->YogaNode,
-				_desc.Width,
-				_desc.Height,
-				static_cast<YGDirection>(
-					static_cast<int>(
-						_root->Style
-							.Get<styles::StyleProperty::LayoutDirection>()
-					) +
-					1
-				)
-			);
-		}
-
-		if (IsAutomaticSize())
-		{
-			_desc.Width = YGNodeLayoutGetWidth(_root->YogaNode);
-			_desc.Height = YGNodeLayoutGetHeight(_root->YogaNode);
-		}
-
-		_root->UpdateSubtreeBounds();
-		detail::reclampScrollOffsets(_root.get());
+		_advanceAnimations(dt);
 	}
 
 	void Surface::_updateDirtyComponents(
@@ -218,6 +193,11 @@ namespace mocca
 			);
 		}
 
+		_advanceAnimations(dt);
+	}
+
+	void Surface::_advanceAnimations(double dt)
+	{
 		_root->ComputeStyle(styles::getDefaultStyle(), dt, 0);
 		_root->BuildYogaTree();
 		{
@@ -306,7 +286,7 @@ namespace mocca
 			}
 		}
 
-		if (IsDirty() || _animating || !_dirtyComponents.empty())
+		if (IsDirty() || _animating || !_dirtyComponents.empty() || _relayout)
 		{
 			Update(dt);
 		}
@@ -322,6 +302,7 @@ namespace mocca
 		auto* ctx = getCtx();
 		ctx->_currentSurface = this;
 
+		bool wasAnim = _animating;
 		_animating = false;
 
 		int settle = 0;
@@ -332,14 +313,20 @@ namespace mocca
 			std::vector<detail::NodeId> comps = std::move(_dirtyComponents);
 			_dirtyComponents.clear();
 
-			if (wasDirty || comps.empty())
+			if (wasDirty)
 			{
 				UpdateTree(settle == 0 ? dt : 0.0);
 			}
-			else
+			else if (!comps.empty())
 			{
 				_updateDirtyComponents(comps, settle == 0 ? dt : 0.0);
 			}
+			else if (wasAnim || _relayout)
+			{
+				_advanceAnimations(dt);
+				_relayout = false;
+			}
+
 			ctx->_store->FlushLayoutEffects(this);
 		} while ((_dirty || !_dirtyComponents.empty()) && ++settle < 16);
 
@@ -493,7 +480,7 @@ namespace mocca
 			{
 				_desc.Width = ev.Data1;
 				_desc.Height = ev.Data2;
-				MarkDirty();
+				_relayout = true;
 			}
 		}
 
@@ -537,7 +524,7 @@ namespace mocca
 		return chain;
 	}
 
-	void Surface::UpdateHover(const PointerEvent& ev)
+	void Surface::UpdateHover(detail::Node* hit, const PointerEvent& ev)
 	{
 		mc_profileFunction();
 
@@ -546,7 +533,11 @@ namespace mocca
 			return;
 		}
 
-		auto* hit = detail::Node::HitTest(_root.get(), ev.X, ev.Y);
+		if (hit == nullptr)
+		{
+			hit = detail::Node::HitTest(_root.get(), ev.X, ev.Y);
+		}
+
 		auto next = hoverChain(hit);
 		auto prev = hoverChain(
 			detail::Node::FindNodeById(_root.get(), _hoveredNode)
@@ -692,7 +683,8 @@ namespace mocca
 					scrollable->ScrollOffset.Y =
 						std::clamp(scrollable->ScrollOffset.Y, 0.0F, maxSy);
 
-					MarkDirty();
+					// TODO: if we add scroll dependent stuff, mark it dirty
+					RequestRepaint();
 				}
 			}
 			return;
@@ -752,7 +744,7 @@ namespace mocca
 			ev.EventType == PointerEvent::Type::Down ||
 			ev.EventType == PointerEvent::Type::Up)
 		{
-			UpdateHover(ev);
+			UpdateHover(_capturedNode == 0 ? target : nullptr, ev);
 		}
 	}
 

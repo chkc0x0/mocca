@@ -1053,37 +1053,39 @@ namespace mocca::detail
 								styles::OverflowType::Visible;
 	}
 
-	auto hitTestImpl(Node* node, float x, float y, Vector2 scroll) -> Node*
+	auto hitTestImpl(Node* node, float x, float y) -> Node*
 	{
-		mc_profileFunction();
-
 		if (node == nullptr)
 		{
 			return nullptr;
 		}
 
+		Vector2 childP = {.X = x, .Y = y};
+
+		if (!node->SubtreeBounds.Contains(childP))
+		{
+			return nullptr;
+		}
+
 		bool inside = !node->IsComponent() &&
-					  layoutRect(*node).Contains(
-						  {.X = x + scroll.X, .Y = y + scroll.Y}
-					  );
+					  layoutRect(*node).Contains(childP);
 
 		if (!inside && clipsChildren(*node))
 		{
 			return nullptr;
 		}
 
-		Vector2 childScroll = scroll;
 		if (node->IsBox() &&
 			node->Style.Get<styles::StyleProperty::Overflow>() ==
 				styles::OverflowType::Scroll)
 		{
-			childScroll.X += node->ScrollOffset.X;
-			childScroll.Y += node->ScrollOffset.Y;
+			childP.X += node->ScrollOffset.X;
+			childP.Y += node->ScrollOffset.Y;
 		}
 
-		for (auto& it : std::views::reverse(node->Children))
+		for (auto& child : std::views::reverse(node->Children))
 		{
-			if (Node* hit = hitTestImpl(it.get(), x, y, childScroll))
+			if (Node* hit = hitTestImpl(child.get(), childP.X, childP.Y))
 			{
 				return hit;
 			}
@@ -1094,7 +1096,8 @@ namespace mocca::detail
 
 	auto Node::HitTest(Node* root, float x, float y) -> Node*
 	{
-		return hitTestImpl(root, x, y, {});
+		mc_profileFunction();
+		return hitTestImpl(root, x, y);
 	}
 
 	// we should also add an id -> node* mapping in the surface later

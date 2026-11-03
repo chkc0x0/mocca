@@ -213,7 +213,7 @@ namespace mocca
 
 	protected:
 		void RoutePointer(PointerEvent ev);
-		void UpdateHover(const PointerEvent& ev);
+		void UpdateHover(detail::Node* hit, const PointerEvent& ev);
 		auto NotifyOutsidePress(const PointerEvent& ev) -> bool;
 
 	private:
@@ -223,6 +223,7 @@ namespace mocca
 			double dt
 		);
 		void _updateCursor(detail::Node* node);
+		void _advanceAnimations(double dt);
 		static void AnnounceSubtreeDestroyed(Surface* s);
 
 		SurfaceDesc _desc;
@@ -230,10 +231,11 @@ namespace mocca
 		detail::NodeId _rootId = 0;
 		std::unique_ptr<detail::Node> _root = nullptr;
 		SurfaceState _state = SurfaceState::Alive;
-		bool _dirty = true;
 		std::vector<detail::NodeId> _dirtyComponents;
+		bool _dirty = true;
 		bool _animating = false;
 		bool _repaint = true;
+		bool _relayout = false;
 		CursorShapeType _cursor = CursorShapeType::Default;
 
 		int _zombieTimeout = 0;
