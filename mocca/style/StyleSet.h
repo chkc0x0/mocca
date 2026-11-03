@@ -26,6 +26,11 @@ namespace mocca::styles
 
 		auto Assign(const StyleList& list) -> bool;
 
+		[[nodiscard]] auto DependentGroups() const -> std::uint8_t
+		{
+			return _depGroups;
+		}
+
 		[[nodiscard]] auto Find(StyleProperty p) const -> const StyleEntry*;
 
 		[[nodiscard]] auto Entries() const -> std::span<const StyleEntry>
@@ -60,5 +65,6 @@ namespace mocca::styles
 
 	private:
 		std::vector<StyleEntry> _entries;
+		std::uint8_t _depGroups = InheritedGroupBit;
 	};
 }

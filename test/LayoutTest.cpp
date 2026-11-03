@@ -662,6 +662,7 @@ namespace mtest
 							Height(px(500)),
 							Padding(px(8)),
 							AlignItems(Alignment::Stretch),
+							FlexDirection(FlexDirections::Column),
 						},
 					.Children = {
 						{

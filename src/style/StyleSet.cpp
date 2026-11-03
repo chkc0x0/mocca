@@ -5,6 +5,21 @@
 
 namespace mocca::styles
 {
+	auto computeDependentGroups(std::span<const StyleEntry> entries)
+		-> std::uint8_t
+	{
+		std::uint8_t deps = InheritedGroupBit;
+		for (const auto& e : entries)
+		{
+			if (e.Type == StyleValueType::Keyword &&
+				e.Payload.Keyword == StyleKeyword::Inherit)
+			{
+				deps |= GroupBitsOf[static_cast<std::size_t>(e.Prop)];
+			}
+		}
+		return deps;
+	}
+
 	auto StyleSet::Assign(const StyleList& list) -> bool
 	{
 		const auto& src = list.Entries();
@@ -35,11 +50,13 @@ namespace mocca::styles
 				src.size() * sizeof(StyleEntry)
 			);
 			mc_profilePlot("Assign -> true (bytes differ)");
+			_depGroups = computeDependentGroups(_entries);
 			return true;
 		}
 
 		mc_profilePlot("Assign -> true (size differs)");
 		_entries = std::vector<StyleEntry>(src.begin(), src.end());
+		_depGroups = computeDependentGroups(_entries);
 		return true;
 	}
 

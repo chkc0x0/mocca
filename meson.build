@@ -127,6 +127,7 @@ if get_option('tests')
             'test/LayoutTest.cpp',
             'test/NodeRefTest.cpp',
             'test/RenderTest.cpp',
+            'test/StyleCacheTest.cpp',
             'test/SurfaceLifecycleTest.cpp',
             'test/FontTest.cpp',
             'test/TextLayoutTest.cpp'

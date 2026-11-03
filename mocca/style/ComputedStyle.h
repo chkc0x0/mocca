@@ -6,6 +6,7 @@
 #include "Length.h"
 #include "input/InputTypes.h"
 #include "utils/Color.h"
+#include <cstdint>
 
 namespace mocca::styles
 {
@@ -21,26 +22,41 @@ namespace mocca::styles
 		struct LayoutSizingProps
 		{
 			mc_layoutSizingProps
+
+				auto
+				operator==(const LayoutSizingProps& b) const -> bool;
 		} LayoutSizing;
 
 		struct LayoutSpacingProps
 		{
 			mc_layoutSpacingProps
+
+				auto
+				operator==(const LayoutSpacingProps& b) const -> bool;
 		} LayoutSpacing;
 
 		struct LayoutFlexProps
 		{
 			mc_layoutFlexProps
+
+				auto
+				operator==(const LayoutFlexProps& b) const -> bool;
 		} LayoutFlex;
 
 		struct LayoutPositionProps
 		{
 			mc_layoutPosProps
+
+				auto
+				operator==(const LayoutPositionProps& b) const -> bool;
 		} LayoutPosition;
 
 		struct RenderProps
 		{
 			mc_renderPropertiesReset
+
+				auto
+				operator==(const RenderProps& b) const -> bool;
 		} Render;
 
 		// maybe switch to per category later
@@ -48,6 +64,9 @@ namespace mocca::styles
 		struct InheritedProps
 		{
 			mc_inheritProperties
+
+				auto
+				operator==(const InheritedProps& b) const -> bool;
 		} Inherited;
 #undef mc_styleProperty
 
@@ -62,13 +81,18 @@ namespace mocca::styles
 		{
 			_ref<P>() = value;
 		}
-		
+
 		void Blend(
 			StyleProperty prop,
 			const StyleEntry& from,
 			const StyleEntry& goal,
 			float t
 		);
+
+		static auto ChangedGroups(
+			const ComputedStyle& a,
+			const ComputedStyle& b
+		) -> std::uint8_t;
 
 	private:
 		template <StyleProperty P> auto _ref() -> PropTraits<P>::Value&;
@@ -114,8 +138,8 @@ namespace mocca::styles
 #undef mc_cat_
 #undef mc_cat
 
-	template <StyleProperty P>
-	auto ComputedStyle::Get() const -> const PropTraits<P>::Value&
+		template <StyleProperty P>
+		auto ComputedStyle::Get() const -> const PropTraits<P>::Value&
 	{
 		using L = PropTraits<P>;
 		return (this->*L::Handle).*L::Field;

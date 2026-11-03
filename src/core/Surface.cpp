@@ -146,7 +146,7 @@ namespace mocca
 			_capturedNode = 0;
 		}
 
-		_root->ComputeStyle(styles::getDefaultStyle(), dt);
+		_root->ComputeStyle(styles::getDefaultStyle(), dt, 0);
 
 		_root->BuildYogaTree();
 		{
@@ -218,7 +218,7 @@ namespace mocca
 			);
 		}
 
-		_root->ComputeStyle(styles::getDefaultStyle(), dt);
+		_root->ComputeStyle(styles::getDefaultStyle(), dt, 0);
 		_root->BuildYogaTree();
 		{
 			mc_profileScope("YGNodeCalculateLayout");

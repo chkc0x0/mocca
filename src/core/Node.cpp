@@ -55,7 +55,11 @@ namespace mocca::detail
 		mc_profileFunction();
 		if (YogaNode != nullptr)
 		{
-			ApplyLayoutStyles();
+			if (YogaDirty)
+			{
+				ApplyLayoutStyles();
+				YogaDirty = false;
+			}
 
 			auto expected = std::vector<YGNodeRef>{};
 			CollectFlatYogaChildren(*this, expected);
@@ -161,33 +165,70 @@ namespace mocca::detail
 #undef mc_styleProperty
 	}
 
-	void Node::ComputeStyle(styles::ComputedStyle& parentComputed, double dt)
+	void Node::ComputeStyle(
+		styles::ComputedStyle& parentComputed,
+		double dt,
+		uint8_t parentChangedGroups
+	)
 	{
 		mc_profileFunction();
-		styles::ComputedStyle target =
-			styles::ComputedStyle::Cascade(Declared, parentComputed);
 
-		if (!Styled)
+		bool needGoal = StyleDirty || !Styled ||
+						(DepGroups & parentChangedGroups) != 0;
+		bool animating = !Transitions.empty();
+
+		uint8_t changed = 0;
+
+		if (needGoal || animating)
 		{
-			Style = target;
-			Styled = true;
+			styles::ComputedStyle target =
+				styles::ComputedStyle::Cascade(Declared, parentComputed);
+
+			if (!Styled)
+			{
+				Style = target;
+				Styled = true;
+				changed = styles::AllGroups;
+			}
+			else
+			{
+				changed = styles::ComputedStyle::ChangedGroups(Style, target);
+				AdvanceTransitions(target, dt);
+			}
 		}
-		else
+
+		ChangedGroups = changed;
+		StyleDirty = false;
+
+		if ((changed & styles::LayoutGroups) != 0)
 		{
-			AdvanceTransitions(target, dt);
+			YogaDirty = true;
+		}
+
+		if (IsText() && YogaNode != nullptr &&
+			(changed & styles::InheritedGroupBit) != 0)
+		{
+			YGNodeMarkDirty(YogaNode);
 		}
 
 		for (auto& child : Children)
 		{
 			if (child)
 			{
-				child->ComputeStyle(Style, dt);
+				child->ComputeStyle(Style, dt, changed);
 			}
 		}
 	}
 
 	void Node::AdvanceTransitions(styles::ComputedStyle& target, double dt)
 	{
+		if (Transitions.empty() &&
+			target.Get<styles::StyleProperty::Transition>() == 0)
+		{
+			Style = target;
+			return;
+		}
+
 		bool anyActive = false;
 
 #define mc_animatable(name)                                                    \
@@ -235,6 +276,7 @@ namespace mocca::detail
 		node->Id = nextNodeId++;
 		node->Key = element.Key;
 		node->Declared.Assign(element.Style);
+		node->DepGroups = node->Declared.DependentGroups();
 		node->Surface = getCtx()->_currentSurface;
 
 		getCtx()->_nodes[node->Id] = node.get();
@@ -946,7 +988,11 @@ namespace mocca::detail
 
 		oldNode->Events = newElement->Events;
 		oldNode->Focus = newElement->Focus;
-		oldNode->Declared.Assign(newElement->Style);
+		if (oldNode->Declared.Assign(newElement->Style))
+		{
+			oldNode->StyleDirty = true;
+			oldNode->DepGroups = oldNode->Declared.DependentGroups();
+		}
 
 		if (oldNode->IsComponent())
 		{

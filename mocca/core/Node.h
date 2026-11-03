@@ -49,6 +49,11 @@ namespace mocca::detail
 		std::vector<ActiveTransition> Transitions;
 		bool Styled = false;
 
+		uint8_t DepGroups = styles::InheritedGroupBit;
+		uint8_t ChangedGroups = 0;
+		bool StyleDirty = false;
+		bool YogaDirty = true;
+
 		Vector2 ScrollOffset{.X = 0, .Y = 0};
 		Vector2 LayoutPos{.X = 0, .Y = 0};
 		Rectangle SubtreeBounds{};
@@ -98,7 +103,11 @@ namespace mocca::detail
 		void BuildYogaTree();
 		void UpdateSubtreeBounds();
 		void ApplyLayoutStyles() const;
-		void ComputeStyle(styles::ComputedStyle& parentComputed, double dt);
+		void ComputeStyle(
+			styles::ComputedStyle& parentComputed,
+			double dt,
+			uint8_t parentChangedGroups
+		);
 		void AdvanceTransitions(styles::ComputedStyle& target, double dt);
 		auto FindTransition(styles::StyleProperty prop) -> ActiveTransition*;
 		void RemoveTransition(styles::StyleProperty prop);

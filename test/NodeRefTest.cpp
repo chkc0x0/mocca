@@ -246,6 +246,7 @@ namespace mtest
 										{
 											Width(px(100)),
 											Height(px(200)),
+											FlexDirection(FlexDirections::Column),
 										},
 									.Children = {
 										fillBox(100, 150),
