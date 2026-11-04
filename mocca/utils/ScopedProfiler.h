@@ -52,5 +52,18 @@ namespace mocca::detail
 #	define mc_profileScope(name) ((void)0)
 #	define mc_profileFunction() ((void)0)
 #	define mc_profileFrame() ((void)0)
+#	define mc_profilePlot(name) ((void)0)
+#	define mc_profilePlotFunction() ((void)0)
+
+	namespace mocca::detail
+	{
+		class ProfilerPlot
+		{
+		public:
+			static void Reset() {}
+		};
+
+		inline void plotMemory() {}
+	}
 
 #endif

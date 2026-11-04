@@ -857,12 +857,12 @@ namespace mocca::detail
 		{
 			if (n)
 			{
-				getCtx()->_store->RemoveComponent(n->Id);
+				getCtx()->_store->RemoveComponent(n.get());
 			}
 		}
 		for (size_t i = unkeyedCursor; i < oldUnkeyed.size(); i++)
 		{
-			getCtx()->_store->RemoveComponent(oldUnkeyed[i]->Id);
+			getCtx()->_store->RemoveComponent(oldUnkeyed[i].get());
 		}
 
 		return newChildren;
@@ -908,7 +908,7 @@ namespace mocca::detail
 			{
 				if (old[i])
 				{
-					getCtx()->_store->RemoveComponent(old[i]->Id);
+					getCtx()->_store->RemoveComponent(old[i].get());
 				}
 			}
 			return out;
@@ -929,7 +929,7 @@ namespace mocca::detail
 		}
 		if (newElement == nullptr) // oldNode != nullptr implied
 		{
-			getCtx()->_store->RemoveComponent(oldNode->Id);
+			getCtx()->_store->RemoveComponent(oldNode.get());
 			return nullptr;
 		}
 
@@ -943,7 +943,7 @@ namespace mocca::detail
 		)
 		{
 			// TODO zombie later on
-			getCtx()->_store->RemoveComponent(oldNode->Id);
+			getCtx()->_store->RemoveComponent(oldNode.get());
 			oldNode = BuildNodeTree(*newElement);
 		}
 

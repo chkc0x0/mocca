@@ -1,4 +1,5 @@
 #include "core/HookStore.h"
+#include "core/Node.h"
 #include "utils/ScopedProfiler.h"
 
 namespace mocca::detail
@@ -158,53 +159,80 @@ namespace mocca::detail
 		return _animations.size();
 	}
 
-	void HookStore::RemoveComponent(NodeId id)
+	void HookStore::RemoveComponent(Node* node)
 	{
 		mc_profileFunction();
-		
+
+		if (node == nullptr)
+		{
+			return;
+		}
+
+		std::unordered_set<NodeId> ids;
+		std::vector<Node*> stack{node};
+		while (!stack.empty())
+		{
+			Node* n = stack.back();
+			stack.pop_back();
+			if (n->IsComponent())
+			{
+				ids.insert(n->Id);
+			}
+			for (auto& child : n->Children)
+			{
+				if (child)
+				{
+					stack.push_back(child.get());
+				}
+			}
+		}
+		if (ids.empty())
+		{
+			return;
+		}
+
 		std::erase_if(
 			_animations,
-			[id](const AnimationFunction& a) -> auto { return a.Id == id; }
+			[&ids](const AnimationFunction& a) -> auto
+			{ return ids.contains(a.Id); }
 		);
 
 		for (auto it = _slots.begin(); it != _slots.end();)
 		{
-			if (it->first.Id == id)
-			{
-				if (auto* eff = std::any_cast<EffectSlot>(&it->second))
-				{
-					auto old = std::move(eff->Cleanup);
-					eff->Cleanup = nullptr;
-					if (old)
-					{
-						try
-						{
-							old();
-						}
-						catch (const std::exception& e)
-						{
-							mc_error(
-								ErrorCode::UserSide,
-								"cleanup threw during removal: {}",
-								e.what()
-							);
-						}
-						catch (...)
-						{
-							mc_error(
-								ErrorCode::UserSide,
-								"cleanup threw a non-std exception during "
-								"removal"
-							);
-						}
-					}
-				}
-				it = _slots.erase(it);
-			}
-			else
+			if (!ids.contains(it->first.Id))
 			{
 				++it;
+				continue;
 			}
+			if (auto* eff = std::any_cast<EffectSlot>(&it->second))
+			{
+				auto old = std::move(eff->Cleanup);
+				eff->Cleanup = nullptr;
+				if (old)
+				{
+					try
+					{
+						old();
+					}
+					catch (const std::exception& e)
+					{
+						mc_error(
+							ErrorCode::UserSide,
+							"cleanup threw during removal: {}",
+							e.what()
+						);
+					}
+					catch (...)
+					{
+						mc_error(
+							ErrorCode::UserSide,
+							"cleanup threw a non-std exception during "
+							"removal"
+						);
+					}
+				}
+			}
+			it = _slots.erase(it);
 		}
 	}
 

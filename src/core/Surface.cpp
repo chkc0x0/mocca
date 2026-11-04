@@ -75,6 +75,11 @@ namespace mocca
 
 	Surface::~Surface()
 	{
+		if (Application::main != nullptr && _root != nullptr)
+		{
+			getCtx()->_store->RemoveComponent(_root.get());
+		}
+
 		if (Application::main != nullptr && IsPlatformBacked())
 		{
 			std::erase(Application::main->_platformSurfaces, this);

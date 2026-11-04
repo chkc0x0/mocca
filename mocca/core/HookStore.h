@@ -16,6 +16,8 @@ namespace mocca
 
 namespace mocca::detail
 {
+	struct Node;
+
 	template <typename T>
 	concept EqualityComparable = requires(const T& a, const T& b) {
 		{ a == b } -> std::convertible_to<bool>;
@@ -187,7 +189,7 @@ namespace mocca::detail
 		auto FlushAnimations(double dt) -> std::size_t;
 		[[nodiscard]] auto ActiveAnimationCount() const -> std::size_t;
 		void FlushLayoutEffects(Surface* surface);
-		void RemoveComponent(NodeId id);
+		void RemoveComponent(Node* node);
 		void PushEffect(const CleanupFn& fn);
 		void PushLayoutEffect(const CleanupFn& fn, Surface* surface);
 		void SetMarkDirty(std::function<void(NodeId)> fn);
