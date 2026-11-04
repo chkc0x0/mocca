@@ -1,1 +1,0 @@
-executable('bench', sources: ['main.cpp'], dependencies: mocca_dep)
