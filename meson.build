@@ -52,8 +52,7 @@ cmake_options.add_cmake_defines({'WITH_PIC': true})
 yoga_dep = cmake.subproject('yoga', options: cmake_options).dependency('yogacore')
 
 dependencies = [
-    yoga_dep, 
-    dependency('freetype2'), 
+    yoga_dep,
     dependency('harfbuzz'), 
     subproject('SheenBidi').get_variable('sheenbidi_dep'),
     subproject('stb').get_variable('stb_image_dep'),
