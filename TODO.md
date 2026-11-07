@@ -6,8 +6,6 @@
 - [ ] a11y: aria struct
 - [ ] a11y: [accesskit](https://github.com/AccessKit/accesskit-c)
 - [ ] a11y: kbd nav
-- [ ] refactor Node::Paint (sorta done? not quite)
-- [ ] refactor drawing api (its so hideous. should mirror skia more instead)
 - [ ] optimize text (i feel like its slow)
 - [ ] docs lol
 - [ ] css text properties
@@ -29,3 +27,5 @@
 - [x] sparse event storage
 - [x] make transitions per property instead of "global"
 - [x] fade colors through alpha instead of oklab when an endpoint is transparent
+- [x] refactor Node::Paint
+- [x] refactor drawing api
