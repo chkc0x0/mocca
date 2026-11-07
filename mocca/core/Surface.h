@@ -2,7 +2,7 @@
 #include "gfx/Canvas.h"
 #include "core/Node.h"
 #include "Element.h"
-#include "gfx/Renderer.h"
+#include "gfx/RenderDevice.h"
 #include "gfx/Texture.h"
 #include "input/InputTypes.h"
 #include "platform/PlatformSurface.h"

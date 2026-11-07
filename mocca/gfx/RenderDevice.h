@@ -1,7 +1,9 @@
 #pragma once
 #include "GfxTypes.h"
-#include "Renderer.h"
+#include "gfx/DrawCommands.h"
+#include "utils/Math.h"
 #include <memory>
+#include <span>
 
 namespace mocca
 {
@@ -10,6 +12,8 @@ namespace mocca
 
 namespace mocca::gfx
 {
+	class Renderer;
+
 	class RenderDevice
 	{
 	public:
@@ -26,5 +30,22 @@ namespace mocca::gfx
 
 		virtual auto CreateRenderer(Surface* surf, const GraphicsHandle& handle)
 			-> std::unique_ptr<Renderer> = 0;
+	};
+
+	struct FrameInfo
+	{
+	public:
+		std::span<const cmds::DrawCommand> Commands;
+		std::span<const Texture* const> Textures;
+		Vector2 ViewportSize;
+		Vector2 Scale;
+	};
+
+	class Renderer
+	{
+	public:
+		virtual ~Renderer() = default;
+
+		virtual void Render(const FrameInfo& frame) = 0;
 	};
 }
