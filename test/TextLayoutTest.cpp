@@ -737,7 +737,9 @@ namespace mtest
 	class NowrapTest : public SurfaceTest
 	{
 	public:
-		NowrapTest() : SurfaceTest("mocca.test.nowrap") {}
+		NowrapTest() : SurfaceTest("mocca.test.nowrap")
+		{
+		}
 
 	protected:
 		void SetUp() override
@@ -758,8 +760,7 @@ namespace mtest
 	{
 		mocca::NodeRef* boxRef = nullptr;
 		mocca::NodeRef* textRef = nullptr;
-		std::string content =
-			"the quick brown fox jumps over the lazy dog";
+		std::string content = "the quick brown fox jumps over the lazy dog";
 
 		auto* surface = AddSurface(
 			{.Width = 120, .Height = 60, .Title = "nowrap"},
@@ -777,20 +778,22 @@ namespace mtest
 								AlignItems(Alignment::FlexStart),
 								Overflow(OverflowType::Scroll),
 							},
-						.Children = {
-							mocca::text(
-								mocca::TextDescriptor{
-									.Style =
-										{
-											FontFamily("sans-serif"),
-											FontSize(px(16)),
-											Width(MaxContent),
-										},
-									.Content = content,
-									.Ref = textRef,
-								}
-							),
-						},
+						.Children =
+							{
+								mocca::text(
+									mocca::TextDescriptor{
+										.Style =
+											{
+												FlexShrink(0),
+												FontFamily("sans-serif"),
+												FontSize(px(16)),
+												Width(MaxContent),
+											},
+										.Content = content,
+										.Ref = textRef,
+									}
+								),
+							},
 						.Ref = boxRef,
 					}
 				);
@@ -802,14 +805,12 @@ namespace mtest
 		ASSERT_TRUE(textRef->Valid());
 
 		float textWidth = textRef->LayoutRect().Width;
-		EXPECT_GT(textWidth, 120.0F)
-			<< "should not wrap";
+		EXPECT_GT(textWidth, 120.0F) << "should not wrap";
 
 		EXPECT_LE(textRef->LayoutRect().Height, 32.0F)
 			<< "should stay one line tall";
 
 		textRef->ScrollIntoView();
-		EXPECT_GT(surface->Tree()->ScrollOffset.X, 0.0F)
-			<< "should scroll";
+		EXPECT_GT(surface->Tree()->ScrollOffset.X, 0.0F) << "should scroll";
 	}
 }

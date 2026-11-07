@@ -51,8 +51,7 @@ namespace mtest
 				}
 				else
 				{
-					EXPECT_EQ(current, ref)
-						<< "ref must be stable";
+					EXPECT_EQ(current, ref) << "ref must be stable";
 				}
 				++renders;
 
@@ -66,8 +65,7 @@ namespace mtest
 		Tick();
 
 		ASSERT_NE(ref, nullptr);
-		EXPECT_FALSE(validDuringRender)
-			<< "ids are assigned after render";
+		EXPECT_FALSE(validDuringRender) << "ids are assigned after render";
 		EXPECT_TRUE(ref->Valid());
 		EXPECT_NE(ref->Id(), 0U);
 		EXPECT_EQ(ref->Surface(), s);
@@ -238,6 +236,10 @@ namespace mtest
 								Width(px(100)),
 								Height(px(80)),
 								Overflow(mocca::styles::OverflowType::Scroll),
+								FlexDirection(FlexDirections::Column),
+								FlexShrink(0),
+								AlignContent(Alignment::FlexStart),
+								Position(PositionType::Relative),
 							},
 						.Children = {
 							mocca::box(
@@ -246,21 +248,40 @@ namespace mtest
 										{
 											Width(px(100)),
 											Height(px(200)),
-											FlexDirection(FlexDirections::Column),
+											FlexDirection(
+												FlexDirections::Column
+											),
+											FlexShrink(0),
+											AlignContent(Alignment::FlexStart),
+											Position(PositionType::Relative),
 										},
-									.Children = {
-										fillBox(100, 150),
-										mocca::box(
-											mocca::BoxDescriptor{
-												.Style =
-													{
-														Width(px(20)),
-														Height(px(20)),
-													},
-												.Ref = target,
-											}
-										),
-									},
+									.Children =
+										{
+											fillBox(100, 150),
+											mocca::box(
+												mocca::BoxDescriptor{
+													.Style =
+														{
+															Width(px(20)),
+															Height(px(20)),
+															FlexDirection(
+																FlexDirections::
+																	Column
+															),
+															FlexShrink(0),
+															AlignContent(
+																Alignment::
+																	FlexStart
+															),
+															Position(
+																PositionType::
+																	Relative
+															),
+														},
+													.Ref = target,
+												}
+											),
+										},
 								}
 							),
 						},
@@ -274,12 +295,22 @@ namespace mtest
 								Width(px(100)),
 								Height(px(100)),
 								Overflow(mocca::styles::OverflowType::Scroll),
+								FlexDirection(FlexDirections::Column),
+								FlexShrink(0),
+								AlignContent(Alignment::FlexStart),
+								Position(PositionType::Relative),
 							},
 						.Children = {
 							mocca::box(
 								mocca::BoxDescriptor{
 									.Style =
 										{
+											FlexDirection(
+												FlexDirections::Column
+											),
+											FlexShrink(0),
+											AlignContent(Alignment::FlexStart),
+											Position(PositionType::Relative),
 											Width(px(100)),
 											Height(px(400)),
 										},
