@@ -14,6 +14,7 @@ sources = [
     'src/gfx/ImageDecoderRegistry.cpp',
     'src/gfx/StbImageDecoder.cpp',
     'src/style/StyleApply.cpp',
+    'src/style/StylePaintApply.cpp',
     'src/core/Element.cpp',
     'src/core/HookFrame.cpp',
     'src/text/Measure.cpp',

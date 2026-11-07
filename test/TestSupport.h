@@ -87,6 +87,11 @@ namespace mtest
 	{
 		for (const auto& c : cmds)
 		{
+			if (const auto* dr = std::get_if<mocca::cmds::DrawDRRectCmd>(&c))
+			{
+				return dr->Paint.Color;
+			}
+
 			const auto* paint = paintOf(c);
 			if (paint != nullptr &&
 				paint->Style != mocca::gfx::PaintStyle::Fill)
@@ -123,16 +128,36 @@ namespace mtest
 		return nullptr;
 	}
 
-	inline auto firstStrokeRRect(const Commands& cmds)
-		-> const mocca::cmds::DrawRRectCmd*
+	inline auto firstDRRect(const Commands& cmds)
+		-> const mocca::cmds::DrawDRRectCmd*
 	{
 		for (const auto& c : cmds)
 		{
-			const auto* r = std::get_if<mocca::cmds::DrawRRectCmd>(&c);
-			if (r != nullptr &&
-				r->Paint.Style == mocca::gfx::PaintStyle::Stroke)
+			if (const auto* dr = std::get_if<mocca::cmds::DrawDRRectCmd>(&c))
 			{
-				return r;
+				return dr;
+			}
+		}
+		return nullptr;
+	}
+
+	inline auto imageCount(const Commands& cmds) -> int
+	{
+		return countOf(
+			cmds,
+			[](const auto& c) -> auto
+			{ return std::get_if<mocca::cmds::DrawImageCmd>(&c) != nullptr; }
+		);
+	}
+
+	inline auto firstImage(const Commands& cmds)
+		-> const mocca::cmds::DrawImageCmd*
+	{
+		for (const auto& c : cmds)
+		{
+			if (const auto* image = std::get_if<mocca::cmds::DrawImageCmd>(&c))
+			{
+				return image;
 			}
 		}
 		return nullptr;
@@ -389,7 +414,8 @@ namespace mtest
 			.Width = 200,
 			.Height = 200,
 			.Title = "parent",
-			.Root = []() -> mocca::Element { return box(200, 200); },
+			.Root = []() -> mocca::Element
+			{ return box(200, 200, mocca::colors::Black); },
 		});
 
 		auto* child = t.App().RegisterSurface({
@@ -397,7 +423,8 @@ namespace mtest
 			.Height = 50,
 			.Title = "child",
 			.Parent = parent,
-			.Root = []() -> mocca::Element { return box(50, 50); },
+			.Root = []() -> mocca::Element
+			{ return box(50, 50, mocca::colors::Blue); },
 		});
 
 		if (outParent != nullptr)

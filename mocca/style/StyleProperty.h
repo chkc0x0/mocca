@@ -75,4 +75,8 @@ namespace mocca::styles
 	inline constexpr std::uint8_t LayoutGroups =
 		static_cast<std::uint8_t>(AllGroups & ~RenderGroupBit);
 	inline constexpr std::uint8_t PaintGroups = RenderGroupBit | InheritedGroupBit;
+	inline constexpr std::uint8_t DecorationGroups =
+		static_cast<std::uint8_t>(
+			PaintGroups | GroupBit(StylePropertyGroup::LayoutSpacing)
+		);
 }

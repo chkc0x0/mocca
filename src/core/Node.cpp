@@ -1,6 +1,7 @@
 #include "core/Node.h"
 #include "core/HookStore.h"
 #include "core/NodeRef.h"
+#include "gfx/Decoration.h"
 #include "style/StyleProperty.h"
 #include "text/Measure.h"
 #include "text/TextGeometry.h"
@@ -13,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <optional>
 #include <ranges>
 #include <vector>
 #include "core/Context.h"
@@ -200,6 +202,11 @@ namespace mocca::detail
 		ChangedGroups = changed;
 		StyleDirty = false;
 
+		if ((changed & styles::DecorationGroups) != 0)
+		{
+			DecoDirty = true;
+		}
+
 		if ((changed & styles::LayoutGroups) != 0)
 		{
 			YogaDirty = true;
@@ -338,176 +345,207 @@ namespace mocca::detail
 		return LayoutPos.Y;
 	}
 
-	auto resolveLength(const Length& length, float basis) -> float
+	struct NodeSpace
 	{
-		return length.Unit == LengthUnit::Percent
-				   ? length.Value * basis / 100.0F
-				   : length.Value;
+		bool Clips = false;
+		bool Scrolls = false;
+		bool HasTransform = false;
+		bool Invertible = true;
+		gfx::Matrix NodeTransform = gfx::Matrix::Identity();
+		gfx::Matrix ParentToLocal = gfx::Matrix::Identity();
+	};
+
+	auto computeNodeSpace(const Node& node) -> NodeSpace
+	{
+		NodeSpace space{};
+
+		if (node.IsBox())
+		{
+			auto overflow = node.Style.Get<styles::StyleProperty::Overflow>();
+			space.Clips = overflow == styles::OverflowType::Hidden ||
+						  overflow == styles::OverflowType::Scroll;
+			space.Scrolls = overflow == styles::OverflowType::Scroll;
+		}
+
+		if (auto inverse = space.NodeTransform.Invert(); inverse)
+		{
+			space.ParentToLocal = *inverse;
+			space.HasTransform = !space.NodeTransform.IsIdentity();
+		}
+		else
+		{
+			space.Invertible = false;
+		}
+
+		return space;
 	}
 
-	auto
-	resolveCornerRadii(const styles::ComputedStyle& style, float w, float h)
-		-> CornerRadii
+	auto narrowCull(
+		const Rectangle& parentCull,
+		const NodeSpace& space,
+		const Rectangle& box,
+		const Vector2& scroll
+	) -> Rectangle
 	{
-		float radiusBasis = std::min(w, h);
-
-		CornerRadii radius{
-			.TopLeft = resolveLength(
-				style.Get<styles::StyleProperty::BorderRadiusTopLeft>(),
-				radiusBasis
-			),
-			.TopRight = resolveLength(
-				style.Get<styles::StyleProperty::BorderRadiusTopRight>(),
-				radiusBasis
-			),
-			.BottomRight = resolveLength(
-				style.Get<styles::StyleProperty::BorderRadiusBottomRight>(),
-				radiusBasis
-			),
-			.BottomLeft = resolveLength(
-				style.Get<styles::StyleProperty::BorderRadiusBottomLeft>(),
-				radiusBasis
-			),
-		};
-
-		float radiusScale = 1.0F;
-		if (radius.TopLeft + radius.TopRight > 0)
+		if (!space.Invertible)
 		{
-			radiusScale =
-				std::min(radiusScale, w / (radius.TopLeft + radius.TopRight));
-		}
-		if (radius.BottomLeft + radius.BottomRight > 0)
-		{
-			radiusScale = std::min(
-				radiusScale,
-				w / (radius.BottomLeft + radius.BottomRight)
-			);
-		}
-		if (radius.TopLeft + radius.BottomLeft > 0)
-		{
-			radiusScale =
-				std::min(radiusScale, h / (radius.TopLeft + radius.BottomLeft));
-		}
-		if (radius.TopRight + radius.BottomRight > 0)
-		{
-			radiusScale = std::min(
-				radiusScale,
-				h / (radius.TopRight + radius.BottomRight)
-			);
-		}
-		if (radiusScale < 1.0F)
-		{
-			radius.TopLeft *= radiusScale;
-			radius.TopRight *= radiusScale;
-			radius.BottomRight *= radiusScale;
-			radius.BottomLeft *= radiusScale;
+			return {};
 		}
 
-		return radius;
+		Rectangle cull = space.ParentToLocal.MapRect(parentCull);
+		if (space.Clips)
+		{
+			cull = cull.Intersect(box);
+		}
+		if (space.Scrolls)
+		{
+			cull.X += scroll.X;
+			cull.Y += scroll.Y;
+		}
+		return cull;
 	}
 
-	auto resolveBorder(const styles::ComputedStyle& style, float w, float h)
-		-> EdgeSizes
+	auto mapPointToChild(
+		const NodeSpace& space,
+		const Rectangle& box,
+		const Vector2& scroll,
+		Vector2 parentPoint
+	) -> std::optional<Vector2>
 	{
-		return {
-			.Top =
-				resolveLength(style.Get<styles::StyleProperty::BorderTop>(), h),
-			.Right = resolveLength(
-				style.Get<styles::StyleProperty::BorderRight>(),
-				w
-			),
-			.Bottom = resolveLength(
-				style.Get<styles::StyleProperty::BorderBottom>(),
-				h
-			),
-			.Left = resolveLength(
-				style.Get<styles::StyleProperty::BorderLeft>(),
-				w
-			),
-		};
+		if (!space.Invertible)
+		{
+			return std::nullopt;
+		}
+
+		Vector2 local = space.ParentToLocal.MapPoint(parentPoint);
+		if (space.Clips && !box.Contains(local))
+		{
+			return std::nullopt;
+		}
+		if (space.Scrolls)
+		{
+			local.X += scroll.X;
+			local.Y += scroll.Y;
+		}
+		return local;
 	}
 
-	void paintDecorations(
-		const Node& node,
+	void paintBorder(
 		Canvas& canvas,
-		float x,
-		float y,
-		float w,
-		float h
+		const gfx::BoxDecoration& deco,
+		const RRect& outer
 	)
 	{
-		const auto& style = node.Style;
-		auto radius = resolveCornerRadii(style, w, h);
-		auto border = resolveBorder(style, w, h);
-		auto background = style.Get<styles::StyleProperty::BackgroundColor>();
-		auto borderColor = style.Get<styles::StyleProperty::BorderColor>();
-		uint32_t imageRef = style.Get<styles::StyleProperty::BackgroundImage>();
+		auto paint = gfx::Paint::Fill(deco.BorderColor);
+		RRect inner = outer.Inset(deco.Border);
 
-		RRect rrect{
-			.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
-			.Radii = radius,
-		};
-		float borderWidth = std::max({
-			border.Top,
-			border.Right,
-			border.Bottom,
-			border.Left,
-		});
-		bool hasBorder = borderWidth > 0 && borderColor.A > 0;
-		gfx::Paint borderPaint = gfx::Paint::Stroke(borderColor, borderWidth);
-
-		canvas.DrawRRect(rrect, gfx::Paint::Fill(background));
-
-		if (imageRef != 0)
+		if (inner.IsEmpty())
 		{
-			const auto& image = styles::detail::resolveBackgroundImage(
-				imageRef
-			);
-			for (const auto& layer : image.Layers)
+			canvas.DrawRRect(outer, paint);
+		}
+		else
+		{
+			canvas.DrawDRRect(outer, inner, paint);
+		}
+	}
+
+	void paintDecoration(
+		Canvas& canvas,
+		const gfx::BoxDecoration& deco,
+		const Rectangle& rect
+	)
+	{
+		RRect outer{
+			.Rect = rect,
+			.Radii = deco.Radius,
+		};
+
+		if (deco.HasFill)
+		{
+			canvas.DrawRRect(outer, deco.Fill);
+		}
+		if (deco.HasImage)
+		{
+			for (const auto& image : deco.Images)
 			{
-				canvas.DrawImage(layer.Texture, rrect);
+				canvas.DrawImage(image, outer);
 			}
 		}
-
-		if (hasBorder)
+		if (deco.HasBorder)
 		{
-			canvas.DrawRRect(rrect, borderPaint);
+			paintBorder(canvas, deco, outer);
 		}
+	}
+
+	auto Node::ResolveDecoration(float w, float h) -> const gfx::BoxDecoration*
+	{
+		bool sizeChanged = w != DecoWidth || h != DecoHeight;
+		if (DecoDirty ||
+			(Deco != nullptr && Deco->SizeDependent && sizeChanged))
+		{
+			_resolveDecoration(w, h);
+		}
+
+		return Deco.get();
+	}
+
+	void Node::_resolveDecoration(float w, float h)
+	{
+		gfx::BoxDecoration deco{};
+		const styles::detail::applying::paint::PaintContext ctx{
+			.Width = w,
+			.Height = h,
+		};
+
+#define mc_styleProperty(name, ...)                                            \
+	styles::detail::applying::paint::apply##name(deco, Style.Render.name, ctx);
+		mc_renderPropertiesReset
+#undef mc_styleProperty
+
+			namespace paint = styles::detail::applying::paint;
+		paint::applyBorderTop(deco, Style.LayoutSpacing.BorderTop, ctx);
+		paint::applyBorderRight(deco, Style.LayoutSpacing.BorderRight, ctx);
+		paint::applyBorderBottom(deco, Style.LayoutSpacing.BorderBottom, ctx);
+		paint::applyBorderLeft(deco, Style.LayoutSpacing.BorderLeft, ctx);
+		paint::normalizeRadius(deco, w, h);
+
+		Deco = deco.IsEmpty()
+				   ? nullptr
+				   : std::make_unique<gfx::BoxDecoration>(std::move(deco));
+		DecoWidth = w;
+		DecoHeight = h;
+		DecoDirty = false;
 	}
 
 	auto lineDecorationY(
-		mtext::TextDecorationKind kind,
+		gfx::TextDecorationKind kind,
 		const mtext::TextLayout& layout,
 		const mtext::TextSpanBox& span
 	) -> float
 	{
 		switch (kind)
 		{
-		case mtext::TextDecorationKind::Overline:
+		case gfx::TextDecorationKind::Overline:
 			return span.Baseline - layout.Ascent;
-		case mtext::TextDecorationKind::Strikethrough:
+		case gfx::TextDecorationKind::Strikethrough:
 			return span.Baseline - (layout.Ascent * 0.4F);
-		case mtext::TextDecorationKind::Selection:
-		case mtext::TextDecorationKind::Underline:
+		case gfx::TextDecorationKind::Selection:
+		case gfx::TextDecorationKind::Underline:
 		default:
 			return span.Baseline + (layout.Descent * 0.5F);
 		}
 	}
 
-	void
-	paintText(Node& node, Canvas& canvas, float x, float y, float w, float h)
+	void paintTextContent(Node& node, Canvas& canvas, const Rectangle& box)
 	{
 		mc_profileFunction();
 
 		const auto& textElement = std::get<TextElement>(node.Kind);
 		const std::string& content = textElement.Content;
 
-		canvas.DrawRect(
-			{.X = x, .Y = y, .Width = w, .Height = h},
-			gfx::Paint::Fill(
-				node.Style.Get<styles::StyleProperty::BackgroundColor>()
-			)
-		);
+		float x = box.X;
+		float y = box.Y;
+		float w = box.Width;
 
 		float caretWidth = textElement.Caret
 							   ? std::max(0.0F, textElement.Caret->Width)
@@ -536,7 +574,7 @@ namespace mocca::detail
 		{
 			for (const auto& decoration : *textElement.Decorations)
 			{
-				if (decoration.Kind != mtext::TextDecorationKind::Selection)
+				if (decoration.Kind != gfx::TextDecorationKind::Selection)
 				{
 					continue;
 				}
@@ -579,7 +617,7 @@ namespace mocca::detail
 		{
 			for (const auto& decoration : *textElement.Decorations)
 			{
-				if (decoration.Kind == mtext::TextDecorationKind::Selection)
+				if (decoration.Kind == gfx::TextDecorationKind::Selection)
 				{
 					continue;
 				}
@@ -655,7 +693,7 @@ namespace mocca::detail
 		}
 	}
 
-	void paintBox(
+	void paintNode(
 		Node& node,
 		Canvas& canvas,
 		const Rectangle& cull,
@@ -667,49 +705,56 @@ namespace mocca::detail
 	{
 		mc_profileFunction();
 
-		auto overflow = node.Style.Get<styles::StyleProperty::Overflow>();
-		bool clips = overflow == styles::OverflowType::Hidden ||
-					 overflow == styles::OverflowType::Scroll;
-		bool scrolls = overflow == styles::OverflowType::Scroll;
+		Rectangle box{.X = x, .Y = y, .Width = w, .Height = h};
+		NodeSpace space = computeNodeSpace(node);
 
-		if (clips)
+		if (!space.Invertible)
+		{
+			return;
+		}
+
+		if (space.HasTransform)
 		{
 			canvas.Save();
-			canvas.ClipRect({.X = x, .Y = y, .Width = w, .Height = h});
+			canvas.Concat(space.NodeTransform);
 		}
 
-		paintDecorations(node, canvas, x, y, w, h);
+		if (const auto* deco = node.ResolveDecoration(w, h))
+		{
+			paintDecoration(canvas, *deco, box);
+		}
 
-		if (scrolls)
+		if (node.IsText())
+		{
+			paintTextContent(node, canvas, box);
+		}
+
+		bool scoped = space.Clips || space.Scrolls;
+		if (scoped)
 		{
 			canvas.Save();
-			canvas.Translate(-node.ScrollOffset.X, -node.ScrollOffset.Y);
+			if (space.Clips)
+			{
+				canvas.ClipRect(box);
+			}
+			if (space.Scrolls)
+			{
+				canvas.Translate(-node.ScrollOffset.X, -node.ScrollOffset.Y);
+			}
 		}
 
-		Rectangle childCull = cull;
-		if (clips)
-		{
-			childCull = childCull.Intersect(
-				{.X = x, .Y = y, .Width = w, .Height = h}
-			);
-		}
-		if (scrolls)
-		{
-			childCull.X += node.ScrollOffset.X;
-			childCull.Y += node.ScrollOffset.Y;
-		}
-
+		Rectangle childCull =
+			narrowCull(cull, space, box, node.ScrollOffset);
 		for (auto& child : node.Children)
 		{
 			child->Paint(canvas, childCull);
 		}
 
-		if (scrolls)
+		if (scoped)
 		{
 			canvas.Restore();
 		}
-
-		if (clips)
+		if (space.HasTransform)
 		{
 			canvas.Restore();
 		}
@@ -733,26 +778,15 @@ namespace mocca::detail
 			return;
 		}
 
-		float x = GetX();
-		float y = GetY();
-		float w = YGNodeLayoutGetWidth(YogaNode);
-		float h = YGNodeLayoutGetHeight(YogaNode);
-
-		if (IsBox())
-		{
-			paintBox(*this, canvas, cull, x, y, w, h);
-		}
-		else if (IsText())
-		{
-			paintText(*this, canvas, x, y, w, h);
-		}
-		else
-		{
-			for (auto& child : Children)
-			{
-				child->Paint(canvas, cull);
-			}
-		}
+		paintNode(
+			*this,
+			canvas,
+			cull,
+			GetX(),
+			GetY(),
+			YGNodeLayoutGetWidth(YogaNode),
+			YGNodeLayoutGetHeight(YogaNode)
+		);
 	}
 
 	void Node::Print(int depth) const
@@ -1037,12 +1071,6 @@ namespace mocca::detail
 		};
 	}
 
-	auto clipsChildren(const Node& n) -> bool
-	{
-		return n.IsBox() && n.Style.Get<styles::StyleProperty::Overflow>() !=
-								styles::OverflowType::Visible;
-	}
-
 	auto hitTestImpl(Node* node, float x, float y) -> Node*
 	{
 		if (node == nullptr)
@@ -1050,32 +1078,38 @@ namespace mocca::detail
 			return nullptr;
 		}
 
-		Vector2 childP = {.X = x, .Y = y};
+		Vector2 parentPoint = {.X = x, .Y = y};
 
-		if (!node->SubtreeBounds.Contains(childP))
+		if (!node->SubtreeBounds.Contains(parentPoint))
 		{
 			return nullptr;
 		}
 
-		bool inside = !node->IsComponent() &&
-					  layoutRect(*node).Contains(childP);
+		Rectangle box{};
+		if (!node->IsComponent())
+		{
+			box = layoutRect(*node);
+		}
 
-		if (!inside && clipsChildren(*node))
+		NodeSpace space = computeNodeSpace(*node);
+		if (!space.Invertible)
 		{
 			return nullptr;
 		}
 
-		if (node->IsBox() &&
-			node->Style.Get<styles::StyleProperty::Overflow>() ==
-				styles::OverflowType::Scroll)
+		bool inside = !node->IsComponent() && box.Contains(parentPoint);
+
+		auto childPoint =
+			mapPointToChild(space, box, node->ScrollOffset, parentPoint);
+		if (!childPoint)
 		{
-			childP.X += node->ScrollOffset.X;
-			childP.Y += node->ScrollOffset.Y;
+			return nullptr;
 		}
 
 		for (auto& child : std::views::reverse(node->Children))
 		{
-			if (Node* hit = hitTestImpl(child.get(), childP.X, childP.Y))
+			if (Node* hit =
+					hitTestImpl(child.get(), childPoint->X, childPoint->Y))
 			{
 				return hit;
 			}

@@ -13,6 +13,11 @@
 namespace mocca
 {
 	class Surface;
+
+	namespace gfx
+	{
+		struct BoxDecoration;
+	}
 }
 
 namespace mocca::detail
@@ -53,6 +58,11 @@ namespace mocca::detail
 		uint8_t ChangedGroups = 0;
 		bool StyleDirty = false;
 		bool YogaDirty = true;
+
+		std::unique_ptr<gfx::BoxDecoration> Deco;
+		float DecoWidth = -1.0F;
+		float DecoHeight = -1.0F;
+		bool DecoDirty = true;
 
 		Vector2 ScrollOffset{.X = 0, .Y = 0};
 		Vector2 LayoutPos{.X = 0, .Y = 0};
@@ -234,11 +244,14 @@ namespace mocca::detail
 
 		void Print(int depth = 0) const;
 		void Paint(Canvas& canvas, const Rectangle& cull);
+		auto ResolveDecoration(float w, float h) -> const gfx::BoxDecoration*;
 
 		static auto HitTest(Node* root, float x, float y) -> Node*;
 		static auto FindNodeById(Node* root, NodeId id) -> Node*;
 
 	private:
+		void _resolveDecoration(float w, float h);
+
 		static auto ReconcileChildrenSlow(
 			std::vector<std::unique_ptr<Node>> oldChildren,
 			std::span<const Element> childElements,

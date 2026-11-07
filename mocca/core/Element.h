@@ -2,7 +2,7 @@
 #include "core/ElementEvents.h"
 #include "Identifiers.h"
 #include "style/StyleList.h"
-#include "text/TextDecoration.h"
+#include "gfx/Decoration.h"
 #include "utils/ScopedProfiler.h"
 #include <any>
 #include <cstdint>
@@ -38,8 +38,8 @@ namespace mocca
 	struct TextElement
 	{
 		std::string Content;
-		std::optional<mtext::CaretDecoration> Caret;
-		std::optional<std::vector<mtext::TextDecoration>> Decorations;
+		std::optional<gfx::CaretDecoration> Caret;
+		std::optional<std::vector<gfx::TextDecoration>> Decorations;
 	};
 
 	struct ComponentElement
@@ -96,8 +96,8 @@ namespace mocca
 		styles::StyleList Style;
 		EventView Events;
 		std::string Content;
-		std::optional<mtext::CaretDecoration> Caret;
-		std::optional<std::vector<mtext::TextDecoration>> Decorations;
+		std::optional<gfx::CaretDecoration> Caret;
+		std::optional<std::vector<gfx::TextDecoration>> Decorations;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
 	};
