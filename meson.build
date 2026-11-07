@@ -40,6 +40,7 @@ sources = [
     'src/text/TextLayoutBuilder.cpp',
     'src/text/LayoutCache.cpp',
     'src/text/Bidi.cpp',
+	'src/utils/Math.cpp',
 
 	'src/widgets/Button.cpp'
 ]
@@ -122,6 +123,7 @@ if get_option('tests')
             'test/ApplicationIdTest.cpp',
             'test/EventBusTest.cpp',
             'test/EventViewTest.cpp',
+            'test/GfxApiTest.cpp',
             'test/HookTest.cpp',
             'test/LayoutTest.cpp',
             'test/NodeRefTest.cpp',

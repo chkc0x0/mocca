@@ -383,17 +383,17 @@ namespace mocca
 				continue;
 			}
 
-			_canvas.PushClip(
-				c->_desc.X,
-				c->_desc.Y,
-				c->_desc.Width,
-				c->_desc.Height
-			);
-			_canvas.PushTransform(c->_desc.X, c->_desc.Y);
+			_canvas.Save();
+			_canvas.ClipRect({
+				.X = c->_desc.X,
+				.Y = c->_desc.Y,
+				.Width = c->_desc.Width,
+				.Height = c->_desc.Height,
+			});
+			_canvas.Translate(c->_desc.X, c->_desc.Y);
 			c->Paint();
 			_canvas.Append(c->_canvas);
-			_canvas.PopTransform();
-			_canvas.PopClip();
+			_canvas.Restore();
 		}
 
 		ctx->_currentSurface = previous;

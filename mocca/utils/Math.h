@@ -39,10 +39,8 @@ namespace mocca
 
 		[[nodiscard]] auto Intersects(const Rectangle& other) const -> bool
 		{
-			return X < other.X + other.Width &&
-				   other.X < X + Width &&
-				   Y < other.Y + other.Height &&
-				   other.Y < Y + Height;
+			return X < other.X + other.Width && other.X < X + Width &&
+				   Y < other.Y + other.Height && other.Y < Y + Height;
 		}
 
 		[[nodiscard]] auto Union(const Rectangle& other) const -> Rectangle
@@ -72,6 +70,37 @@ namespace mocca
 		[[nodiscard]] auto IsEmpty() const -> bool
 		{
 			return Width <= 0 || Height <= 0;
+		}
+	};
+
+	struct CornerRadii
+	{
+	public:
+		float TopLeft;
+		float TopRight;
+		float BottomRight;
+		float BottomLeft;
+	};
+
+	struct EdgeSizes
+	{
+	public:
+		float Top;
+		float Right;
+		float Bottom;
+		float Left;
+	};
+
+	struct RRect
+	{
+	public:
+		Rectangle Rect;
+		CornerRadii Radii;
+
+		[[nodiscard]] auto Inset(const EdgeSizes& border) const -> RRect;
+		[[nodiscard]] auto IsEmpty() const -> bool
+		{
+			return Rect.IsEmpty();
 		}
 	};
 }

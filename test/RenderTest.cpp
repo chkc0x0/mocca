@@ -10,22 +10,24 @@ namespace mtest
 	{
 		mocca::Canvas canvas;
 		canvas.DrawImage(
-			mocca::cmds::DrawImageCmd{
+			mocca::gfx::TextureId{.Id = 7, .Gen = 1},
+			mocca::RRect{
 				.Rect = {.X = 4, .Y = 8, .Width = 32, .Height = 16},
-				.Texture = {.Id = 7, .Gen = 1},
-				.Radius = {.TopLeft = 2, .TopRight = 2},
+				.Radii = {.TopLeft = 2, .TopRight = 2},
 			}
 		);
 
 		const auto& cmds = canvas.Commands();
 		ASSERT_EQ(cmds.size(), 1U);
-		const auto* image = std::get_if<mocca::cmds::DrawImageCmd>(&cmds.front());
+		const auto* image = std::get_if<mocca::cmds::DrawImageCmd>(
+			&cmds.front()
+		);
 		ASSERT_NE(image, nullptr);
 		EXPECT_EQ(image->Texture.Id, 7U);
 		EXPECT_EQ(image->Texture.Gen, 1U);
-		EXPECT_FLOAT_EQ(image->Rect.X, 4.0F);
-		EXPECT_FLOAT_EQ(image->Rect.Width, 32.0F);
-		EXPECT_FLOAT_EQ(image->Radius.TopLeft, 2.0F);
+		EXPECT_FLOAT_EQ(image->Dst.Rect.X, 4.0F);
+		EXPECT_FLOAT_EQ(image->Dst.Rect.Width, 32.0F);
+		EXPECT_FLOAT_EQ(image->Dst.Radii.TopLeft, 2.0F);
 	}
 
 	TEST_F(RenderTest, FirstTickRecordsCommands)
@@ -170,12 +172,12 @@ namespace mtest
 
 		Tick();
 
-		const auto* rect = firstRect(commandsOf(*s));
+		const auto* rect = firstRRect(commandsOf(*s));
 		ASSERT_NE(rect, nullptr);
-		EXPECT_FLOAT_EQ(rect->Radius.TopLeft, 20.0F);
-		EXPECT_FLOAT_EQ(rect->Radius.TopRight, 20.0F);
-		EXPECT_FLOAT_EQ(rect->Radius.BottomRight, 20.0F);
-		EXPECT_FLOAT_EQ(rect->Radius.BottomLeft, 20.0F);
+		EXPECT_FLOAT_EQ(rect->RRect.Radii.TopLeft, 20.0F);
+		EXPECT_FLOAT_EQ(rect->RRect.Radii.TopRight, 20.0F);
+		EXPECT_FLOAT_EQ(rect->RRect.Radii.BottomRight, 20.0F);
+		EXPECT_FLOAT_EQ(rect->RRect.Radii.BottomLeft, 20.0F);
 	}
 
 	TEST_F(RenderTest, BorderResolved)
@@ -206,13 +208,10 @@ namespace mtest
 
 		Tick();
 
-		const auto* rect = firstRect(commandsOf(*s));
-		ASSERT_NE(rect, nullptr);
-		EXPECT_FLOAT_EQ(rect->Border.Top, 3.0F);
-		EXPECT_FLOAT_EQ(rect->Border.Right, 3.0F);
-		EXPECT_FLOAT_EQ(rect->Border.Bottom, 3.0F);
-		EXPECT_FLOAT_EQ(rect->Border.Left, 3.0F);
-		EXPECT_EQ(rect->BorderColor, mocca::colors::Red);
+		const auto* border = firstStrokeRRect(commandsOf(*s));
+		ASSERT_NE(border, nullptr);
+		EXPECT_FLOAT_EQ(border->Paint.StrokeWidth, 3.0F);
+		EXPECT_EQ(border->Paint.Color, mocca::colors::Red);
 	}
 
 	TEST_F(RenderTest, PlainBoxNoBorder)
@@ -229,11 +228,11 @@ namespace mtest
 
 		Tick();
 
-		const auto* rect = firstRect(commandsOf(*s));
+		const auto* rect = firstRRect(commandsOf(*s));
 		ASSERT_NE(rect, nullptr);
-		EXPECT_FLOAT_EQ(rect->Border.Top, 0.0F);
-		EXPECT_FLOAT_EQ(rect->Radius.TopLeft, 0.0F);
-		EXPECT_EQ(rect->BorderColor, mocca::colors::Transparent);
+		EXPECT_EQ(rect->Paint.Color, mocca::colors::Black);
+		EXPECT_FLOAT_EQ(rect->RRect.Radii.TopLeft, 0.0F);
+		EXPECT_EQ(firstStrokeRRect(commandsOf(*s)), nullptr);
 	}
 
 	TEST_F(RenderTest, SpliceIsBalancedAndFramed)
@@ -244,13 +243,11 @@ namespace mtest
 		Tick();
 
 		const auto& cmds = commandsOf(*parent);
-		EXPECT_EQ(clipPushCount(cmds), clipPopCount(cmds))
-			<< "every PushClip must be matched by a PopClip";
-		EXPECT_EQ(transformPushCount(cmds), transformPopCount(cmds))
-			<< "every PushTransform must be matched by a PopTransform";
-		EXPECT_GE(clipPushCount(cmds), 1)
+		EXPECT_EQ(saveCount(cmds), restoreCount(cmds))
+			<< "every Save must be matched by a Restore";
+		EXPECT_GE(clipRectCount(cmds), 1)
 			<< "a spliced child must be clipped to its own bounds";
-		EXPECT_GE(transformPushCount(cmds), 1)
+		EXPECT_GE(concatCount(cmds), 1)
 			<< "a spliced child must be offset by its own position";
 	}
 

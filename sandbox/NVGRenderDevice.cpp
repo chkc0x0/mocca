@@ -1,8 +1,8 @@
 #include "NVGRenderDevice.h"
 #include "core/Application.h"
 #include "core/Logger.h"
+#include "gfx/Paint.h"
 #include "text/FontRegistry.h"
-#include <algorithm>
 #include <cstdlib>
 #include <string>
 #include <type_traits>
@@ -16,6 +16,104 @@
 namespace sandbox
 {
 	constexpr bool DebugRunBoxes = false;
+
+	auto hasRadius(const mocca::CornerRadii& radii) -> bool
+	{
+		return radii.TopLeft > 0 || radii.TopRight > 0 ||
+			   radii.BottomRight > 0 || radii.BottomLeft > 0;
+	}
+
+	auto addRRect(NVGcontext* vg, const mocca::RRect& rrect) -> void
+	{
+		const auto& rect = rrect.Rect;
+		if (hasRadius(rrect.Radii))
+		{
+			nvgRoundedRectVarying(
+				vg,
+				rect.X,
+				rect.Y,
+				rect.Width,
+				rect.Height,
+				rrect.Radii.TopLeft,
+				rrect.Radii.TopRight,
+				rrect.Radii.BottomRight,
+				rrect.Radii.BottomLeft
+			);
+		}
+		else
+		{
+			nvgRect(vg, rect.X, rect.Y, rect.Width, rect.Height);
+		}
+	}
+
+	auto strokeCapOf(mocca::gfx::StrokeCap cap) -> int
+	{
+		switch (cap)
+		{
+		case mocca::gfx::StrokeCap::Round:
+			return NVG_ROUND;
+		case mocca::gfx::StrokeCap::Square:
+			return NVG_SQUARE;
+		case mocca::gfx::StrokeCap::Butt:
+		default:
+			return NVG_BUTT;
+		}
+	}
+
+	auto strokeJoinOf(mocca::gfx::StrokeJoin join) -> int
+	{
+		switch (join)
+		{
+		case mocca::gfx::StrokeJoin::Round:
+			return NVG_ROUND;
+		case mocca::gfx::StrokeJoin::Bevel:
+			return NVG_BEVEL;
+		case mocca::gfx::StrokeJoin::Miter:
+		default:
+			return NVG_MITER;
+		}
+	}
+
+	auto toNvgColor(mocca::Color color) -> NVGcolor
+	{
+		return nvgRGBA(color.R, color.G, color.B, color.A);
+	}
+
+	auto applyPaint(NVGcontext* vg, const mocca::gfx::Paint& paint) -> void
+	{
+		nvgGlobalAlpha(vg, paint.Opacity);
+		nvgFillColor(vg, toNvgColor(paint.Color));
+		nvgStrokeColor(vg, toNvgColor(paint.Color));
+		nvgStrokeWidth(vg, paint.StrokeWidth);
+		nvgLineCap(vg, strokeCapOf(paint.Cap));
+		nvgLineJoin(vg, strokeJoinOf(paint.Join));
+		nvgMiterLimit(vg, paint.MiterLimit);
+
+		switch (paint.Style)
+		{
+		case mocca::gfx::PaintStyle::Stroke:
+			nvgStroke(vg);
+			break;
+		case mocca::gfx::PaintStyle::FillAndStroke:
+			nvgFill(vg);
+			nvgStroke(vg);
+			break;
+		case mocca::gfx::PaintStyle::Fill:
+		default:
+			nvgFill(vg);
+			break;
+		}
+	}
+
+	template <typename Build>
+	auto
+	drawShape(NVGcontext* vg, const mocca::gfx::Paint& paint, Build&& buildPath)
+		-> void
+	{
+		nvgBeginPath(vg);
+		buildPath();
+		applyPaint(vg, paint);
+	}
 
 	NVGRenderDevice::~NVGRenderDevice() = default;
 
@@ -101,63 +199,44 @@ namespace sandbox
 					using T = std::decay_t<decltype(c)>;
 					if constexpr (std::is_same_v<T, mocca::cmds::DrawRectCmd>)
 					{
-						const auto& radius = c.Radius;
-						bool rounded = radius.TopLeft > 0 ||
-									   radius.TopRight > 0 ||
-									   radius.BottomRight > 0 ||
-									   radius.BottomLeft > 0;
-
-						nvgBeginPath(_vg);
-						if (rounded)
-						{
-							nvgRoundedRectVarying(
-								_vg,
-								c.Rect.X,
-								c.Rect.Y,
-								c.Rect.Width,
-								c.Rect.Height,
-								radius.TopLeft,
-								radius.TopRight,
-								radius.BottomRight,
-								radius.BottomLeft
-							);
-						}
-						else
-						{
-							nvgRect(
-								_vg,
-								c.Rect.X,
-								c.Rect.Y,
-								c.Rect.Width,
-								c.Rect.Height
-							);
-						}
-						nvgFillColor(
+						drawShape(
 							_vg,
-							nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
+							c.Paint,
+							[&]() -> void
+							{
+								nvgRect(
+									_vg,
+									c.Rect.X,
+									c.Rect.Y,
+									c.Rect.Width,
+									c.Rect.Height
+								);
+							}
 						);
-						nvgFill(_vg);
-
-						float borderWidth = std::max({
-							c.Border.Top,
-							c.Border.Right,
-							c.Border.Bottom,
-							c.Border.Left,
-						});
-						if (borderWidth > 0 && c.BorderColor.A > 0)
+					}
+					else if constexpr (
+						std::is_same_v<T, mocca::cmds::DrawRRectCmd>
+					)
+					{
+						drawShape(
+							_vg,
+							c.Paint,
+							[&]() -> void { addRRect(_vg, c.RRect); }
+						);
+					}
+					else if constexpr (
+						std::is_same_v<T, mocca::cmds::DrawDRRectCmd>
+					)
+					{
+						nvgBeginPath(_vg);
+						addRRect(_vg, c.Outer);
+						if (!c.Inner.IsEmpty())
 						{
-							nvgStrokeColor(
-								_vg,
-								nvgRGBA(
-									c.BorderColor.R,
-									c.BorderColor.G,
-									c.BorderColor.B,
-									c.BorderColor.A
-								)
-							);
-							nvgStrokeWidth(_vg, borderWidth);
-							nvgStroke(_vg);
+							addRRect(_vg, c.Inner);
+							nvgPathWinding(_vg, NVG_HOLE);
 						}
+						applyPaint(_vg, c.Paint);
+						nvgFill(_vg);
 					}
 					else if constexpr (
 						std::is_same_v<T, mocca::cmds::DrawImageCmd>
@@ -174,48 +253,19 @@ namespace sandbox
 							return;
 						}
 
-						const auto& radius = c.Radius;
-						bool rounded = radius.TopLeft > 0 ||
-									   radius.TopRight > 0 ||
-									   radius.BottomRight > 0 ||
-									   radius.BottomLeft > 0;
-
 						nvgBeginPath(_vg);
-						if (rounded)
-						{
-							nvgRoundedRectVarying(
-								_vg,
-								c.Rect.X,
-								c.Rect.Y,
-								c.Rect.Width,
-								c.Rect.Height,
-								radius.TopLeft,
-								radius.TopRight,
-								radius.BottomRight,
-								radius.BottomLeft
-							);
-						}
-						else
-						{
-							nvgRect(
-								_vg,
-								c.Rect.X,
-								c.Rect.Y,
-								c.Rect.Width,
-								c.Rect.Height
-							);
-						}
+						addRRect(_vg, c.Dst);
 						nvgFillPaint(
 							_vg,
 							nvgImagePattern(
 								_vg,
-								c.Rect.X,
-								c.Rect.Y,
-								c.Rect.Width,
-								c.Rect.Height,
+								c.Dst.Rect.X,
+								c.Dst.Rect.Y,
+								c.Dst.Rect.Width,
+								c.Dst.Rect.Height,
 								0.0F,
 								static_cast<int>(handle),
-								1.0F
+								c.Paint.Opacity
 							)
 						);
 						nvgFill(_vg);
@@ -229,12 +279,10 @@ namespace sandbox
 							return;
 						}
 
+						nvgGlobalAlpha(_vg, c.Paint.Opacity);
 						nvgTextLetterSpacing(_vg, 0.0F);
 						nvgTextAlign(_vg, NVG_ALIGN_LEFT | NVG_ALIGN_BASELINE);
-						nvgFillColor(
-							_vg,
-							nvgRGBA(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
-						);
+						nvgFillColor(_vg, toNvgColor(c.Paint.Color));
 
 						for (const auto& line : c.Layout->Lines)
 						{
@@ -245,8 +293,7 @@ namespace sandbox
 								 ci < line.ClusterEnd;
 								 ci++)
 							{
-								const auto& cluster =
-									c.Layout->Clusters[ci];
+								const auto& cluster = c.Layout->Clusters[ci];
 								if (cluster.End <= cluster.Start)
 								{
 									continue;
@@ -316,32 +363,53 @@ namespace sandbox
 							}
 						}
 					}
-					else if constexpr (
-						std::is_same_v<T, mocca::cmds::PushClipCmd>
-					)
+					else if constexpr (std::is_same_v<T, mocca::cmds::SaveCmd>)
 					{
 						nvgSave(_vg);
-						nvgScissor(
-							_vg,
-							c.Rect.X,
-							c.Rect.Y,
-							c.Rect.Width,
-							c.Rect.Height
-						);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::PopClipCmd> ||
-						std::is_same_v<T, mocca::cmds::PopTransformCmd>
+						std::is_same_v<T, mocca::cmds::RestoreCmd>
 					)
 					{
 						nvgRestore(_vg);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::PushTransformCmd>
+						std::is_same_v<T, mocca::cmds::ConcatCmd>
 					)
 					{
-						nvgSave(_vg);
-						nvgTranslate(_vg, c.Offset.X, c.Offset.Y);
+						const auto& m = c.Matrix.M;
+						nvgTransform(_vg, m[0], m[3], m[1], m[4], m[2], m[5]);
+					}
+					else if constexpr (
+						std::is_same_v<T, mocca::cmds::ClipRectCmd>
+					)
+					{
+						if (c.Op == mocca::gfx::ClipOp::Intersect)
+						{
+							nvgScissor(
+								_vg,
+								c.Rect.X,
+								c.Rect.Y,
+								c.Rect.Width,
+								c.Rect.Height
+							);
+						}
+					}
+					else if constexpr (
+						std::is_same_v<T, mocca::cmds::ClipRRectCmd>
+					)
+					{
+						if (c.Op == mocca::gfx::ClipOp::Intersect)
+						{
+							const auto& rect = c.RRect.Rect;
+							nvgScissor(
+								_vg,
+								rect.X,
+								rect.Y,
+								rect.Width,
+								rect.Height
+							);
+						}
 					}
 				},
 				cmd
@@ -361,7 +429,7 @@ namespace sandbox
 
 		int handle = -1;
 		if (_vg != nullptr && mocca::Application::main != nullptr &&
-			std::cmp_not_equal(id ,-1))
+			std::cmp_not_equal(id, -1))
 		{
 			const auto& entry = mocca::Application::main->Fonts().Entry(id);
 			std::string name = "mocca-face-" + std::to_string(id);

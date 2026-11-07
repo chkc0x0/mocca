@@ -33,4 +33,22 @@ namespace mocca::gfx
 		void* (*GetProcAddress)(const char*);
 		void* Native;
 	};
+
+	enum class ClipOp : uint8_t
+	{
+		Intersect,
+		Difference,
+	};
+
+	struct Sampling
+	{
+	public:
+		enum class Filter : uint8_t
+		{
+			Nearest,
+			Linear,
+		};
+
+		Filter Filter = Filter::Linear;
+	};
 }

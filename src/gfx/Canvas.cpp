@@ -2,29 +2,143 @@
 
 namespace mocca
 {
-	void Canvas::DrawRect(
-		float x,
-		float y,
-		float w,
-		float h,
-		Color color,
-		const RectStyle& style
+	constexpr float Boundary = 1.0e9F;
+
+	auto boundlessClip() -> Rectangle
+	{
+		return {
+			.X = -Boundary,
+			.Y = -Boundary,
+			.Width = Boundary * 2.0F,
+			.Height = Boundary * 2.0F,
+		};
+	}
+
+	Canvas::Canvas()
+	{
+		_matrixStack.push_back(gfx::Matrix::Identity());
+		_clipStack.push_back(boundlessClip());
+	}
+
+	void Canvas::Save()
+	{
+		_commands.emplace_back(cmds::SaveCmd{});
+		_matrixStack.push_back(_matrixStack.back());
+		_clipStack.push_back(_clipStack.back());
+	}
+
+	void Canvas::Restore()
+	{
+		if (_matrixStack.size() > 1)
+		{
+			_matrixStack.pop_back();
+			_clipStack.pop_back();
+		}
+		_commands.emplace_back(cmds::RestoreCmd{});
+	}
+
+	void Canvas::Translate(float dx, float dy)
+	{
+		Concat(gfx::Matrix::Translate(dx, dy));
+	}
+
+	void Canvas::Scale(float sx, float sy)
+	{
+		Concat(gfx::Matrix::Scale(sx, sy));
+	}
+
+	void Canvas::Rotate(float degrees)
+	{
+		Concat(gfx::Matrix::Rotate(degrees));
+	}
+
+	void Canvas::Concat(const gfx::Matrix& matrix)
+	{
+		_commands.emplace_back(cmds::ConcatCmd{.Matrix = matrix});
+		_matrixStack.back() = gfx::Matrix::Concat(_matrixStack.back(), matrix);
+	}
+
+	void Canvas::ClipRect(const Rectangle& rect, gfx::ClipOp op)
+	{
+		_commands.emplace_back(cmds::ClipRectCmd{.Rect = rect, .Op = op});
+
+		if (op == gfx::ClipOp::Intersect)
+		{
+			_clipStack.back() = _clipStack.back().Intersect(
+				_matrixStack.back().MapRect(rect)
+			);
+		}
+	}
+
+	void Canvas::ClipRRect(const RRect& rrect, gfx::ClipOp op)
+	{
+		_commands.emplace_back(cmds::ClipRRectCmd{.RRect = rrect, .Op = op});
+
+		if (op == gfx::ClipOp::Intersect)
+		{
+			_clipStack.back() = _clipStack.back().Intersect(
+				_matrixStack.back().MapRect(rrect.Rect)
+			);
+		}
+	}
+
+	void Canvas::DrawRect(const Rectangle& rect, const gfx::Paint& paint)
+	{
+		_commands.emplace_back(cmds::DrawRectCmd{.Rect = rect, .Paint = paint});
+	}
+
+	void Canvas::DrawRRect(const RRect& rrect, const gfx::Paint& paint)
+	{
+		_commands.emplace_back(
+			cmds::DrawRRectCmd{.RRect = rrect, .Paint = paint}
+		);
+	}
+
+	void Canvas::DrawDRRect(
+		const RRect& outer,
+		const RRect& inner,
+		const gfx::Paint& paint
 	)
 	{
 		_commands.emplace_back(
-			cmds::DrawRectCmd{
-				.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
-				.Radius = style.Radius,
-				.Border = style.Border,
-				.Color = color,
-				.BorderColor = style.BorderColor,
+			cmds::DrawDRRectCmd{
+				.Outer = outer,
+				.Inner = inner,
+				.Paint = paint,
 			}
 		);
 	}
 
-	void Canvas::DrawImage(cmds::DrawImageCmd cmd)
+	void Canvas::DrawImage(
+		const gfx::TextureId& texture,
+		const RRect& dst,
+		const gfx::Paint& paint,
+		const gfx::Sampling& sampling
+	)
 	{
-		_commands.emplace_back(std::move(cmd));
+		_commands.emplace_back(
+			cmds::DrawImageCmd{
+				.Dst = dst,
+				.Texture = texture,
+				.Paint = paint,
+				.Sampling = sampling,
+			}
+		);
+	}
+
+	void Canvas::DrawImage(
+		const gfx::TextureId& texture,
+		const Rectangle& dst,
+		const gfx::Paint& paint,
+		const gfx::Sampling& sampling
+	)
+	{
+		DrawImage(
+			texture,
+			RRect{.Rect = dst, .Radii = {}},
+			paint,
+			sampling
+		);
 	}
 
 	void Canvas::DrawText(cmds::DrawTextCmd cmd)
@@ -32,59 +146,18 @@ namespace mocca
 		_commands.emplace_back(std::move(cmd));
 	}
 
-	void Canvas::PushClip(float x, float y, float w, float h)
+	auto Canvas::QuickReject(const Rectangle& localRect) const -> bool
 	{
-		Vector2 currentOffset = _transformStack.empty()
-									? Vector2{0, 0}
-									: _transformStack.back();
-		Rectangle rect{
-			.X = currentOffset.X + x,
-			.Y = currentOffset.Y + y,
-			.Width = w,
-			.Height = h,
-		};
-		if (!_clipStack.empty())
+		if (localRect.IsEmpty())
 		{
-			rect = _clipStack.back().Intersect(rect);
+			return true;
 		}
-		_clipStack.push_back(rect);
-		_commands.emplace_back(cmds::PushClipCmd{rect});
+
+		Rectangle device = _matrixStack.back().MapRect(localRect);
+		return !device.Intersects(_clipStack.back());
 	}
 
-	void Canvas::PopClip()
-	{
-		if (!_clipStack.empty())
-		{
-			_clipStack.pop_back();
-		}
-		_commands.emplace_back(cmds::PopClipCmd{});
-	}
-
-	void Canvas::PushTransform(float dx, float dy)
-	{
-		Vector2 currentOffset = _transformStack.empty()
-									? Vector2{.X = 0, .Y = 0}
-									: _transformStack.back();
-		Vector2 newOffset = {
-			.X = currentOffset.X + dx,
-			.Y = currentOffset.Y + dy,
-		};
-		_transformStack.push_back(newOffset);
-		_commands.emplace_back(
-			cmds::PushTransformCmd{Vector2{.X = dx, .Y = dy}}
-		);
-	}
-
-	void Canvas::PopTransform()
-	{
-		if (!_transformStack.empty())
-		{
-			_transformStack.pop_back();
-		}
-		_commands.emplace_back(cmds::PopTransformCmd{});
-	}
-
-	auto Canvas::Commands() const -> const std::vector<cmds::DrawCommand>&
+	auto Canvas::Commands() const -> std::span<const cmds::DrawCommand>
 	{
 		return _commands;
 	}
@@ -92,8 +165,10 @@ namespace mocca
 	void Canvas::Clear()
 	{
 		_commands.clear();
+		_matrixStack.clear();
 		_clipStack.clear();
-		_transformStack.clear();
+		_matrixStack.push_back(gfx::Matrix::Identity());
+		_clipStack.push_back(boundlessClip());
 	}
 
 	void Canvas::Append(const Canvas& other)

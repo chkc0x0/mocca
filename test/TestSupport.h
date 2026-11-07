@@ -5,12 +5,13 @@
 #include "style/StyleHelpers.h"
 #include "gtest/gtest.h"
 #include <algorithm>
+#include <span>
 #include <string>
 #include <vector>
 
 namespace mtest
 {
-	using Commands = std::vector<mocca::cmds::DrawCommand>;
+	using Commands = std::span<const mocca::cmds::DrawCommand>;
 
 	inline auto countOf(const Commands& cmds, auto pred) -> int
 	{
@@ -30,8 +31,30 @@ namespace mtest
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::DrawRectCmd>(&c) != nullptr; }
+			{
+				return std::get_if<mocca::cmds::DrawRectCmd>(&c) != nullptr ||
+					   std::get_if<mocca::cmds::DrawRRectCmd>(&c) != nullptr ||
+					   std::get_if<mocca::cmds::DrawDRRectCmd>(&c) != nullptr;
+			}
 		);
+	}
+
+	inline auto paintOf(const mocca::cmds::DrawCommand& c)
+		-> const mocca::gfx::Paint*
+	{
+		if (const auto* r = std::get_if<mocca::cmds::DrawRectCmd>(&c))
+		{
+			return &r->Paint;
+		}
+		if (const auto* rr = std::get_if<mocca::cmds::DrawRRectCmd>(&c))
+		{
+			return &rr->Paint;
+		}
+		if (const auto* dr = std::get_if<mocca::cmds::DrawDRRectCmd>(&c))
+		{
+			return &dr->Paint;
+		}
+		return nullptr;
 	}
 
 	inline auto rectHasColor(const Commands& cmds, mocca::Color color) -> bool
@@ -40,10 +63,38 @@ namespace mtest
 			cmds,
 			[color](const auto& c) -> auto
 			{
-				const auto* r = std::get_if<mocca::cmds::DrawRectCmd>(&c);
-				return r != nullptr && r->Color == color;
+				const auto* paint = paintOf(c);
+				return paint != nullptr && paint->Color == color;
 			}
 		);
+	}
+
+	inline auto firstFillColor(const Commands& cmds) -> mocca::Color
+	{
+		for (const auto& c : cmds)
+		{
+			const auto* paint = paintOf(c);
+			if (paint != nullptr &&
+				paint->Style != mocca::gfx::PaintStyle::Stroke)
+			{
+				return paint->Color;
+			}
+		}
+		return mocca::colors::Transparent;
+	}
+
+	inline auto firstBorderColor(const Commands& cmds) -> mocca::Color
+	{
+		for (const auto& c : cmds)
+		{
+			const auto* paint = paintOf(c);
+			if (paint != nullptr &&
+				paint->Style != mocca::gfx::PaintStyle::Fill)
+			{
+				return paint->Color;
+			}
+		}
+		return mocca::colors::Transparent;
 	}
 
 	inline auto firstRect(const Commands& cmds)
@@ -52,6 +103,34 @@ namespace mtest
 		for (const auto& c : cmds)
 		{
 			if (const auto* r = std::get_if<mocca::cmds::DrawRectCmd>(&c))
+			{
+				return r;
+			}
+		}
+		return nullptr;
+	}
+
+	inline auto firstRRect(const Commands& cmds)
+		-> const mocca::cmds::DrawRRectCmd*
+	{
+		for (const auto& c : cmds)
+		{
+			if (const auto* r = std::get_if<mocca::cmds::DrawRRectCmd>(&c))
+			{
+				return r;
+			}
+		}
+		return nullptr;
+	}
+
+	inline auto firstStrokeRRect(const Commands& cmds)
+		-> const mocca::cmds::DrawRRectCmd*
+	{
+		for (const auto& c : cmds)
+		{
+			const auto* r = std::get_if<mocca::cmds::DrawRRectCmd>(&c);
+			if (r != nullptr &&
+				r->Paint.Style == mocca::gfx::PaintStyle::Stroke)
 			{
 				return r;
 			}
@@ -93,46 +172,52 @@ namespace mtest
 		return {};
 	}
 
-	inline auto clipPushCount(const Commands& cmds) -> int
+	inline auto saveCount(const Commands& cmds) -> int
 	{
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::PushClipCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::cmds::SaveCmd>(&c) != nullptr; }
 		);
 	}
 
-	inline auto clipPopCount(const Commands& cmds) -> int
+	inline auto restoreCount(const Commands& cmds) -> int
 	{
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::PopClipCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::cmds::RestoreCmd>(&c) != nullptr; }
 		);
 	}
 
-	inline auto transformPushCount(const Commands& cmds) -> int
+	inline auto clipRectCount(const Commands& cmds) -> int
 	{
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{
-				return std::get_if<mocca::cmds::PushTransformCmd>(&c) !=
-					   nullptr;
-			}
+			{ return std::get_if<mocca::cmds::ClipRectCmd>(&c) != nullptr; }
 		);
 	}
 
-	inline auto transformPopCount(const Commands& cmds) -> int
+	inline auto clipRRectCount(const Commands& cmds) -> int
 	{
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::PopTransformCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::cmds::ClipRRectCmd>(&c) != nullptr; }
 		);
 	}
 
-	inline auto commandsOf(const mocca::Surface& s) -> const Commands&
+	inline auto concatCount(const Commands& cmds) -> int
+	{
+		return countOf(
+			cmds,
+			[](const auto& c) -> auto
+			{ return std::get_if<mocca::cmds::ConcatCmd>(&c) != nullptr; }
+		);
+	}
+
+	inline auto commandsOf(const mocca::Surface& s) -> Commands
 	{
 		return s.GetDrawData();
 	}

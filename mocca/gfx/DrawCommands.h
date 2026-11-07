@@ -1,7 +1,9 @@
 #pragma once
+#include "gfx/GfxTypes.h"
+#include "gfx/Matrix.h"
+#include "gfx/Paint.h"
 #include "gfx/Texture.h"
 #include "text/TextLayout.h"
-#include "utils/Color.h"
 #include "utils/Math.h"
 #include <memory>
 #include <string>
@@ -9,40 +11,35 @@
 
 namespace mocca::cmds
 {
-	struct CornerRadii
-	{
-	public:
-		float TopLeft;
-		float TopRight;
-		float BottomRight;
-		float BottomLeft;
-	};
-
-	struct EdgeSizes
-	{
-	public:
-		float Top;
-		float Right;
-		float Bottom;
-		float Left;
-	};
-
 	struct DrawRectCmd
 	{
 	public:
 		Rectangle Rect;
-		CornerRadii Radius;
-		EdgeSizes Border;
-		struct Color Color;
-		struct Color BorderColor;
+		gfx::Paint Paint;
+	};
+
+	struct DrawRRectCmd
+	{
+	public:
+		RRect RRect;
+		gfx::Paint Paint;
+	};
+
+	struct DrawDRRectCmd
+	{
+	public:
+		RRect Outer;
+		RRect Inner;
+		gfx::Paint Paint;
 	};
 
 	struct DrawImageCmd
 	{
 	public:
-		Rectangle Rect;
+		RRect Dst;
 		gfx::TextureId Texture;
-		CornerRadii Radius{};
+		gfx::Paint Paint;
+		gfx::Sampling Sampling{};
 	};
 
 	struct DrawTextCmd
@@ -50,7 +47,7 @@ namespace mocca::cmds
 	public:
 		Vector2 Position;
 		std::string Content;
-		struct Color Color;
+		gfx::Paint Paint;
 		float Size;
 		mtext::FontFaceId Face = static_cast<mtext::FontFaceId>(-1);
 		std::shared_ptr<const mtext::TextLayout> Layout;
@@ -58,30 +55,43 @@ namespace mocca::cmds
 		styles::TextAlignment Align = styles::TextAlignment::Start;
 	};
 
-	struct PushClipCmd
+	struct SaveCmd
 	{
+	};
+
+	struct RestoreCmd
+	{
+	};
+
+	struct ConcatCmd
+	{
+	public:
+		gfx::Matrix Matrix;
+	};
+
+	struct ClipRectCmd
+	{
+	public:
 		Rectangle Rect;
+		gfx::ClipOp Op = gfx::ClipOp::Intersect;
 	};
 
-	struct PopClipCmd
+	struct ClipRRectCmd
 	{
-	};
-
-	struct PushTransformCmd
-	{
-		Vector2 Offset;
-	};
-
-	struct PopTransformCmd
-	{
+	public:
+		RRect RRect;
+		gfx::ClipOp Op = gfx::ClipOp::Intersect;
 	};
 
 	using DrawCommand = std::variant<
 		DrawRectCmd,
+		DrawRRectCmd,
+		DrawDRRectCmd,
 		DrawImageCmd,
 		DrawTextCmd,
-		PushClipCmd,
-		PopClipCmd,
-		PushTransformCmd,
-		PopTransformCmd>;
+		SaveCmd,
+		RestoreCmd,
+		ConcatCmd,
+		ClipRectCmd,
+		ClipRRectCmd>;
 }

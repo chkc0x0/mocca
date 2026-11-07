@@ -208,28 +208,27 @@ namespace mtest
 		);
 
 		Tick();
-		const auto* initial = firstRect(commandsOf(*s));
-		ASSERT_NE(initial, nullptr);
-		EXPECT_EQ(initial->Color, mocca::colors::Transparent);
-		EXPECT_EQ(initial->BorderColor, mocca::colors::Transparent);
+		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Transparent);
+		EXPECT_EQ(
+			firstBorderColor(commandsOf(*s)),
+			mocca::colors::Transparent
+		);
 
 		(*perPropToggler)(true);
 		Tick(0.05, 1);
 
-		const auto* mid = firstRect(commandsOf(*s));
-		ASSERT_NE(mid, nullptr);
-		EXPECT_EQ(mid->Color.R, 255);
-		EXPECT_EQ(mid->Color.G, 0);
-		EXPECT_EQ(mid->Color.B, 0);
-		EXPECT_GT(mid->Color.A, mid->BorderColor.A);
-		EXPECT_GT(mid->Color.A, 0);
-		EXPECT_GT(mid->BorderColor.A, 0);
+		auto midFill = firstFillColor(commandsOf(*s));
+		auto midBorder = firstBorderColor(commandsOf(*s));
+		EXPECT_EQ(midFill.R, 255);
+		EXPECT_EQ(midFill.G, 0);
+		EXPECT_EQ(midFill.B, 0);
+		EXPECT_GT(midFill.A, midBorder.A);
+		EXPECT_GT(midFill.A, 0);
+		EXPECT_GT(midBorder.A, 0);
 
 		Tick(0.05, 8);
-		const auto* settled = firstRect(commandsOf(*s));
-		ASSERT_NE(settled, nullptr);
-		EXPECT_EQ(settled->Color, mocca::colors::Red);
-		EXPECT_EQ(settled->BorderColor, mocca::colors::Blue);
+		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Red);
+		EXPECT_EQ(firstBorderColor(commandsOf(*s)), mocca::colors::Blue);
 	}
 
 	namespace
@@ -374,18 +373,18 @@ namespace mtest
 		);
 
 		Tick();
-		EXPECT_EQ(firstRect(commandsOf(*s))->Color, mocca::colors::Transparent);
+		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Transparent);
 
 		(*animToggler)(true);
 		Tick(0.05, 1);
 		(*animToggler)(true);
 
-		auto mid = firstRect(commandsOf(*s))->Color;
+		auto mid = firstFillColor(commandsOf(*s));
 		EXPECT_NE(mid, mocca::colors::Transparent);
 		EXPECT_NE(mid, mocca::colors::Red);
 
 		Tick(0.05, 4);
-		EXPECT_EQ(firstRect(commandsOf(*s))->Color, mocca::colors::Red);
+		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Red);
 	}
 
 	TEST_F(AnimationTest, SpringColorSettles)
@@ -427,7 +426,7 @@ namespace mtest
 		(*animToggler)(true);
 		Tick(0.016, 160);
 
-		EXPECT_EQ(firstRect(commandsOf(*s))->Color, mocca::colors::Red);
+		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Red);
 	}
 
 	TEST_F(AnimationTest, NoAnimColorSnaps)
@@ -443,6 +442,6 @@ namespace mtest
 		(*animToggler)(true);
 		Tick();
 
-		EXPECT_EQ(firstRect(commandsOf(*s))->Color, mocca::colors::Red);
+		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Red);
 	}
 }

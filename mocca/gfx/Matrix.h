@@ -35,7 +35,7 @@ namespace mocca::gfx
 			return {c, -s, 0.0F, s, c, 0.0F};
 		}
 
-		static auto Concat(Matrix& a, Matrix& b) -> Matrix
+		static auto Concat(const Matrix& a, const Matrix& b) -> Matrix
 		{
 			Matrix result{};
 			result.M[0] = (a.M[0] * b.M[0]) + (a.M[1] * b.M[3]);
@@ -47,7 +47,7 @@ namespace mocca::gfx
 			return result;
 		}
 
-		[[nodiscard]] auto MapPoint(Vector2 p) -> Vector2
+		[[nodiscard]] auto MapPoint(const Vector2& p) const -> Vector2
 		{
 			return {
 				.X = (M[0] * p.X) + (M[1] * p.Y) + M[2],
@@ -55,7 +55,7 @@ namespace mocca::gfx
 			};
 		}
 
-		[[nodiscard]] auto MapRect(Rectangle& rect) -> Rectangle
+		[[nodiscard]] auto MapRect(const Rectangle& rect) const -> Rectangle
 		{
 			Vector2 a = MapPoint({.X = rect.X, .Y = rect.Y});
 			Vector2 b = MapPoint({.X = rect.X + rect.Width, .Y = rect.Y});
@@ -79,7 +79,7 @@ namespace mocca::gfx
 			};
 		}
 
-		[[nodiscard]] auto Invert() -> std::optional<Matrix>
+		[[nodiscard]] auto Invert() const -> std::optional<Matrix>
 		{
 			float det = (M[0] * M[4]) - (M[1] * M[3]);
 			if (det == 0.0F)

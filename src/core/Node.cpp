@@ -347,11 +347,11 @@ namespace mocca::detail
 
 	auto
 	resolveCornerRadii(const styles::ComputedStyle& style, float w, float h)
-		-> cmds::CornerRadii
+		-> CornerRadii
 	{
 		float radiusBasis = std::min(w, h);
 
-		cmds::CornerRadii radius{
+		CornerRadii radius{
 			.TopLeft = resolveLength(
 				style.Get<styles::StyleProperty::BorderRadiusTopLeft>(),
 				radiusBasis
@@ -407,7 +407,7 @@ namespace mocca::detail
 	}
 
 	auto resolveBorder(const styles::ComputedStyle& style, float w, float h)
-		-> cmds::EdgeSizes
+		-> EdgeSizes
 	{
 		return {
 			.Top =
@@ -443,50 +443,35 @@ namespace mocca::detail
 		auto borderColor = style.Get<styles::StyleProperty::BorderColor>();
 		uint32_t imageRef = style.Get<styles::StyleProperty::BackgroundImage>();
 
+		RRect rrect{
+			.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
+			.Radii = radius,
+		};
+		float borderWidth = std::max({
+			border.Top,
+			border.Right,
+			border.Bottom,
+			border.Left,
+		});
+		bool hasBorder = borderWidth > 0 && borderColor.A > 0;
+		gfx::Paint borderPaint = gfx::Paint::Stroke(borderColor, borderWidth);
+
+		canvas.DrawRRect(rrect, gfx::Paint::Fill(background));
+
 		if (imageRef != 0)
 		{
-			canvas
-				.DrawRect(x, y, w, h, background, RectStyle{.Radius = radius});
 			const auto& image = styles::detail::resolveBackgroundImage(
 				imageRef
 			);
 			for (const auto& layer : image.Layers)
 			{
-				canvas.DrawImage(
-					cmds::DrawImageCmd{
-						.Rect = {.X = x, .Y = y, .Width = w, .Height = h},
-						.Texture = layer.Texture,
-						.Radius = radius,
-					}
-				);
+				canvas.DrawImage(layer.Texture, rrect);
 			}
-			canvas.DrawRect(
-				x,
-				y,
-				w,
-				h,
-				colors::Transparent,
-				RectStyle{
-					.Radius = radius,
-					.Border = border,
-					.BorderColor = borderColor,
-				}
-			);
 		}
-		else
+
+		if (hasBorder)
 		{
-			canvas.DrawRect(
-				x,
-				y,
-				w,
-				h,
-				background,
-				RectStyle{
-					.Radius = radius,
-					.Border = border,
-					.BorderColor = borderColor,
-				}
-			);
+			canvas.DrawRRect(rrect, borderPaint);
 		}
 	}
 
@@ -518,12 +503,10 @@ namespace mocca::detail
 		const std::string& content = textElement.Content;
 
 		canvas.DrawRect(
-			x,
-			y,
-			w,
-			h,
-			node.Style.Get<styles::StyleProperty::BackgroundColor>(),
-			RectStyle{}
+			{.X = x, .Y = y, .Width = w, .Height = h},
+			gfx::Paint::Fill(
+				node.Style.Get<styles::StyleProperty::BackgroundColor>()
+			)
 		);
 
 		float caretWidth = textElement.Caret
@@ -542,7 +525,12 @@ namespace mocca::detail
 
 		auto emit =
 			[&](float rx, float ry, float rw, float rh, Color color) -> void
-		{ canvas.DrawRect(x + rx, y + ry, rw, rh, color, RectStyle{}); };
+		{
+			canvas.DrawRect(
+				{.X = x + rx, .Y = y + ry, .Width = rw, .Height = rh},
+				gfx::Paint::Fill(color)
+			);
+		};
 
 		if (textElement.Decorations)
 		{
@@ -576,7 +564,9 @@ namespace mocca::detail
 			cmds::DrawTextCmd{
 				.Position = {.X = x, .Y = y},
 				.Content = content,
-				.Color = node.Style.Get<styles::StyleProperty::TextColor>(),
+				.Paint = gfx::Paint::Fill(
+					node.Style.Get<styles::StyleProperty::TextColor>()
+				),
 				.Size = node.Style.Get<styles::StyleProperty::FontSize>().Value,
 				.Face = layout->Face,
 				.Layout = layout,
@@ -652,12 +642,13 @@ namespace mocca::detail
 					float drawW = std::max(1.0F, std::round(caret.Width));
 					float drawH = std::round(box.Height);
 					canvas.DrawRect(
-						drawX,
-						drawY,
-						drawW,
-						drawH,
-						caret.Color,
-						RectStyle{}
+						{
+							.X = drawX,
+							.Y = drawY,
+							.Width = drawW,
+							.Height = drawH,
+						},
+						gfx::Paint::Fill(caret.Color)
 					);
 				}
 			}
@@ -683,14 +674,16 @@ namespace mocca::detail
 
 		if (clips)
 		{
-			canvas.PushClip(x, y, w, h);
+			canvas.Save();
+			canvas.ClipRect({.X = x, .Y = y, .Width = w, .Height = h});
 		}
 
 		paintDecorations(node, canvas, x, y, w, h);
 
 		if (scrolls)
 		{
-			canvas.PushTransform(-node.ScrollOffset.X, -node.ScrollOffset.Y);
+			canvas.Save();
+			canvas.Translate(-node.ScrollOffset.X, -node.ScrollOffset.Y);
 		}
 
 		Rectangle childCull = cull;
@@ -713,12 +706,12 @@ namespace mocca::detail
 
 		if (scrolls)
 		{
-			canvas.PopTransform();
+			canvas.Restore();
 		}
 
 		if (clips)
 		{
-			canvas.PopClip();
+			canvas.Restore();
 		}
 	}
 

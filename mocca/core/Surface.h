@@ -101,7 +101,7 @@ namespace mocca
 		auto DetachChild(Surface* which) -> std::unique_ptr<Surface>;
 
 		[[nodiscard]] auto GetDrawData() const
-			-> const std::vector<cmds::DrawCommand>&
+			-> std::span<const cmds::DrawCommand>
 		{
 			return _canvas.Commands();
 		}
