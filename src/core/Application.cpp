@@ -211,6 +211,12 @@ namespace mocca
 				_textureScratch.clear();
 				_textures.CollectFor(surface, _textureScratch);
 
+				gfx::detail::reportMissingFeatures(
+					surface->GetDrawData(),
+					surface->_renderer->Capabilities(),
+					_reportedMissingFeatures
+				);
+
 				surface->_renderer->Render({
 					.Commands = surface->GetDrawData(),
 					.Textures = _textureScratch,

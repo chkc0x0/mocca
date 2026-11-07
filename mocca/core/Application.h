@@ -142,6 +142,7 @@ namespace mocca
 
 		bool _inTick = false;
 		bool _init = false;
+		uint64_t _reportedMissingFeatures = 0;
 		bool _stateOnEffectWarned = false;
 		bool _hasLast = false;
 		uint32_t _stateOnEffectStreak = 0;

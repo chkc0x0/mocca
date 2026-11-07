@@ -39,6 +39,11 @@ namespace mocca::gfx
 		
 		static auto Fill(const mocca::Color& color) -> Paint;
 		static auto Stroke(const mocca::Color& color, float width) -> Paint;
+
+		[[nodiscard]] auto HasStroke() const -> bool
+		{
+			return Style != PaintStyle::Fill;
+		}
 	};
 
 	inline auto Paint::Fill(const mocca::Color& color) -> Paint

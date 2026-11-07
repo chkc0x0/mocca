@@ -80,6 +80,12 @@ namespace mocca
 		float TopRight;
 		float BottomRight;
 		float BottomLeft;
+
+		[[nodiscard]] auto HasRadius() const -> bool
+		{
+			return TopLeft > 0 || TopRight > 0 || BottomRight > 0 ||
+				   BottomLeft > 0;
+		}
 	};
 
 	struct EdgeSizes

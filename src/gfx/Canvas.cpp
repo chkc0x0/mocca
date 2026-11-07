@@ -1,4 +1,6 @@
 #include "gfx/Canvas.h"
+#include "core/Logger.h"
+#include "gfx/Capabilities.h"
 
 namespace mocca
 {
@@ -178,5 +180,35 @@ namespace mocca
 			other._commands.begin(),
 			other._commands.end()
 		);
+	}
+
+	// i dont want a new file so
+	auto gfx::detail::reportMissingFeatures(
+		std::span<const cmds::DrawCommand> commands,
+		const gfx::Capabilities& caps,
+		uint64_t& reported
+	) -> uint64_t
+	{
+#ifdef DEBUG
+		uint64_t missing = gfx::drawCmdMissingFeatures(commands, caps) &
+								 ~reported;
+		if (missing == 0)
+		{
+			return 0;
+		}
+
+		reported |= missing;
+		mc_warning(
+			"renderer is missing draw features required by this frame "
+			"(missing feature bits 0x{:x})",
+			missing
+		);
+		return missing;
+#else
+		(void)commands;
+		(void)caps;
+		(void)reported;
+		return 0;
+#endif
 	}
 }

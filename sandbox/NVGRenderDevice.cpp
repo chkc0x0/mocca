@@ -171,6 +171,25 @@ namespace sandbox
 		}
 	}
 
+	auto NVGRenderer::Capabilities() const -> const mocca::gfx::Capabilities&
+	{
+		using mocca::gfx::bits;
+		using mocca::gfx::Feature;
+
+		static const mocca::gfx::Capabilities Caps{
+			.Features = bits(Feature::StrokedPaths) |
+						bits(Feature::RoundedRects) | bits(Feature::DRRects) |
+						bits(Feature::ClipRect) | bits(Feature::ImageSampling) |
+						bits(Feature::ImageRounded) |
+						bits(Feature::Text) | bits(Feature::Opacity),
+			.MaxTextureSize = 4096,
+			.MaxPathPoints = 0,
+			.TextureFormats =
+				1U << static_cast<uint32_t>(mocca::gfx::TextureFormat::RGBA8),
+		};
+		return Caps;
+	}
+
 	void NVGRenderer::Render(const mocca::gfx::FrameInfo& frame)
 	{
 		if (_vg == nullptr)

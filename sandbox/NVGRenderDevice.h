@@ -32,6 +32,9 @@ namespace sandbox
 		);
 		~NVGRenderer() override;
 
+		[[nodiscard]] auto Capabilities() const
+			-> const mocca::gfx::Capabilities& override;
+
 		void Render(const mocca::gfx::FrameInfo& frame) override;
 
 	private:

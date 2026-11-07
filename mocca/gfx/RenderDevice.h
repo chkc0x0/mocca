@@ -1,5 +1,6 @@
 #pragma once
 #include "GfxTypes.h"
+#include "gfx/Capabilities.h"
 #include "gfx/DrawCommands.h"
 #include "utils/Math.h"
 #include <memory>
@@ -45,6 +46,9 @@ namespace mocca::gfx
 	{
 	public:
 		virtual ~Renderer() = default;
+
+		[[nodiscard]] virtual auto Capabilities() const
+			-> const Capabilities& = 0;
 
 		virtual void Render(const FrameInfo& frame) = 0;
 	};
