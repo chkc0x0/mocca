@@ -208,10 +208,15 @@ namespace mtest
 
 		Tick();
 
-		const auto* border = firstStrokeRRect(commandsOf(*s));
+		const auto* border = firstDRRect(commandsOf(*s));
 		ASSERT_NE(border, nullptr);
-		EXPECT_FLOAT_EQ(border->Paint.StrokeWidth, 3.0F);
 		EXPECT_EQ(border->Paint.Color, mocca::colors::Red);
+		EXPECT_FLOAT_EQ(border->Outer.Rect.X, 0.0F);
+		EXPECT_FLOAT_EQ(border->Outer.Rect.Width, 50.0F);
+		EXPECT_FLOAT_EQ(border->Inner.Rect.X, 3.0F);
+		EXPECT_FLOAT_EQ(border->Inner.Rect.Y, 3.0F);
+		EXPECT_FLOAT_EQ(border->Inner.Rect.Width, 44.0F);
+		EXPECT_FLOAT_EQ(border->Inner.Rect.Height, 44.0F);
 	}
 
 	TEST_F(RenderTest, PlainBoxNoBorder)
@@ -232,7 +237,7 @@ namespace mtest
 		ASSERT_NE(rect, nullptr);
 		EXPECT_EQ(rect->Paint.Color, mocca::colors::Black);
 		EXPECT_FLOAT_EQ(rect->RRect.Radii.TopLeft, 0.0F);
-		EXPECT_EQ(firstStrokeRRect(commandsOf(*s)), nullptr);
+		EXPECT_EQ(firstDRRect(commandsOf(*s)), nullptr);
 	}
 
 	TEST_F(RenderTest, SpliceIsBalancedAndFramed)
