@@ -104,12 +104,12 @@ mocca_dep = declare_dependency(
 if get_option('sandbox')
     executable(
         'sandbox',
-        dependencies: [mocca_dep, dependency('glfw3'), subproject('kurva').get_variable('nanovg_dep'), dependency('glew')],
+        dependencies: [mocca_dep, dependency('sdl3'), subproject('kurva').get_variable('nanovg_dep'), dependency('glew')],
         sources: [
             'sandbox/main.cpp',
-            'sandbox/GLFWPlatformSurface.cpp',
+            'sandbox/SDL3PlatformSurface.cpp',
             'sandbox/NVGRenderDevice.cpp',
-            'sandbox/GLFWPlatformInterface.cpp'
+            'sandbox/SDL3PlatformInterface.cpp'
         ],
         include_directories: include_directories('sandbox'),
     )

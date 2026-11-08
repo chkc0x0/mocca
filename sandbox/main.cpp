@@ -1,4 +1,4 @@
-#include "GLFWPlatformInterface.h"
+#include "SDL3PlatformInterface.h"
 #include "core/Application.h"
 #include "core/Element.h"
 #include "core/Hooks.h"
@@ -109,7 +109,7 @@ auto main(int argc, const char** argv) -> int
 {
 	auto app = Application("com.mocca.sandbox");
 	app.SetRenderDevice<sandbox::NVGRenderDevice>();
-	app.SetPlatformInterface(sandbox::createGLFWPlatformInterface());
+	app.SetPlatformInterface(sandbox::createSDL3PlatformInterface());
 
 	mocca::Logger::SetLogCallback(logCallback);
 
