@@ -255,7 +255,6 @@ namespace sandbox
 							nvgPathWinding(_vg, NVG_HOLE);
 						}
 						applyPaint(_vg, c.Paint);
-						nvgFill(_vg);
 					}
 					else if constexpr (
 						std::is_same_v<T, mocca::cmds::DrawImageCmd>

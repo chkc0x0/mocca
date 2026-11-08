@@ -12,6 +12,8 @@ SDL3PlatformSurface::SDL3PlatformSurface(
 ) :
 	_owner(owner)
 {
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
 	_window = SDL_CreateWindow(
 		desc.Title.c_str(),
 		static_cast<int>(desc.Width),
