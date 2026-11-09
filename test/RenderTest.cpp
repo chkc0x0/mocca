@@ -174,10 +174,10 @@ namespace mtest
 
 		const auto* rect = firstRRect(commandsOf(*s));
 		ASSERT_NE(rect, nullptr);
-		EXPECT_FLOAT_EQ(rect->RRect.Radii.TopLeft, 20.0F);
-		EXPECT_FLOAT_EQ(rect->RRect.Radii.TopRight, 20.0F);
-		EXPECT_FLOAT_EQ(rect->RRect.Radii.BottomRight, 20.0F);
-		EXPECT_FLOAT_EQ(rect->RRect.Radii.BottomLeft, 20.0F);
+		EXPECT_FLOAT_EQ(rect->Rect.Radii.TopLeft, 20.0F);
+		EXPECT_FLOAT_EQ(rect->Rect.Radii.TopRight, 20.0F);
+		EXPECT_FLOAT_EQ(rect->Rect.Radii.BottomRight, 20.0F);
+		EXPECT_FLOAT_EQ(rect->Rect.Radii.BottomLeft, 20.0F);
 	}
 
 	TEST_F(RenderTest, BorderResolved)
@@ -236,7 +236,7 @@ namespace mtest
 		const auto* rect = firstRRect(commandsOf(*s));
 		ASSERT_NE(rect, nullptr);
 		EXPECT_EQ(rect->Paint.Color, mocca::colors::Black);
-		EXPECT_FLOAT_EQ(rect->RRect.Radii.TopLeft, 0.0F);
+		EXPECT_FLOAT_EQ(rect->Rect.Radii.TopLeft, 0.0F);
 		EXPECT_EQ(firstDRRect(commandsOf(*s)), nullptr);
 	}
 

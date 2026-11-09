@@ -43,6 +43,7 @@ sources = [
     'src/text/LayoutCache.cpp',
     'src/text/Bidi.cpp',
 	'src/utils/Math.cpp',
+	'src/gfx/Capabilities.cpp',
 
 	'src/widgets/Button.cpp'
 ]

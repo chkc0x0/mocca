@@ -74,7 +74,7 @@ namespace mocca
 
 	void Canvas::ClipRRect(const RRect& rrect, gfx::ClipOp op)
 	{
-		_commands.emplace_back(cmds::ClipRRectCmd{.RRect = rrect, .Op = op});
+		_commands.emplace_back(cmds::ClipRRectCmd{.Rect = rrect, .Op = op});
 
 		if (op == gfx::ClipOp::Intersect)
 		{
@@ -92,7 +92,7 @@ namespace mocca
 	void Canvas::DrawRRect(const RRect& rrect, const gfx::Paint& paint)
 	{
 		_commands.emplace_back(
-			cmds::DrawRRectCmd{.RRect = rrect, .Paint = paint}
+			cmds::DrawRRectCmd{.Rect = rrect, .Paint = paint}
 		);
 	}
 

@@ -240,7 +240,7 @@ namespace sandbox
 						drawShape(
 							_vg,
 							c.Paint,
-							[&]() -> void { addRRect(_vg, c.RRect); }
+							[&]() -> void { addRRect(_vg, c.Rect); }
 						);
 					}
 					else if constexpr (
@@ -419,7 +419,7 @@ namespace sandbox
 					{
 						if (c.Op == mocca::gfx::ClipOp::Intersect)
 						{
-							const auto& rect = c.RRect.Rect;
+							const auto& rect = c.Rect.Rect;
 							nvgScissor(
 								_vg,
 								rect.X,

@@ -21,7 +21,7 @@ namespace mocca::cmds
 	struct DrawRRectCmd
 	{
 	public:
-		RRect RRect;
+		RRect Rect;
 		gfx::Paint Paint;
 	};
 
@@ -79,7 +79,7 @@ namespace mocca::cmds
 	struct ClipRRectCmd
 	{
 	public:
-		RRect RRect;
+		RRect Rect;
 		gfx::ClipOp Op = gfx::ClipOp::Intersect;
 	};
 

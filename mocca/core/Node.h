@@ -46,7 +46,7 @@ namespace mocca::detail
 		ElementKey Key = mc_keyNone;
 
 		Node* Parent = nullptr;
-		Surface* Surface = nullptr;
+		class Surface* Surface = nullptr;
 		YGNodeRef YogaNode{nullptr};
 
 		styles::StyleSet Declared;
