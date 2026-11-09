@@ -17,6 +17,19 @@ namespace mocca
 		FocusReason Reason = FocusReason::Programmatic;
 	};
 
+	enum class A11yAction : uint8_t
+	{
+		Click,
+		Focus,
+		Blur,
+		Expand,
+		Collapse,
+		Increment,
+		Decrement,
+		SetValue,
+		Custom,
+	};
+
 	struct Modifiers
 	{
 		bool Shift = false;
