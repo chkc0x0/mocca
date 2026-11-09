@@ -177,6 +177,12 @@ namespace mocca
 
 		_context._store->ClearDirty();
 
+		if (++_a11yPruneCounter >= 120)
+		{
+			_a11yPruneCounter = 0;
+			_interners->A11y.Prune();
+		}
+
 		_createPendingSurfaces();
 		_reparentPendingSurfaces();
 	}

@@ -1,4 +1,5 @@
 #pragma once
+#include "a11y/A11y.h"
 #include "style/BackgroundImageTypes.h"
 #include "style/FontStyleTypes.h"
 #include "style/TransitionType.h"
@@ -14,5 +15,6 @@ namespace mocca::detail
 		Interner<styles::FontVariationsType> FontVariations;
 		Interner<styles::FontFeaturesType> FontFeatures;
 		Interner<styles::BackgroundImageType> BackgroundImages;
+		A11yInterner A11y;
 	};
 }

@@ -3,7 +3,6 @@
 ## Content
 
 - [ ] add font fallback outside the font stack (registered fonts and FontProvider)
-- [ ] a11y: aria struct
 - [ ] a11y: [accesskit](https://github.com/AccessKit/accesskit-c)
 - [ ] a11y: kbd nav
 - [ ] optimize text (i feel like its slow)
@@ -29,3 +28,4 @@
 - [x] fade colors through alpha instead of oklab when an endpoint is transparent
 - [x] refactor Node::Paint
 - [x] refactor drawing api
+- [x] a11y: aria struct

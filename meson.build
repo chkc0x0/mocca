@@ -16,6 +16,7 @@ sources = [
     'src/style/StyleApply.cpp',
     'src/style/StylePaintApply.cpp',
     'src/core/Element.cpp',
+    'src/a11y/A11y.cpp',
     'src/core/HookFrame.cpp',
     'src/text/Measure.cpp',
     'src/text/Unicode.cpp',
@@ -120,6 +121,7 @@ if get_option('tests')
         'mocca_tests',
         dependencies: [mocca_dep, dependency('gtest', main: true)],
         sources: files(
+            'test/A11yTest.cpp',
             'test/AnimationTest.cpp',
             'test/ApplicationIdTest.cpp',
             'test/EventBusTest.cpp',

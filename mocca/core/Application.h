@@ -146,6 +146,7 @@ namespace mocca
 		bool _stateOnEffectWarned = false;
 		bool _hasLast = false;
 		uint32_t _stateOnEffectStreak = 0;
+		uint32_t _a11yPruneCounter = 0;
 
 		std::chrono::steady_clock::time_point _last;
 		std::size_t _animationsActive = 0;
