@@ -243,7 +243,7 @@ namespace mocca::detail
 		) -> std::unique_ptr<Node>;
 
 		void Print(int depth = 0) const;
-		void Paint(Canvas& canvas, const Rectangle& cull);
+		void Paint(gfx::Canvas& canvas, const Rectangle& cull);
 		auto ResolveDecoration(float w, float h) -> const gfx::BoxDecoration*;
 
 		static auto HitTest(Node* root, float x, float y) -> Node*;

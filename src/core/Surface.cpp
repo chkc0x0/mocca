@@ -404,7 +404,7 @@ namespace mocca
 		_textureSeen.clear();
 		for (const auto& cmd : _canvas.Commands())
 		{
-			if (const auto* image = std::get_if<cmds::DrawImageCmd>(&cmd))
+			if (const auto* image = std::get_if<gfx::cmds::DrawImageCmd>(&cmd))
 			{
 				_textureSeen.insert(image->Texture);
 			}

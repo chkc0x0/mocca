@@ -11,7 +11,7 @@
 
 namespace mtest
 {
-	using Commands = std::span<const mocca::cmds::DrawCommand>;
+	using Commands = std::span<const mocca::gfx::cmds::DrawCommand>;
 
 	inline auto countOf(const Commands& cmds, auto pred) -> int
 	{
@@ -32,25 +32,25 @@ namespace mtest
 			cmds,
 			[](const auto& c) -> auto
 			{
-				return std::get_if<mocca::cmds::DrawRectCmd>(&c) != nullptr ||
-					   std::get_if<mocca::cmds::DrawRRectCmd>(&c) != nullptr ||
-					   std::get_if<mocca::cmds::DrawDRRectCmd>(&c) != nullptr;
+				return std::get_if<mocca::gfx::cmds::DrawRectCmd>(&c) != nullptr ||
+					   std::get_if<mocca::gfx::cmds::DrawRRectCmd>(&c) != nullptr ||
+					   std::get_if<mocca::gfx::cmds::DrawDRRectCmd>(&c) != nullptr;
 			}
 		);
 	}
 
-	inline auto paintOf(const mocca::cmds::DrawCommand& c)
+	inline auto paintOf(const mocca::gfx::cmds::DrawCommand& c)
 		-> const mocca::gfx::Paint*
 	{
-		if (const auto* r = std::get_if<mocca::cmds::DrawRectCmd>(&c))
+		if (const auto* r = std::get_if<mocca::gfx::cmds::DrawRectCmd>(&c))
 		{
 			return &r->Paint;
 		}
-		if (const auto* rr = std::get_if<mocca::cmds::DrawRRectCmd>(&c))
+		if (const auto* rr = std::get_if<mocca::gfx::cmds::DrawRRectCmd>(&c))
 		{
 			return &rr->Paint;
 		}
-		if (const auto* dr = std::get_if<mocca::cmds::DrawDRRectCmd>(&c))
+		if (const auto* dr = std::get_if<mocca::gfx::cmds::DrawDRRectCmd>(&c))
 		{
 			return &dr->Paint;
 		}
@@ -87,7 +87,7 @@ namespace mtest
 	{
 		for (const auto& c : cmds)
 		{
-			if (const auto* dr = std::get_if<mocca::cmds::DrawDRRectCmd>(&c))
+			if (const auto* dr = std::get_if<mocca::gfx::cmds::DrawDRRectCmd>(&c))
 			{
 				return dr->Paint.Color;
 			}
@@ -103,11 +103,11 @@ namespace mtest
 	}
 
 	inline auto firstRect(const Commands& cmds)
-		-> const mocca::cmds::DrawRectCmd*
+		-> const mocca::gfx::cmds::DrawRectCmd*
 	{
 		for (const auto& c : cmds)
 		{
-			if (const auto* r = std::get_if<mocca::cmds::DrawRectCmd>(&c))
+			if (const auto* r = std::get_if<mocca::gfx::cmds::DrawRectCmd>(&c))
 			{
 				return r;
 			}
@@ -116,11 +116,11 @@ namespace mtest
 	}
 
 	inline auto firstRRect(const Commands& cmds)
-		-> const mocca::cmds::DrawRRectCmd*
+		-> const mocca::gfx::cmds::DrawRRectCmd*
 	{
 		for (const auto& c : cmds)
 		{
-			if (const auto* r = std::get_if<mocca::cmds::DrawRRectCmd>(&c))
+			if (const auto* r = std::get_if<mocca::gfx::cmds::DrawRRectCmd>(&c))
 			{
 				return r;
 			}
@@ -129,11 +129,11 @@ namespace mtest
 	}
 
 	inline auto firstDRRect(const Commands& cmds)
-		-> const mocca::cmds::DrawDRRectCmd*
+		-> const mocca::gfx::cmds::DrawDRRectCmd*
 	{
 		for (const auto& c : cmds)
 		{
-			if (const auto* dr = std::get_if<mocca::cmds::DrawDRRectCmd>(&c))
+			if (const auto* dr = std::get_if<mocca::gfx::cmds::DrawDRRectCmd>(&c))
 			{
 				return dr;
 			}
@@ -146,16 +146,16 @@ namespace mtest
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::DrawImageCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::gfx::cmds::DrawImageCmd>(&c) != nullptr; }
 		);
 	}
 
 	inline auto firstImage(const Commands& cmds)
-		-> const mocca::cmds::DrawImageCmd*
+		-> const mocca::gfx::cmds::DrawImageCmd*
 	{
 		for (const auto& c : cmds)
 		{
-			if (const auto* image = std::get_if<mocca::cmds::DrawImageCmd>(&c))
+			if (const auto* image = std::get_if<mocca::gfx::cmds::DrawImageCmd>(&c))
 			{
 				return image;
 			}
@@ -164,11 +164,11 @@ namespace mtest
 	}
 
 	inline auto firstText(const Commands& cmds)
-		-> const mocca::cmds::DrawTextCmd*
+		-> const mocca::gfx::cmds::DrawTextCmd*
 	{
 		for (const auto& c : cmds)
 		{
-			if (const auto* t = std::get_if<mocca::cmds::DrawTextCmd>(&c))
+			if (const auto* t = std::get_if<mocca::gfx::cmds::DrawTextCmd>(&c))
 			{
 				return t;
 			}
@@ -181,7 +181,7 @@ namespace mtest
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::DrawTextCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::gfx::cmds::DrawTextCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -189,7 +189,7 @@ namespace mtest
 	{
 		for (const auto& c : cmds)
 		{
-			if (const auto* t = std::get_if<mocca::cmds::DrawTextCmd>(&c))
+			if (const auto* t = std::get_if<mocca::gfx::cmds::DrawTextCmd>(&c))
 			{
 				return t->Content;
 			}
@@ -202,7 +202,7 @@ namespace mtest
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::SaveCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::gfx::cmds::SaveCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -211,7 +211,7 @@ namespace mtest
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::RestoreCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::gfx::cmds::RestoreCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -220,7 +220,7 @@ namespace mtest
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::ClipRectCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::gfx::cmds::ClipRectCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -229,7 +229,7 @@ namespace mtest
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::ClipRRectCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::gfx::cmds::ClipRRectCmd>(&c) != nullptr; }
 		);
 	}
 
@@ -238,7 +238,7 @@ namespace mtest
 		return countOf(
 			cmds,
 			[](const auto& c) -> auto
-			{ return std::get_if<mocca::cmds::ConcatCmd>(&c) != nullptr; }
+			{ return std::get_if<mocca::gfx::cmds::ConcatCmd>(&c) != nullptr; }
 		);
 	}
 

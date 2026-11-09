@@ -3,7 +3,7 @@
 #include <span>
 #include <vector>
 
-namespace mocca
+namespace mocca::gfx
 {
 	class Canvas
 	{

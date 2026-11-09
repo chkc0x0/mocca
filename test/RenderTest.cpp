@@ -8,7 +8,7 @@ namespace mtest
 
 	TEST(CanvasDrawImage, EmitsImageCommand)
 	{
-		mocca::Canvas canvas;
+		mocca::gfx::Canvas canvas;
 		canvas.DrawImage(
 			mocca::gfx::TextureId{.Id = 7, .Gen = 1},
 			mocca::RRect{
@@ -19,7 +19,7 @@ namespace mtest
 
 		const auto& cmds = canvas.Commands();
 		ASSERT_EQ(cmds.size(), 1U);
-		const auto* image = std::get_if<mocca::cmds::DrawImageCmd>(
+		const auto* image = std::get_if<mocca::gfx::cmds::DrawImageCmd>(
 			&cmds.front()
 		);
 		ASSERT_NE(image, nullptr);

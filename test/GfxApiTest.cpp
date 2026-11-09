@@ -20,7 +20,7 @@ namespace mtest
 
 	TEST(PaintTest, CanvasPutsPaintOnCommand)
 	{
-		mocca::Canvas canvas;
+		mocca::gfx::Canvas canvas;
 		canvas.DrawRect(
 			{.X = 0, .Y = 0, .Width = 10, .Height = 10},
 			mocca::gfx::Paint::Fill(mocca::colors::Red)
@@ -33,11 +33,11 @@ namespace mtest
 		auto cmds = canvas.Commands();
 		ASSERT_EQ(cmds.size(), 2U);
 
-		const auto* rect = std::get_if<mocca::cmds::DrawRectCmd>(cmds.data());
+		const auto* rect = std::get_if<mocca::gfx::cmds::DrawRectCmd>(cmds.data());
 		ASSERT_NE(rect, nullptr);
 		EXPECT_EQ(rect->Paint.Style, mocca::gfx::PaintStyle::Fill);
 
-		const auto* rrect = std::get_if<mocca::cmds::DrawRRectCmd>(&cmds[1]);
+		const auto* rrect = std::get_if<mocca::gfx::cmds::DrawRRectCmd>(&cmds[1]);
 		ASSERT_NE(rrect, nullptr);
 		EXPECT_EQ(rrect->Paint.Style, mocca::gfx::PaintStyle::Stroke);
 		EXPECT_FLOAT_EQ(rrect->Paint.StrokeWidth, 2.0F);
@@ -164,7 +164,7 @@ namespace mtest
 
 	TEST(CanvasStateTest, SaveRestoreKeepsStreamBalanced)
 	{
-		mocca::Canvas canvas;
+		mocca::gfx::Canvas canvas;
 		canvas.Save();
 		canvas.Translate(10.0F, 20.0F);
 		canvas.Save();
@@ -180,7 +180,7 @@ namespace mtest
 
 	TEST(CanvasStateTest, QuickRejectFollowsClipAndTransform)
 	{
-		mocca::Canvas canvas;
+		mocca::gfx::Canvas canvas;
 		canvas.ClipRect({.X = 0, .Y = 0, .Width = 10, .Height = 10});
 
 		EXPECT_FALSE(
@@ -198,7 +198,7 @@ namespace mtest
 
 	TEST(CanvasStateTest, QuickRejectConservativeOnRotation)
 	{
-		mocca::Canvas canvas;
+		mocca::gfx::Canvas canvas;
 		canvas.ClipRect({.X = 0, .Y = 0, .Width = 10, .Height = 10});
 		canvas.Rotate(45.0F);
 
@@ -212,12 +212,12 @@ namespace mtest
 
 	TEST(CanvasStateTest, AppendPreservesCommandStream)
 	{
-		mocca::Canvas child;
+		mocca::gfx::Canvas child;
 		child.Save();
 		child.Translate(1.0F, 2.0F);
 		child.Restore();
 
-		mocca::Canvas parent;
+		mocca::gfx::Canvas parent;
 		parent.Save();
 		parent.Append(child);
 		parent.Restore();

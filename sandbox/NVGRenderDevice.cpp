@@ -216,7 +216,7 @@ namespace sandbox
 				[this](const auto& c) -> void
 				{
 					using T = std::decay_t<decltype(c)>;
-					if constexpr (std::is_same_v<T, mocca::cmds::DrawRectCmd>)
+					if constexpr (std::is_same_v<T, mocca::gfx::cmds::DrawRectCmd>)
 					{
 						drawShape(
 							_vg,
@@ -234,7 +234,7 @@ namespace sandbox
 						);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::DrawRRectCmd>
+						std::is_same_v<T, mocca::gfx::cmds::DrawRRectCmd>
 					)
 					{
 						drawShape(
@@ -244,7 +244,7 @@ namespace sandbox
 						);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::DrawDRRectCmd>
+						std::is_same_v<T, mocca::gfx::cmds::DrawDRRectCmd>
 					)
 					{
 						nvgBeginPath(_vg);
@@ -257,7 +257,7 @@ namespace sandbox
 						applyPaint(_vg, c.Paint);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::DrawImageCmd>
+						std::is_same_v<T, mocca::gfx::cmds::DrawImageCmd>
 					)
 					{
 						if (_texCache == nullptr)
@@ -289,7 +289,7 @@ namespace sandbox
 						nvgFill(_vg);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::DrawTextCmd>
+						std::is_same_v<T, mocca::gfx::cmds::DrawTextCmd>
 					)
 					{
 						if (c.Layout == nullptr)
@@ -381,25 +381,25 @@ namespace sandbox
 							}
 						}
 					}
-					else if constexpr (std::is_same_v<T, mocca::cmds::SaveCmd>)
+					else if constexpr (std::is_same_v<T, mocca::gfx::cmds::SaveCmd>)
 					{
 						nvgSave(_vg);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::RestoreCmd>
+						std::is_same_v<T, mocca::gfx::cmds::RestoreCmd>
 					)
 					{
 						nvgRestore(_vg);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::ConcatCmd>
+						std::is_same_v<T, mocca::gfx::cmds::ConcatCmd>
 					)
 					{
 						const auto& m = c.Matrix.M;
 						nvgTransform(_vg, m[0], m[3], m[1], m[4], m[2], m[5]);
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::ClipRectCmd>
+						std::is_same_v<T, mocca::gfx::cmds::ClipRectCmd>
 					)
 					{
 						if (c.Op == mocca::gfx::ClipOp::Intersect)
@@ -414,7 +414,7 @@ namespace sandbox
 						}
 					}
 					else if constexpr (
-						std::is_same_v<T, mocca::cmds::ClipRRectCmd>
+						std::is_same_v<T, mocca::gfx::cmds::ClipRRectCmd>
 					)
 					{
 						if (c.Op == mocca::gfx::ClipOp::Intersect)

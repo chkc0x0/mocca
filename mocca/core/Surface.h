@@ -101,7 +101,7 @@ namespace mocca
 		auto DetachChild(Surface* which) -> std::unique_ptr<Surface>;
 
 		[[nodiscard]] auto GetDrawData() const
-			-> std::span<const cmds::DrawCommand>
+			-> std::span<const gfx::cmds::DrawCommand>
 		{
 			return _canvas.Commands();
 		}
@@ -240,7 +240,7 @@ namespace mocca
 
 		int _zombieTimeout = 0;
 		int _zombieRemaining = 0;
-		Canvas _canvas;
+		gfx::Canvas _canvas;
 
 		std::unordered_map<gfx::TextureId, int, gfx::TextureIdHash> _textureAge;
 		std::unordered_set<gfx::TextureId, gfx::TextureIdHash> _textureSeen;

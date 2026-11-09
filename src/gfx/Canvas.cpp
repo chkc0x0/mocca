@@ -2,7 +2,7 @@
 #include "core/Logger.h"
 #include "gfx/Capabilities.h"
 
-namespace mocca
+namespace mocca::gfx
 {
 	constexpr float Boundary = 1.0e9F;
 

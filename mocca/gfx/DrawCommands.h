@@ -9,7 +9,7 @@
 #include <string>
 #include <variant>
 
-namespace mocca::cmds
+namespace mocca::gfx::cmds
 {
 	struct DrawRectCmd
 	{

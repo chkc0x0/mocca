@@ -431,7 +431,7 @@ namespace mocca::detail
 	}
 
 	void paintBorder(
-		Canvas& canvas,
+		gfx::Canvas& canvas,
 		const gfx::BoxDecoration& deco,
 		const RRect& outer
 	)
@@ -450,7 +450,7 @@ namespace mocca::detail
 	}
 
 	void paintDecoration(
-		Canvas& canvas,
+		gfx::Canvas& canvas,
 		const gfx::BoxDecoration& deco,
 		const Rectangle& rect
 	)
@@ -536,7 +536,7 @@ namespace mocca::detail
 		}
 	}
 
-	void paintTextContent(Node& node, Canvas& canvas, const Rectangle& box)
+	void paintTextContent(Node& node, gfx::Canvas& canvas, const Rectangle& box)
 	{
 		mc_profileFunction();
 
@@ -599,7 +599,7 @@ namespace mocca::detail
 		}
 
 		canvas.DrawText(
-			cmds::DrawTextCmd{
+			gfx::cmds::DrawTextCmd{
 				.Position = {.X = x, .Y = y},
 				.Content = content,
 				.Paint = gfx::Paint::Fill(
@@ -695,7 +695,7 @@ namespace mocca::detail
 
 	void paintNode(
 		Node& node,
-		Canvas& canvas,
+		gfx::Canvas& canvas,
 		const Rectangle& cull,
 		float x,
 		float y,
@@ -760,7 +760,7 @@ namespace mocca::detail
 		}
 	}
 
-	void Node::Paint(Canvas& canvas, const Rectangle& cull)
+	void Node::Paint(gfx::Canvas& canvas, const Rectangle& cull)
 	{
 		mc_profileFunction();
 
