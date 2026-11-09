@@ -1,4 +1,4 @@
-#include "TextResolve.h"
+#include "text/TextResolve.h"
 #include "style/StyleValue.h"
 #include <variant>
 
@@ -6,7 +6,7 @@ namespace mocca::mtext::detail
 {
 	const std::vector<std::string> DefaultFamilies{"sans-serif"};
 
-	auto ResolveFamilies(const styles::ComputedStyle& style)
+	auto resolveFamilies(const styles::ComputedStyle& style)
 		-> std::vector<std::string>
 	{
 		uint32_t handle = style.Get<styles::StyleProperty::FontFamily>();
@@ -18,7 +18,7 @@ namespace mocca::mtext::detail
 		return styles::detail::resolveFontFamily(handle).Families;
 	}
 
-	auto ResolveFontRequest(const styles::ComputedStyle& style) -> FontRequest
+	auto resolveFontRequest(const styles::ComputedStyle& style) -> FontRequest
 	{
 		FontRequest request;
 		request.Weight = style.Get<styles::StyleProperty::FontWeight>();
@@ -32,14 +32,14 @@ namespace mocca::mtext::detail
 		return request;
 	}
 
-	auto ResolveTextLayoutStyle(const styles::ComputedStyle& style)
+	auto resolveTextLayoutStyle(const styles::ComputedStyle& style)
 		-> TextLayoutStyle
 	{
 		using P = styles::StyleProperty;
 
 		TextLayoutStyle out;
-		out.Families = ResolveFamilies(style);
-		out.Request = ResolveFontRequest(style);
+		out.Families = resolveFamilies(style);
+		out.Request = resolveFontRequest(style);
 		out.SizePx = style.Get<P::FontSize>().Value;
 		out.Variations = style.Get<P::FontVariationSettings>();
 		out.Features = style.Get<P::FontFeatureSettings>();

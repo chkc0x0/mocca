@@ -6,11 +6,11 @@
 
 namespace mocca::mtext::detail
 {
-	auto ResolveFamilies(const styles::ComputedStyle& style)
+	auto resolveFamilies(const styles::ComputedStyle& style)
 		-> std::vector<std::string>;
 
-	auto ResolveFontRequest(const styles::ComputedStyle& style) -> FontRequest;
+	auto resolveFontRequest(const styles::ComputedStyle& style) -> FontRequest;
 
-	auto ResolveTextLayoutStyle(const styles::ComputedStyle& style)
+	auto resolveTextLayoutStyle(const styles::ComputedStyle& style)
 		-> TextLayoutStyle;
 }

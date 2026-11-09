@@ -1,7 +1,7 @@
 #include "text/FontRegistry.h"
 #include "text/FontMatcher.h"
 #include "core/Logger.h"
-#include "HarfbuzzUtils.h"
+#include "text/HarfbuzzUtils.h"
 #include "utils/ScopedProfiler.h"
 #include <algorithm>
 #include <cctype>

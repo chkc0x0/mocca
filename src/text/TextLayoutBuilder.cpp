@@ -1,5 +1,5 @@
 #include "text/TextLayoutBuilder.h"
-#include "TextResolve.h"
+#include "text/TextResolve.h"
 #include "text/LayoutCache.h"
 #include "text/TextShaper.h"
 #include "text/TextUtils.h"
@@ -192,7 +192,7 @@ namespace mocca::mtext::detail
 	) -> std::shared_ptr<const TextLayout>
 	{
 		float snapped = std::floor(maxWidth);
-		TextLayoutStyle layoutStyle = detail::ResolveTextLayoutStyle(style);
+		TextLayoutStyle layoutStyle = detail::resolveTextLayoutStyle(style);
 
 		auto shaped = detail::TextShaper::Shape(content, layoutStyle);
 		if (!shaped)
