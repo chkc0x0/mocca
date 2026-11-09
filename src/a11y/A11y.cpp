@@ -89,7 +89,7 @@ namespace mocca::aria
 
 namespace mocca
 {
-	auto a11y(aria::Props props) -> A11y
+	auto a11y(aria::Props props) -> aria::A11y
 	{
 		if (Application::main != nullptr)
 		{
@@ -101,7 +101,7 @@ namespace mocca
 		return std::make_shared<const aria::Props>(std::move(props));
 	}
 
-	auto a11y(aria::Role role, std::string name) -> A11y
+	auto a11y(aria::Role role, std::string name) -> aria::A11y
 	{
 		aria::Props props;
 		props.Role = role;
@@ -112,7 +112,7 @@ namespace mocca
 
 namespace mocca::detail
 {
-	auto A11yInterner::Intern(aria::Props props) -> A11y
+	auto A11yInterner::Intern(aria::Props props) -> aria::A11y
 	{
 		size_t hash = aria::PropsHash{}(props);
 		auto& bucket = _buckets[hash];

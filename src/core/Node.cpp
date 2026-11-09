@@ -318,6 +318,7 @@ namespace mocca::detail
 
 		node->Events = element.Events;
 		node->Focus = element.Focus;
+		node->A11y = element.A11y;
 
 		if (!node->IsComponent())
 		{
@@ -1012,6 +1013,10 @@ namespace mocca::detail
 
 		oldNode->Events = newElement->Events;
 		oldNode->Focus = newElement->Focus;
+		if (!sameA11y(oldNode->A11y, newElement->A11y))
+		{
+			oldNode->A11y = newElement->A11y;
+		}
 		if (oldNode->Declared.Assign(newElement->Style))
 		{
 			oldNode->StyleDirty = true;

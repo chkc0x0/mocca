@@ -72,6 +72,7 @@ namespace mocca::detail
 
 		std::shared_ptr<EventView> Events;
 		FocusMode Focus = FocusMode::None;
+		aria::A11y A11y = nullptr;
 
 		uint64_t BlinkToken = 0;
 		double BlinkEpochMs = 0.0;

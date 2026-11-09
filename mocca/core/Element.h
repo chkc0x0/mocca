@@ -1,4 +1,5 @@
 #pragma once
+#include "a11y/A11y.h"
 #include "core/ElementEvents.h"
 #include "Identifiers.h"
 #include "style/StyleList.h"
@@ -56,6 +57,7 @@ namespace mocca
 		std::shared_ptr<EventView> Events = nullptr;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
+		aria::A11y A11y = nullptr;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -81,6 +83,7 @@ namespace mocca
 	struct BoxDescriptor
 	{
 	public:
+		aria::A11y A11y = nullptr;
 		ElementKey Key = mc_keyNone;
 		styles::StyleList Style;
 		EventView Events;
@@ -92,6 +95,7 @@ namespace mocca
 	struct TextDescriptor
 	{
 	public:
+		aria::A11y A11y = nullptr;
 		ElementKey Key = mc_keyNone;
 		styles::StyleList Style;
 		EventView Events;
@@ -120,6 +124,7 @@ namespace mocca
 			.Events = EventView::From(std::move(desc.Events)),
 			.Ref = desc.Ref,
 			.Focus = desc.Focus,
+			.A11y = std::move(desc.A11y),
 		};
 	}
 
@@ -147,6 +152,7 @@ namespace mocca
 			.Events = EventView::From(std::move(desc.Events)),
 			.Ref = desc.Ref,
 			.Focus = desc.Focus,
+			.A11y = std::move(desc.A11y),
 		};
 	}
 

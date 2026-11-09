@@ -196,19 +196,19 @@ namespace mocca::aria
 	{
 		return mocca::detail::hashString(name); // FNV-1a, same as ElementKey
 	}
+
+	using A11y = std::shared_ptr<const aria::Props>;
 }
 
 namespace mocca
 {
-	using A11y = std::shared_ptr<const aria::Props>;
-
-	auto a11y(aria::Props props) -> A11y;
-	auto a11y(aria::Role role, std::string name = {}) -> A11y;
+	auto a11y(aria::Props props) -> aria::A11y;
+	auto a11y(aria::Role role, std::string name = {}) -> aria::A11y;
 }
 
 namespace mocca::detail
 {
-	inline auto sameA11y(const A11y& a, const A11y& b) -> bool
+	inline auto sameA11y(const aria::A11y& a, const aria::A11y& b) -> bool
 	{
 		if (a == b)
 		{
@@ -224,7 +224,7 @@ namespace mocca::detail
 	class A11yInterner
 	{
 	public:
-		auto Intern(aria::Props props) -> A11y;
+		auto Intern(aria::Props props) -> aria::A11y;
 		void Prune();
 	private:
 		struct Entry
