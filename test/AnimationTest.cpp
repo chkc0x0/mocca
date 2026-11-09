@@ -12,8 +12,14 @@ namespace mtest
 
 	TEST(AnimationMath, BezierEndpoints)
 	{
-		EXPECT_FLOAT_EQ(mocca::anim::sample(mocca::anim::EaseInOut, 0.0F), 0.0F);
-		EXPECT_FLOAT_EQ(mocca::anim::sample(mocca::anim::EaseInOut, 1.0F), 1.0F);
+		EXPECT_FLOAT_EQ(
+			mocca::anim::sample(mocca::anim::EaseInOut, 0.0F),
+			0.0F
+		);
+		EXPECT_FLOAT_EQ(
+			mocca::anim::sample(mocca::anim::EaseInOut, 1.0F),
+			1.0F
+		);
 	}
 
 	TEST(AnimationMath, SpringSettles)
@@ -39,12 +45,20 @@ namespace mtest
 	{
 		EXPECT_FLOAT_EQ(mocca::anim::lerp(0.0F, 10.0F, 0.5F), 5.0F);
 		EXPECT_EQ(
-			mocca::anim::interpolate(mocca::colors::Black, mocca::colors::Black, 0.5F),
+			mocca::anim::interpolate(
+				mocca::colors::Black,
+				mocca::colors::Black,
+				0.5F
+			),
 			mocca::colors::Black
 		);
 		EXPECT_EQ(
-			mocca::anim::interpolate(mocca::Length{0}, mocca::Length{10}, 1.0F),
-			(mocca::Length{10})
+			mocca::anim::interpolate(
+				mocca::styles::Length{0},
+				mocca::styles::Length{10},
+				1.0F
+			),
+			(mocca::styles::Length{10})
 		);
 	}
 
@@ -83,8 +97,12 @@ namespace mtest
 	TEST(AnimationMath, LengthClamps)
 	{
 		EXPECT_EQ(
-			mocca::anim::interpolate(mocca::Length{10}, mocca::Length{20}, -2.0F),
-			(mocca::Length{0})
+			mocca::anim::interpolate(
+				mocca::styles::Length{10},
+				mocca::styles::Length{20},
+				-2.0F
+			),
+			(mocca::styles::Length{0})
 		);
 	}
 
@@ -178,30 +196,29 @@ namespace mtest
 
 				return mocca::box(
 					mocca::BoxDescriptor{
-						.Style =
-							{
-								Width(px(40)),
-								Height(px(40)),
-								Border(px(6)),
-								BackgroundColor(
-									on ? mocca::colors::Red
-									   : mocca::colors::Transparent
-								),
-								BorderColor(
-									on ? mocca::colors::Blue
-									   : mocca::colors::Transparent
-								),
-								Transition(
-									StyleProperty::BackgroundColor,
-									ms(100),
-									mocca::anim::LinearCurve
-								),
-								Transition(
-									StyleProperty::BorderColor,
-									ms(400),
-									mocca::anim::LinearCurve
-								),
-							},
+						.Style = {
+							Width(px(40)),
+							Height(px(40)),
+							Border(px(6)),
+							BackgroundColor(
+								on ? mocca::colors::Red
+								   : mocca::colors::Transparent
+							),
+							BorderColor(
+								on ? mocca::colors::Blue
+								   : mocca::colors::Transparent
+							),
+							Transition(
+								StyleProperty::BackgroundColor,
+								ms(100),
+								mocca::anim::LinearCurve
+							),
+							Transition(
+								StyleProperty::BorderColor,
+								ms(400),
+								mocca::anim::LinearCurve
+							),
+						},
 					}
 				);
 			}
@@ -209,10 +226,7 @@ namespace mtest
 
 		Tick();
 		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Transparent);
-		EXPECT_EQ(
-			firstBorderColor(commandsOf(*s)),
-			mocca::colors::Transparent
-		);
+		EXPECT_EQ(firstBorderColor(commandsOf(*s)), mocca::colors::Transparent);
 
 		(*perPropToggler)(true);
 		Tick(0.05, 1);
@@ -312,9 +326,7 @@ namespace mtest
 		auto* s = AddSurface(
 			{.Width = 50, .Height = 50, .Title = "spring"},
 			[]() -> mocca::Element
-			{
-				return AnimComponent(mocca::anim::spring(200.0F, 18.0F), 0.2F);
-			}
+			{ return AnimComponent(mocca::anim::spring(200.0F, 18.0F), 0.2F); }
 		);
 		(void)s;
 
@@ -349,17 +361,13 @@ namespace mtest
 			};
 			if (withTransition)
 			{
-				style.Add(
-					Transition(
-						mocca::styles::StyleProperty::BackgroundColor,
-						mocca::styles::ms(100),
-						mocca::anim::LinearCurve
-					)
-				);
+				style.Add(Transition(
+					mocca::styles::StyleProperty::BackgroundColor,
+					mocca::styles::ms(100),
+					mocca::anim::LinearCurve
+				));
 			}
-			return mocca::box(
-				mocca::BoxDescriptor{.Style = std::move(style)}
-			);
+			return mocca::box(mocca::BoxDescriptor{.Style = std::move(style)});
 		}
 	}
 
@@ -404,19 +412,18 @@ namespace mtest
 
 				return mocca::box(
 					mocca::BoxDescriptor{
-						.Style =
-							{
-								Width(px(40)),
-								Height(px(40)),
-								BackgroundColor(
-									on ? mocca::colors::Red
-									   : mocca::colors::Transparent
-								),
-								Transition(
-									StyleProperty::BackgroundColor,
-									mocca::anim::spring(200.0F, 18.0F)
-								),
-							},
+						.Style = {
+							Width(px(40)),
+							Height(px(40)),
+							BackgroundColor(
+								on ? mocca::colors::Red
+								   : mocca::colors::Transparent
+							),
+							Transition(
+								StyleProperty::BackgroundColor,
+								mocca::anim::spring(200.0F, 18.0F)
+							),
+						},
 					}
 				);
 			}

@@ -50,13 +50,13 @@ namespace mocca::mtext::detail
 					   : BaseDirection::LTR;
 
 		if (const auto* spacing =
-				std::get_if<Length>(&style.Get<P::LetterSpacing>()))
+				std::get_if<styles::Length>(&style.Get<P::LetterSpacing>()))
 		{
 			out.LetterSpacingPx = spacing->Value;
 		}
 
 		if (const auto* spacing =
-				std::get_if<Length>(&style.Get<P::WordSpacing>()))
+				std::get_if<styles::Length>(&style.Get<P::WordSpacing>()))
 		{
 			out.WordSpacingPx = spacing->Value;
 		}
@@ -67,10 +67,10 @@ namespace mocca::mtext::detail
 			out.LineHeight = LineHeightKind::Number;
 			out.LineHeightValue = std::get<float>(lineHeight);
 		}
-		else if (std::holds_alternative<Length>(lineHeight))
+		else if (std::holds_alternative<styles::Length>(lineHeight))
 		{
 			out.LineHeight = LineHeightKind::Px;
-			out.LineHeightValue = std::get<Length>(lineHeight).Value;
+			out.LineHeightValue = std::get<styles::Length>(lineHeight).Value;
 		}
 
 		return out;

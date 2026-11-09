@@ -47,16 +47,17 @@ namespace mocca::anim
 		return Color::MixOklab(a, b, clamped);
 	}
 
-	inline auto lerp(const Length& a, const Length& b, float t) -> Length
+	inline auto lerp(const styles::Length& a, const styles::Length& b, float t)
+		-> styles::Length
 	{
 		float value = a.Value + ((b.Value - a.Value) * t);
 		return {a.Unit, value < 0.0F ? 0.0F : value};
 	}
 
 	template <typename T>
-	inline constexpr bool IsInterpolatable =
-		std::is_same_v<T, float> || std::is_same_v<T, Color> ||
-		std::is_same_v<T, Length>;
+	inline constexpr bool IsInterpolatable = std::is_same_v<T, float> ||
+											 std::is_same_v<T, Color> ||
+											 std::is_same_v<T, styles::Length>;
 
 	template <typename T>
 	auto interpolate(const T& a, const T& b, float t) -> T

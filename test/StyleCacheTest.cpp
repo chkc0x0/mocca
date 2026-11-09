@@ -47,7 +47,7 @@ namespace mtest
 	{
 		ComputedStyle a;
 		ComputedStyle b;
-		b.Set<StyleProperty::Width>(SizingValue{mocca::Length{10.0F}});
+		b.Set<StyleProperty::Width>(SizingValue{mocca::styles::Length{10.0F}});
 
 		EXPECT_EQ(
 			ComputedStyle::ChangedGroups(a, b),
