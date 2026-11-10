@@ -210,6 +210,11 @@ namespace mocca
 
 		[[nodiscard]] auto GetEffectiveFocus() const -> detail::NodeId;
 
+		auto ActivateNode(
+			detail::NodeId id,
+			ActivationSource source = ActivationSource::Programmatic
+		) -> bool;
+
 		void CapturePointer(detail::NodeId id);
 		void ReleasePointer();
 		[[nodiscard]] auto GetCapturedNode() const -> detail::NodeId

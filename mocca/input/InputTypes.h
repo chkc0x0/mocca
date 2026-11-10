@@ -30,6 +30,19 @@ namespace mocca
 		Custom,
 	};
 
+	enum class ActivationSource : uint8_t
+	{
+		Keyboard,
+		AssistiveTechnology,
+		Programmatic,
+	};
+
+	struct ActivateEvent
+	{
+		ActivationSource Source = ActivationSource::Programmatic;
+		bool StopPropagation = false;
+	};
+
 	struct Modifiers
 	{
 		bool Shift = false;

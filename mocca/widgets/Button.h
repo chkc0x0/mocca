@@ -14,6 +14,7 @@ namespace mocca::widgets::basic
 		std::vector<Element> Children;
 		std::function<void(PointerEvent&)> OnPress;
 		styles::StyleList Style;
+		aria::A11y A11y = nullptr;
 	};
 
 	struct PressOptions

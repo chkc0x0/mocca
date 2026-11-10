@@ -30,6 +30,7 @@ namespace mocca
 		TextInput,
 		Focus,
 		Blur,
+		Activate,
 	};
 
 	constexpr uint32_t FirstCustomEventId = 1U << 16;
@@ -83,6 +84,9 @@ namespace mocca
 		};
 		inline constexpr EventKey<FocusEvent> Blur{
 			static_cast<uint32_t>(EventType::Blur),
+		};
+		inline constexpr EventKey<ActivateEvent> Activate{
+			static_cast<uint32_t>(EventType::Activate),
 		};
 	}
 

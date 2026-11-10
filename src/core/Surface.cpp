@@ -980,6 +980,37 @@ namespace mocca
 		return _a11ySnapshot;
 	}
 
+	auto Surface::ActivateNode(detail::NodeId id, ActivationSource source)
+		-> bool
+	{
+		auto* target = detail::Node::FindNodeById(_root.get(), id);
+		if (target == nullptr)
+		{
+			return false;
+		}
+
+		ActivateEvent ev{.Source = source};
+		bool handled = false;
+
+		for (auto* n = target; n != nullptr; n = n->Parent)
+		{
+			if (n->Events == nullptr || !n->Events->Has(EventType::Activate))
+			{
+				continue;
+			}
+
+			handled = true;
+			n->Events->Call(EventType::Activate, ev);
+
+			if (ev.StopPropagation)
+			{
+				break;
+			}
+		}
+
+		return handled;
+	}
+
 	void Surface::FocusNext(bool backward)
 	{
 		if (_root == nullptr)

@@ -25,7 +25,9 @@ namespace mocca::widgets::basic
 				   {
 					   if (!disabled && !state.Hovered)
 					   {
-						   setState({.Hovered = true, .Pressed = state.Pressed});
+						   setState(
+							   {.Hovered = true, .Pressed = state.Pressed}
+						   );
 					   }
 				   }),
 				on(events::PointerLeave,
@@ -45,9 +47,8 @@ namespace mocca::widgets::basic
 					   setState({.Hovered = true, .Pressed = true});
 				   }),
 				on(events::PointerUp,
-				   [armed, setState, disabled, onPress, state](
-					   PointerEvent& ev
-				   ) -> auto
+				   [armed, setState, disabled, onPress, state](PointerEvent& ev)
+					   -> auto
 				   {
 					   bool fire = armed.Current && !disabled;
 					   armed.Current = false;
@@ -68,6 +69,28 @@ namespace mocca::widgets::basic
 		);
 
 		auto* node = useNode();
+
+		auto disabled = props.Disabled;
+		auto onPress = props.OnPress;
+
+		EventView events = std::move(press.Events);
+		events.Add(
+			on(events::Activate,
+			   [disabled, onPress, node](ActivateEvent&) -> void
+			   {
+				   if (disabled || !onPress)
+				   {
+					   return;
+				   }
+
+				   auto r = node->Rect();
+				   PointerEvent synth{};
+				   synth.EventType = PointerEvent::Type::Up;
+				   synth.X = r.X + (r.Width * 0.5F);
+				   synth.Y = r.Y + (r.Height * 0.5F);
+				   onPress(synth);
+			   })
+		);
 
 		styles::StyleList base = {
 			styles::AlignSelf(styles::Alignment::FlexStart),
@@ -188,8 +211,13 @@ namespace mocca::widgets::basic
 		}
 
 		return box({
+			.A11y = props.A11y != nullptr ? props.A11y
+										  : a11y({
+												.Role = aria::Role::Button,
+												.Disabled = props.Disabled,
+											}),
 			.Style = base + props.Style,
-			.Events = std::move(press.Events),
+			.Events = std::move(events),
 			.Children = props.Children,
 			.Ref = node,
 			.Focus = props.Disabled ? FocusMode::None : FocusMode::Tab,

@@ -15,7 +15,7 @@ namespace mocca
 
 		virtual auto Size() -> IVec2 = 0;
 		virtual auto FramebufferSize() -> IVec2 = 0;
-		virtual auto Scale() -> Vector2 = 0; // dpi
+		virtual auto Scale() -> Vector2 = 0; // dpi. which i learned is actually dpr
 
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
