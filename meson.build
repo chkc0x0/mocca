@@ -17,6 +17,7 @@ sources = [
     'src/style/StylePaintApply.cpp',
     'src/core/Element.cpp',
     'src/a11y/A11y.cpp',
+    'src/a11y/Snapshot.cpp',
     'src/core/HookFrame.cpp',
     'src/text/Measure.cpp',
     'src/text/Unicode.cpp',

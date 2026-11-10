@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <optional>
 #include <ranges>
+#include "a11y/Snapshot.h"
 #include "core/Application.h"
 #include "core/HookStore.h"
 #include "input/Scroll.h"
@@ -895,6 +896,34 @@ namespace mocca
 		FireFocusEvent(oldEvents, EventType::Blur, reason);
 
 		MarkDirty();
+	}
+
+	auto Surface::GetEffectiveFocus() const -> detail::NodeId
+	{
+		detail::NodeId focused = _focusedNode;
+		const Surface* surface = _focusSurface;
+
+		while (surface != nullptr)
+		{
+			if (surface->GetState() != SurfaceState::Alive)
+			{
+				break;
+			}
+
+			if (surface->_focusedNode != 0)
+			{
+				focused = surface->_focusedNode;
+			}
+
+			surface = surface->_focusSurface;
+		}
+
+		return focused;
+	}
+
+	auto Surface::BuildA11ySnapshot() const -> std::shared_ptr<const aria::Snapshot>
+	{
+		return aria::Snapshot::Build(*this);
 	}
 
 	void Surface::FocusNext(bool backward)

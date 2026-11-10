@@ -9,6 +9,11 @@
 #include <unordered_map>
 #include <vector>
 
+namespace mocca
+{
+	class Surface;
+}
+
 namespace mocca::aria
 {
 	struct Node
@@ -38,6 +43,8 @@ namespace mocca::aria
 		std::unordered_map<detail::NodeId, size_t> Index;
 
 		[[nodiscard]] auto Find(detail::NodeId id) const -> const Node*;
+		static auto Build(const Surface& surface)
+			-> std::shared_ptr<const Snapshot>;
 	};
 
 	struct ActionRequest

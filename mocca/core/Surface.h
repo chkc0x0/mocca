@@ -20,6 +20,12 @@ namespace mocca
 		class TextureRegistry;
 	}
 
+	namespace aria
+	{
+		struct Snapshot;
+		class SnapshotBuilder;
+	}
+
 	namespace SurfaceFlags
 	{
 		using FlagType = uint64_t;
@@ -77,7 +83,9 @@ namespace mocca
 		void MarkComponentDirty(detail::NodeId id)
 		{
 			if (std::find(
-					_dirtyComponents.begin(), _dirtyComponents.end(), id
+					_dirtyComponents.begin(),
+					_dirtyComponents.end(),
+					id
 				) == _dirtyComponents.end())
 			{
 				_dirtyComponents.push_back(id);
@@ -170,6 +178,9 @@ namespace mocca
 
 		[[nodiscard]] auto FindSurfaceContaining(detail::NodeId id) -> Surface*;
 
+		[[nodiscard]] auto BuildA11ySnapshot() const
+			-> std::shared_ptr<const aria::Snapshot>;
+
 		void ProcessInput(const InputBatch& batch);
 
 		void FocusNode(
@@ -184,6 +195,8 @@ namespace mocca
 			return _focusedNode;
 		}
 
+		[[nodiscard]] auto GetEffectiveFocus() const -> detail::NodeId;
+
 		void CapturePointer(detail::NodeId id);
 		void ReleasePointer();
 		[[nodiscard]] auto GetCapturedNode() const -> detail::NodeId
@@ -191,11 +204,10 @@ namespace mocca
 			return _capturedNode;
 		}
 
-		[[nodiscard]] auto GetClipboardText() -> std::string;
-		void SetClipboardText(std::string_view text);
+		static auto GetClipboardText() -> std::string;
+		static void SetClipboardText(std::string_view text);
 		void SetImeCursorRect(Rectangle rect);
 
-		// this surface (or a subsurface) is capturing
 		[[nodiscard]] auto IsCapturing() const -> bool
 		{
 			return _capturedNode != 0 || _captureSurface != nullptr;
@@ -259,5 +271,6 @@ namespace mocca
 		std::unique_ptr<gfx::Renderer> _renderer;
 
 		friend class Application;
+		friend class aria::SnapshotBuilder;
 	};
 }

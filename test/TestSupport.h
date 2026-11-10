@@ -349,7 +349,7 @@ namespace mtest
 		{
 		}
 
-		[[nodiscard]] auto AddSurface(
+		auto AddSurface(
 			mocca::SurfaceDesc desc,
 			mocca::ComponentFn root
 		) -> mocca::Surface*
