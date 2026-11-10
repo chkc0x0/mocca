@@ -1016,6 +1016,10 @@ namespace mocca::detail
 		if (!sameA11y(oldNode->A11y, newElement->A11y))
 		{
 			oldNode->A11y = newElement->A11y;
+			if (auto* surface = getCtx()->_currentSurface; surface != nullptr)
+			{
+				surface->MarkA11yDirty();
+			}
 		}
 		if (oldNode->Declared.Assign(newElement->Style))
 		{

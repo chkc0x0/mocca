@@ -2,12 +2,14 @@
 #include "gfx/Canvas.h"
 #include "core/Node.h"
 #include "Element.h"
+#include "a11y/Snapshot.h"
 #include "gfx/RenderDevice.h"
 #include "gfx/Texture.h"
 #include "input/InputTypes.h"
 #include "platform/PlatformSurface.h"
 #include <algorithm>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -22,7 +24,6 @@ namespace mocca
 
 	namespace aria
 	{
-		struct Snapshot;
 		class SnapshotBuilder;
 	}
 
@@ -178,6 +179,18 @@ namespace mocca
 
 		[[nodiscard]] auto FindSurfaceContaining(detail::NodeId id) -> Surface*;
 
+		void SetA11yBridge(std::unique_ptr<aria::Bridge> bridge);
+		[[nodiscard]] auto GetA11yBridge() const -> aria::Bridge*;
+
+		void MarkA11yDirty();
+		[[nodiscard]] auto IsA11yDirty() const -> bool
+		{
+			return _a11yDirty;
+		}
+
+		[[nodiscard]] auto GetA11ySnapshot() const
+			-> std::shared_ptr<const aria::Snapshot>;
+
 		[[nodiscard]] auto BuildA11ySnapshot() const
 			-> std::shared_ptr<const aria::Snapshot>;
 
@@ -269,6 +282,11 @@ namespace mocca
 		Surface* _captureSurface = nullptr;
 
 		std::unique_ptr<gfx::Renderer> _renderer;
+
+		std::unique_ptr<aria::Bridge> _a11y;
+		mutable std::mutex _a11yMutex;
+		std::shared_ptr<const aria::Snapshot> _a11ySnapshot;
+		bool _a11yDirty = true;
 
 		friend class Application;
 		friend class aria::SnapshotBuilder;

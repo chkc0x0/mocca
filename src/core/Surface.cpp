@@ -76,6 +76,8 @@ namespace mocca
 
 	Surface::~Surface()
 	{
+		_a11y.reset();
+
 		if (Application::main != nullptr && _root != nullptr)
 		{
 			getCtx()->_store->RemoveComponent(_root.get());
@@ -297,6 +299,20 @@ namespace mocca
 			Update(dt);
 		}
 
+		if (_a11y && _a11yDirty)
+		{
+			if (_a11y->Active())
+			{
+				{
+					std::scoped_lock lock(_a11yMutex);
+					_a11ySnapshot = aria::Snapshot::Build(*this);
+				}
+				_a11yDirty = false;
+			}
+
+			_a11y->UpdateIfActive();
+		}
+
 		for (auto& i : _children)
 		{
 			i->Tick(dt);
@@ -350,6 +366,8 @@ namespace mocca
 
 		ctx->_currentSurface = nullptr;
 		_repaint = true;
+
+		MarkA11yDirty();
 	}
 
 	void Surface::Paint()
@@ -487,6 +505,11 @@ namespace mocca
 				_desc.Width = ev.Data1;
 				_desc.Height = ev.Data2;
 				_relayout = true;
+				MarkA11yDirty();
+			}
+			if (ev.EventType == SurfaceEvent::Type::DPIChange)
+			{
+				MarkA11yDirty();
 			}
 		}
 
@@ -691,6 +714,7 @@ namespace mocca
 
 					// TODO: if we add scroll dependent stuff, mark it dirty
 					RequestRepaint();
+					MarkA11yDirty();
 				}
 			}
 			return;
@@ -878,6 +902,7 @@ namespace mocca
 		FireFocusEvent(target->Events, EventType::Focus, reason);
 
 		MarkDirty();
+		MarkA11yDirty();
 	}
 
 	void Surface::ClearFocus(FocusReason reason)
@@ -896,6 +921,7 @@ namespace mocca
 		FireFocusEvent(oldEvents, EventType::Blur, reason);
 
 		MarkDirty();
+		MarkA11yDirty();
 	}
 
 	auto Surface::GetEffectiveFocus() const -> detail::NodeId
@@ -921,9 +947,37 @@ namespace mocca
 		return focused;
 	}
 
-	auto Surface::BuildA11ySnapshot() const -> std::shared_ptr<const aria::Snapshot>
+	auto Surface::BuildA11ySnapshot() const
+		-> std::shared_ptr<const aria::Snapshot>
 	{
 		return aria::Snapshot::Build(*this);
+	}
+
+	void Surface::SetA11yBridge(std::unique_ptr<aria::Bridge> bridge)
+	{
+		_a11y = std::move(bridge);
+		_a11yDirty = true;
+	}
+
+	auto Surface::GetA11yBridge() const -> aria::Bridge*
+	{
+		return _a11y.get();
+	}
+
+	void Surface::MarkA11yDirty()
+	{
+		_a11yDirty = true;
+		if (_desc.Parent != nullptr && !IsPlatformBacked())
+		{
+			_desc.Parent->MarkA11yDirty();
+		}
+	}
+
+	auto Surface::GetA11ySnapshot() const
+		-> std::shared_ptr<const aria::Snapshot>
+	{
+		std::scoped_lock lock(_a11yMutex);
+		return _a11ySnapshot;
 	}
 
 	void Surface::FocusNext(bool backward)

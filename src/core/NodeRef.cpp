@@ -282,6 +282,7 @@ namespace mocca
 		if (changed)
 		{
 			_surface->MarkDirty();
+			_surface->MarkA11yDirty();
 		}
 	}
 
