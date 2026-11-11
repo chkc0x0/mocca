@@ -1,9 +1,13 @@
 #include "input/Scroll.h"
 #include "core/Context.h"
 #include "core/Node.h"
+#include "core/Surface.h"
 #include "style/ComputedStyle.h"
 #include "utils/ScopedProfiler.h"
 #include "yoga/YGNodeLayout.h"
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 namespace mocca::detail
 {
@@ -40,6 +44,118 @@ namespace mocca::detail
 		for (auto& c : n->Children)
 		{
 			contentExtent(c.get(), maxX, maxY);
+		}
+	}
+
+	auto paintedRect(const Node& node) -> Rectangle
+	{
+		Rectangle rect{
+			.X = node.GetX(),
+			.Y = node.GetY(),
+			.Width = YGNodeLayoutGetWidth(node.YogaNode),
+			.Height = YGNodeLayoutGetHeight(node.YogaNode),
+		};
+
+		for (auto* parent = node.Parent; parent != nullptr;
+			 parent = parent->Parent)
+		{
+			if (parent->IsBox() &&
+				parent->Style.Get<styles::StyleProperty::Overflow>() ==
+					styles::OverflowType::Scroll)
+			{
+				rect.X -= parent->ScrollOffset.X;
+				rect.Y -= parent->ScrollOffset.Y;
+			}
+		}
+
+		return rect;
+	}
+
+	void scrollRectIntoView(Node* node, Surface* surface, Rectangle target)
+	{
+		if (node == nullptr || surface == nullptr)
+		{
+			return;
+		}
+
+		std::vector<Node*> scrollables;
+		for (auto* parent = node->Parent; parent != nullptr;
+			 parent = parent->Parent)
+		{
+			if (parent->IsBox() &&
+				parent->Style.Get<styles::StyleProperty::Overflow>() ==
+					styles::OverflowType::Scroll)
+			{
+				scrollables.push_back(parent);
+			}
+		}
+
+		bool changed = false;
+		for (auto* scrollable : scrollables)
+		{
+			Rectangle viewport = paintedRect(*scrollable);
+
+			float contentMaxX = 0.0F;
+			float contentMaxY = 0.0F;
+			contentExtent(scrollable, contentMaxX, contentMaxY);
+
+			float maxSx = std::max<float>(
+				0.0F,
+				contentMaxX - (scrollable->GetX() +
+							   YGNodeLayoutGetWidth(scrollable->YogaNode))
+			);
+			float maxSy = std::max<float>(
+				0.0F,
+				contentMaxY - (scrollable->GetY() +
+							   YGNodeLayoutGetHeight(scrollable->YogaNode))
+			);
+
+			float sx = scrollable->ScrollOffset.X;
+			float sy = scrollable->ScrollOffset.Y;
+
+			float cx = target.X - viewport.X + sx;
+			float cy = target.Y - viewport.Y + sy;
+
+			if (cx < sx)
+			{
+				sx = cx;
+			}
+			else if (cx + target.Width > sx + viewport.Width)
+			{
+				sx = cx + target.Width - viewport.Width;
+			}
+
+			if (cy < sy)
+			{
+				sy = cy;
+			}
+			else if (cy + target.Height > sy + viewport.Height)
+			{
+				sy = cy + target.Height - viewport.Height;
+			}
+
+			sx = std::round(std::clamp(sx, 0.0F, maxSx));
+			sy = std::round(std::clamp(sy, 0.0F, maxSy));
+
+			float dx = sx - scrollable->ScrollOffset.X;
+			float dy = sy - scrollable->ScrollOffset.Y;
+
+			if (dx == 0.0F && dy == 0.0F)
+			{
+				continue;
+			}
+
+			scrollable->ScrollOffset.X = sx;
+			scrollable->ScrollOffset.Y = sy;
+			target.X -= dx;
+			target.Y -= dy;
+			changed = true;
+		}
+
+		if (changed)
+		{
+			surface->MarkDirty();
+			surface->MarkA11yDirty();
 		}
 	}
 

@@ -10,6 +10,7 @@ namespace mocca
 		Pointer,
 		Keyboard,
 		Programmatic,
+		AssistiveTechnology,
 	};
 
 	struct FocusEvent

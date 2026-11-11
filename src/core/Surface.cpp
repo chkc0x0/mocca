@@ -37,11 +37,47 @@ namespace mocca
 		events->Call(type, ev);
 	}
 
+	static auto IsPrunedForFocus(const detail::Node& node) -> bool
+	{
+		for (const auto* n = &node; n != nullptr; n = n->Parent)
+		{
+			if (n->Style.Get<styles::StyleProperty::Display>() ==
+				styles::DisplayType::None)
+			{
+				return true;
+			}
+
+			if (n->A11y != nullptr && n->A11y->Hidden)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	static auto IsA11yDisabled(const detail::Node& node) -> bool
+	{
+		return node.A11y != nullptr && node.A11y->Disabled;
+	}
+
+	static auto IsFocusable(const detail::Node& node) -> bool
+	{
+		return node.Focus != FocusMode::None && !IsPrunedForFocus(node) &&
+			   !IsA11yDisabled(node);
+	}
+
+	static auto IsTabStop(const detail::Node& node) -> bool
+	{
+		return node.Focus == FocusMode::Tab && !IsPrunedForFocus(node) &&
+			   !IsA11yDisabled(node);
+	}
+
 	static auto NearestFocusable(detail::Node* node) -> detail::Node*
 	{
 		for (auto* n = node; n != nullptr; n = n->Parent)
 		{
-			if (n->Focus != FocusMode::None)
+			if (IsFocusable(*n))
 			{
 				return n;
 			}
@@ -882,7 +918,8 @@ namespace mocca
 			return;
 		}
 
-		if (!force && target->Focus == FocusMode::None)
+		if (!force && (target->Focus == FocusMode::None ||
+					   IsPrunedForFocus(*target) || IsA11yDisabled(*target)))
 		{
 			return;
 		}
@@ -890,6 +927,16 @@ namespace mocca
 		if (_focusedNode == id)
 		{
 			return;
+		}
+
+		if (reason == FocusReason::Keyboard ||
+			reason == FocusReason::AssistiveTechnology)
+		{
+			detail::scrollRectIntoView(
+				target,
+				this,
+				detail::paintedRect(*target)
+			);
 		}
 
 		auto* old = detail::Node::FindNodeById(_root.get(), _focusedNode);
@@ -1020,31 +1067,42 @@ namespace mocca
 
 		std::vector<detail::Node*> all;
 		CollectPreorder(_root.get(), all);
-		if (all.empty())
+
+		std::vector<detail::Node*> stops;
+		stops.reserve(all.size());
+		for (auto* node : all)
+		{
+			if (IsTabStop(*node))
+			{
+				stops.push_back(node);
+			}
+		}
+
+		if (stops.empty())
 		{
 			return;
 		}
 
-		auto count = static_cast<int>(all.size());
+		auto count = static_cast<int>(stops.size());
 		int current = -1;
 		for (int i = 0; i < count; ++i)
 		{
-			if (all[i]->Id == _focusedNode)
+			if (stops[i]->Id == _focusedNode)
 			{
 				current = i;
 				break;
 			}
 		}
 
-		int start = current >= 0 ? current : (backward ? count : -1);
+		int start = current >= 0 ? current : (backward ? 0 : -1);
 
 		for (int step = 1; step <= count; ++step)
 		{
 			int idx = backward ? (((start - step) % count) + count) % count
 							   : (start + step) % count;
-			if (all[idx]->Focus == FocusMode::Tab)
+			if (idx != current)
 			{
-				FocusNode(all[idx]->Id, FocusReason::Keyboard);
+				FocusNode(stops[idx]->Id, FocusReason::Keyboard);
 				return;
 			}
 		}
