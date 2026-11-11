@@ -143,17 +143,11 @@ namespace mocca::detail
 			const styles::TransitionList& transitions =
 				styles::detail::resolveTransition(transitionRef);
 
-			const styles::TransitionType* spec = nullptr;
-			for (auto it = transitions.Specs.rbegin();
-				 it != transitions.Specs.rend();
-				 ++it)
-			{
-				if ((it->Props & styles::propertyBit<P>()) != 0)
-				{
-					spec = &*it;
-					break;
-				}
-			}
+			const styles::TransitionType* spec =
+				styles::findTransition(
+					transitions,
+					styles::propertyBit<P>()
+				);
 
 			if (spec == nullptr)
 			{

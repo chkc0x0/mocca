@@ -1,5 +1,6 @@
 #pragma once
 #include "StyleProperty.h"
+#include "style/TransitionType.h"
 #include "styles.def"
 #include <cstddef>
 #include <cstdint>
@@ -34,12 +35,24 @@ namespace mocca::styles
 
 	template <StyleProperty P> constexpr auto propertyBit() -> std::uint32_t
 	{
-		std::size_t index = animatableIndex<P>();
-		return index < 32 ? (1U << index) : 0U;
+		if constexpr (P == StyleProperty::All)
+		{
+			return AllProperties;
+		}
+		else
+		{
+			std::size_t index = animatableIndex<P>();
+			return index < 32 ? (1U << index) : 0U;
+		}
 	}
 
 	constexpr auto animatableBit(StyleProperty prop) -> std::uint32_t
 	{
+		if (prop == StyleProperty::All)
+		{
+			return AllProperties;
+		}
+
 		for (std::size_t i = 0; i < AnimatablePropertyCount; ++i)
 		{
 			if (AnimatablePropertyList[i] == prop)
@@ -48,5 +61,32 @@ namespace mocca::styles
 			}
 		}
 		return 0U;
+	}
+
+	constexpr auto findTransition(
+		const TransitionList& transitions,
+		std::uint32_t propBit
+	) -> const TransitionType*
+	{
+		const TransitionType* all = nullptr;
+		for (auto it = transitions.Specs.rbegin();
+			 it != transitions.Specs.rend();
+			 ++it)
+		{
+			if (it->Props == AllProperties)
+			{
+				if (all == nullptr)
+				{
+					all = &*it;
+				}
+				continue;
+			}
+
+			if ((it->Props & propBit) != 0)
+			{
+				return &*it;
+			}
+		}
+		return all;
 	}
 }

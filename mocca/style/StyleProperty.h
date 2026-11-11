@@ -15,6 +15,7 @@ namespace mocca::styles
 			mc_miscProperties
 #undef mc_styleProperty
 				StylePropertyCount,
+		All = StylePropertyCount,
 	};
 
 	enum class StylePropertyGroup : char
