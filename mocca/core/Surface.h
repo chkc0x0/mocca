@@ -208,6 +208,11 @@ namespace mocca
 			return _focusedNode;
 		}
 
+		[[nodiscard]] auto GetLastFocusReason() const -> FocusReason
+		{
+			return _lastFocusReason;
+		}
+
 		[[nodiscard]] auto GetEffectiveFocus() const -> detail::NodeId;
 
 		auto ActivateNode(
@@ -286,6 +291,7 @@ namespace mocca
 		std::vector<std::unique_ptr<Surface>> _children;
 
 		detail::NodeId _focusedNode = 0;
+		FocusReason _lastFocusReason = FocusReason::Programmatic;
 		detail::NodeId _spaceActivateNode = 0;
 		detail::NodeId _capturedNode = 0;
 		detail::NodeId _hoveredNode = 0;

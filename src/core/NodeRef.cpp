@@ -149,6 +149,16 @@ namespace mocca
 		return false;
 	}
 
+	auto NodeRef::IsFocusVisible() const -> bool
+	{
+		if (!IsFocused() || _surface == nullptr)
+		{
+			return false;
+		}
+
+		return _surface->GetLastFocusReason() != FocusReason::Pointer;
+	}
+
 	void NodeRef::_emitImpl(
 		uint32_t id,
 		const std::type_info& type,

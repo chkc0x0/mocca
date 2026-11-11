@@ -37,6 +37,7 @@ namespace mocca
 		void Focus();
 		void Blur();
 		[[nodiscard]] auto IsFocused() const -> bool;
+		[[nodiscard]] auto IsFocusVisible() const -> bool;
 
 		template <class E> void Emit(EventKey<E> key, E& event) const
 		{

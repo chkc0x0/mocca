@@ -203,7 +203,7 @@ namespace mocca::widgets::basic
 			);
 
 			base.AddIf(
-				node->IsFocused(),
+				node->IsFocusVisible(),
 				{
 					styles::BorderColor(Color(0, 0, 255)),
 				}

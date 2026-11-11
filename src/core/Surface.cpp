@@ -1056,6 +1056,7 @@ namespace mocca
 															  : nullptr;
 
 		_focusedNode = id;
+		_lastFocusReason = reason;
 		_spaceActivateNode = 0;
 
 		FireFocusEvent(oldEvents, EventType::Blur, reason);
