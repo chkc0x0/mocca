@@ -61,6 +61,38 @@ namespace mocca
 		return node.A11y != nullptr && node.A11y->Disabled;
 	}
 
+	static auto A11yRoleOf(const detail::Node& node) -> aria::Role
+	{
+		for (const auto* n = &node; n != nullptr; n = n->Parent)
+		{
+			if (n->A11y != nullptr)
+			{
+				return n->A11y->Role;
+			}
+		}
+
+		return aria::Role::None;
+	}
+
+	static auto IsActivatable(const detail::Node& node) -> bool
+	{
+		auto role = A11yRoleOf(node);
+		if (aria::isTextInputRole(role))
+		{
+			return false;
+		}
+
+		for (const auto* n = &node; n != nullptr; n = n->Parent)
+		{
+			if (n->Events != nullptr && n->Events->Has(EventType::Activate))
+			{
+				return true;
+			}
+		}
+
+		return aria::isInteractiveRole(role);
+	}
+
 	static auto IsFocusable(const detail::Node& node) -> bool
 	{
 		return node.Focus != FocusMode::None && !IsPrunedForFocus(node) &&
@@ -189,6 +221,12 @@ namespace mocca
 			detail::Node::FindNodeById(_root.get(), _capturedNode) == nullptr)
 		{
 			_capturedNode = 0;
+		}
+		if (_spaceActivateNode != 0 &&
+			detail::Node::FindNodeById(_root.get(), _spaceActivateNode) ==
+				nullptr)
+		{
+			_spaceActivateNode = 0;
 		}
 
 		_advanceAnimations(dt);
@@ -857,6 +895,56 @@ namespace mocca
 			!ev.PreventDefault)
 		{
 			FocusNext(ev.Mods.Shift);
+			return;
+		}
+
+		if (ev.Code != KeyCode::Enter && ev.Code != KeyCode::Space)
+		{
+			return;
+		}
+
+		if (ev.PreventDefault)
+		{
+			if (ev.Code == KeyCode::Space &&
+				ev.EventType != KeyEvent::Type::Repeat)
+			{
+				_spaceActivateNode = 0;
+			}
+			return;
+		}
+
+		auto* target = detail::Node::FindNodeById(_root.get(), _focusedNode);
+		if (target == nullptr)
+		{
+			return;
+		}
+
+		if (ev.Code == KeyCode::Enter)
+		{
+			if (ev.EventType == KeyEvent::Type::Down && IsActivatable(*target))
+			{
+				ActivateNode(_focusedNode, ActivationSource::Keyboard);
+			}
+			return;
+		}
+
+		switch (ev.EventType)
+		{
+		case KeyEvent::Type::Down:
+			_spaceActivateNode = IsActivatable(*target) ? _focusedNode : 0;
+			break;
+		case KeyEvent::Type::Up:
+		{
+			auto id = _spaceActivateNode;
+			_spaceActivateNode = 0;
+			if (id != 0 && id == _focusedNode)
+			{
+				ActivateNode(id, ActivationSource::Keyboard);
+			}
+			break;
+		}
+		case KeyEvent::Type::Repeat:
+			break;
 		}
 	}
 
@@ -944,6 +1032,7 @@ namespace mocca
 															  : nullptr;
 
 		_focusedNode = id;
+		_spaceActivateNode = 0;
 
 		FireFocusEvent(oldEvents, EventType::Blur, reason);
 		FireFocusEvent(target->Events, EventType::Focus, reason);
@@ -964,6 +1053,7 @@ namespace mocca
 															  : nullptr;
 
 		_focusedNode = 0;
+		_spaceActivateNode = 0;
 
 		FireFocusEvent(oldEvents, EventType::Blur, reason);
 

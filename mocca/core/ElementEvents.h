@@ -31,6 +31,7 @@ namespace mocca
 		Focus,
 		Blur,
 		Activate,
+		A11yAction,
 	};
 
 	constexpr uint32_t FirstCustomEventId = 1U << 16;
@@ -87,6 +88,9 @@ namespace mocca
 		};
 		inline constexpr EventKey<ActivateEvent> Activate{
 			static_cast<uint32_t>(EventType::Activate),
+		};
+		inline constexpr EventKey<A11yActionEvent> A11yAction{
+			static_cast<uint32_t>(EventType::A11yAction),
 		};
 	}
 

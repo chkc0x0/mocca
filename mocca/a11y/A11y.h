@@ -192,6 +192,40 @@ namespace mocca::aria
 		auto operator()(const Props& props) const noexcept -> size_t;
 	};
 
+	constexpr auto isInteractiveRole(Role role) -> bool
+	{
+		switch (role)
+		{
+		case Role::Button:
+		case Role::CheckBox:
+		case Role::RadioButton:
+		case Role::Switch:
+		case Role::Link:
+		case Role::MenuItem:
+		case Role::Tab:
+		case Role::TreeItem:
+		case Role::ListBoxOption:
+		case Role::GridCell:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	constexpr auto isTextInputRole(Role role) -> bool
+	{
+		switch (role)
+		{
+		case Role::TextInput:
+		case Role::MultilineTextInput:
+		case Role::SearchInput:
+		case Role::PasswordInput:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	inline auto id(std::string_view name) -> uint64_t
 	{
 		return mocca::detail::hashString(name); // FNV-1a, same as ElementKey

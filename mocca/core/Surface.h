@@ -278,6 +278,7 @@ namespace mocca
 		std::vector<std::unique_ptr<Surface>> _children;
 
 		detail::NodeId _focusedNode = 0;
+		detail::NodeId _spaceActivateNode = 0;
 		detail::NodeId _capturedNode = 0;
 		detail::NodeId _hoveredNode = 0;
 

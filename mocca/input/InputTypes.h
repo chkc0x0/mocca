@@ -44,6 +44,14 @@ namespace mocca
 		bool StopPropagation = false;
 	};
 
+	struct A11yActionEvent
+	{
+		A11yAction Action = A11yAction::Click;
+		std::string Value;
+		double NumericValue = 0.0;
+		bool StopPropagation = false;
+	};
+
 	struct Modifiers
 	{
 		bool Shift = false;
