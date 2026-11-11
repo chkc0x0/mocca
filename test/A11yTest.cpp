@@ -4,6 +4,7 @@
 #include "core/Hooks.h"
 #include "core/NodeRef.h"
 #include "utils/TypeInterners.h"
+#include "widgets/Button.h"
 #include <memory>
 
 namespace mtest
@@ -324,7 +325,7 @@ namespace mtest
 
 		auto snap = snapshotOf(*s);
 		ASSERT_EQ(countRole(*snap, Role::Group), 1);
-		
+
 		EXPECT_EQ(countRole(*snap, Role::Label), 1);
 		EXPECT_EQ(snap->Nodes[1].Name, "Toolbar");
 	}
@@ -664,5 +665,188 @@ namespace mtest
 		EXPECT_FLOAT_EQ(button.Bounds.X, 100.0F)
 			<< "composite origins offset flattened bounds";
 		EXPECT_FLOAT_EQ(button.Bounds.Y, 40.0F);
+	}
+
+	TEST_F(SnapshotTest, DispatchClickCallsOnPress)
+	{
+		int presses = 0;
+
+		auto* s = AddSurface(
+			{.Width = 200, .Height = 100, .Title = "click"},
+			[&]() -> mocca::Element
+			{
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style = {Width(px(200)), Height(px(100))},
+						.Children = {
+							mocca::widgets::basic::button(
+								mocca::widgets::basic::ButtonProps{
+									.Children = {mocca::text("Save")},
+									.OnPress = [&presses](mocca::PointerEvent&)
+										-> void { presses++; },
+								}
+							),
+						},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		auto snap = snapshotOf(*s);
+		const mocca::aria::Node* button = nullptr;
+		for (const auto& node : snap->Nodes)
+		{
+			if (node.Role == Role::Button)
+			{
+				button = &node;
+			}
+		}
+
+		ASSERT_NE(button, nullptr);
+		s->DispatchA11yAction({
+			.Target = button->Id,
+			.Action = mocca::A11yAction::Click,
+		});
+		EXPECT_EQ(presses, 1);
+	}
+
+	TEST_F(SnapshotTest, DispatchFocusAndBlurAcrossCompositeSurface)
+	{
+		mocca::NodeRef* button = nullptr;
+
+		auto* parent = AddSurface(
+			{.Width = 200, .Height = 200, .Title = "parent"},
+			[]() -> mocca::Element
+			{
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style = {Width(px(200)), Height(px(200))},
+					}
+				);
+			}
+		);
+
+		auto* child = AddSurface(
+			{
+				.Width = 50,
+				.Height = 50,
+				.X = 100,
+				.Y = 40,
+				.Title = "child",
+				.Parent = parent,
+			},
+			[&]() -> mocca::Element
+			{
+				button = mocca::useNode();
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.A11y = mocca::a11y(
+							{.Role = Role::Button, .Name = "Child"}
+						),
+						.Style = {Width(px(30)), Height(px(20))},
+						.Ref = button,
+						.Focus = mocca::FocusMode::Tab,
+					}
+				);
+			}
+		);
+
+		Tick();
+		ASSERT_NE(button, nullptr);
+		ASSERT_TRUE(button->Valid());
+		auto id = button->Id();
+
+		parent->DispatchA11yAction({
+			.Target = id,
+			.Action = mocca::A11yAction::Focus,
+		});
+		EXPECT_EQ(child->GetFocusedNode(), id);
+		EXPECT_EQ(parent->GetEffectiveFocus(), id);
+
+		parent->DispatchA11yAction({
+			.Action = mocca::A11yAction::Blur,
+		});
+		EXPECT_EQ(child->GetFocusedNode(), 0U);
+		EXPECT_EQ(parent->GetEffectiveFocus(), 0U);
+	}
+
+	TEST_F(SnapshotTest, DispatchOtherActionBubbles)
+	{
+		mocca::NodeRef* inner = nullptr;
+		std::vector<std::string> seen;
+
+		auto* s = AddSurface(
+			{.Width = 100, .Height = 100, .Title = "action"},
+			[&]() -> mocca::Element
+			{
+				inner = mocca::useNode();
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style = {Width(px(100)), Height(px(100))},
+						.Events =
+							{
+								mocca::on(
+									mocca::events::A11yAction,
+									[&seen](mocca::A11yActionEvent&) -> void
+									{ seen.emplace_back("outer"); }
+								),
+							},
+						.Children = {
+							mocca::box(
+								mocca::BoxDescriptor{
+									.A11y = mocca::a11y({
+										.Role = Role::Button,
+										.Expanded = false,
+									}),
+									.Style = {Width(px(40)), Height(px(20))},
+									.Events =
+										{
+											mocca::on(
+												mocca::events::A11yAction,
+												[&seen](
+													mocca::A11yActionEvent& ev
+												)
+												{
+													seen.emplace_back("inner");
+													if (ev.Action ==
+														mocca::A11yAction::
+															Expand)
+													{
+														ev.StopPropagation =
+															true;
+													}
+												}
+											),
+										},
+									.Ref = inner,
+								}
+							),
+						},
+					}
+				);
+			}
+		);
+
+		Tick();
+		ASSERT_NE(inner, nullptr);
+
+		s->DispatchA11yAction({
+			.Target = inner->Id(),
+			.Action = mocca::A11yAction::Expand,
+		});
+		ASSERT_EQ(seen.size(), 1U)
+			<< "StopPropagation must stop bubble at target";
+		EXPECT_EQ(seen[0], "inner");
+
+		seen.clear();
+		s->DispatchA11yAction({
+			.Target = inner->Id(),
+			.Action = mocca::A11yAction::Custom,
+		});
+		ASSERT_EQ(seen.size(), 2U);
+		EXPECT_EQ(seen[0], "inner");
+		EXPECT_EQ(seen[1], "outer");
 	}
 }

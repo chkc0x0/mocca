@@ -215,6 +215,14 @@ namespace mocca
 			ActivationSource source = ActivationSource::Programmatic
 		) -> bool;
 
+		void FocusNodeAnywhere(
+			detail::NodeId id,
+			FocusReason reason = FocusReason::Programmatic,
+			bool force = false
+		);
+		void ClearFocusAnywhere(FocusReason reason = FocusReason::Programmatic);
+		void DispatchA11yAction(const aria::ActionRequest& request);
+
 		void CapturePointer(detail::NodeId id);
 		void ReleasePointer();
 		[[nodiscard]] auto GetCapturedNode() const -> detail::NodeId

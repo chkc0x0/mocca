@@ -541,9 +541,33 @@ namespace mocca
 		}
 	}
 
+	static auto SubtreeContains(const detail::Node* node, detail::NodeId id)
+		-> bool
+	{
+		if (node == nullptr)
+		{
+			return false;
+		}
+
+		if (node->Id == id)
+		{
+			return true;
+		}
+
+		for (const auto& child : node->Children)
+		{
+			if (SubtreeContains(child.get(), id))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	auto Surface::FindSurfaceContaining(detail::NodeId id) -> Surface*
 	{
-		if (detail::Node::FindNodeById(_root.get(), id) != nullptr)
+		if (SubtreeContains(_root.get(), id))
 		{
 			return this;
 		}
@@ -1146,6 +1170,124 @@ namespace mocca
 		}
 
 		return handled;
+	}
+
+	void Surface::FocusNodeAnywhere(
+		detail::NodeId id,
+		FocusReason reason,
+		bool force
+	)
+	{
+		auto* owner = FindSurfaceContaining(id);
+		if (owner == nullptr)
+		{
+			return;
+		}
+
+		for (auto* surface = this; surface != owner;)
+		{
+			Surface* next = nullptr;
+			for (auto& child : surface->_children)
+			{
+				if (child.get() == owner ||
+					child->FindSurfaceContaining(id) != nullptr)
+				{
+					next = child.get();
+					break;
+				}
+			}
+
+			if (next == nullptr)
+			{
+				return;
+			}
+
+			surface->_focusSurface = next;
+			surface = next;
+		}
+
+		owner->_focusSurface = nullptr;
+		owner->FocusNode(id, reason, force);
+	}
+
+	void Surface::ClearFocusAnywhere(FocusReason reason)
+	{
+		Surface* target = this;
+		for (auto* surface = _focusSurface; surface != nullptr;
+			 surface = surface->_focusSurface)
+		{
+			if (surface->_focusedNode != 0)
+			{
+				target = surface;
+			}
+		}
+
+		target->ClearFocus(reason);
+	}
+
+	void Surface::DispatchA11yAction(const aria::ActionRequest& request)
+	{
+		if (_root == nullptr)
+		{
+			return;
+		}
+
+		switch (request.Action)
+		{
+		case A11yAction::Click:
+			if (auto* owner = FindSurfaceContaining(request.Target))
+			{
+				owner->ActivateNode(
+					request.Target,
+					ActivationSource::AssistiveTechnology
+				);
+			}
+			return;
+
+		case A11yAction::Focus:
+			FocusNodeAnywhere(
+				request.Target,
+				FocusReason::AssistiveTechnology,
+				true
+			);
+			return;
+
+		case A11yAction::Blur:
+			ClearFocusAnywhere(FocusReason::AssistiveTechnology);
+			return;
+
+		default:
+			break;
+		}
+
+		auto* owner = FindSurfaceContaining(request.Target);
+		if (owner == nullptr)
+		{
+			return;
+		}
+
+		auto* target =
+			detail::Node::FindNodeById(owner->_root.get(), request.Target);
+		if (target == nullptr)
+		{
+			return;
+		}
+
+		A11yActionEvent ev{
+			.Action = request.Action,
+			.Value = request.Value,
+			.NumericValue = request.NumericValue,
+		};
+
+		for (auto* node = target; node != nullptr && !ev.StopPropagation;
+			 node = node->Parent)
+		{
+			if (node->Events != nullptr &&
+				node->Events->Has(EventType::A11yAction))
+			{
+				node->Events->Call(EventType::A11yAction, ev);
+			}
+		}
 	}
 
 	void Surface::FocusNext(bool backward)
