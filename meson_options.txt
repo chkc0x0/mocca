@@ -16,3 +16,7 @@ option(
     value: false,
     description: 'build with Tracy profiling instrumentation',
 )
+option('a11y',
+       type: 'feature',
+       value: 'disabled',
+       description: 'a11y bridge through accesskit-c (requires rust)')

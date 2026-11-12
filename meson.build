@@ -80,6 +80,15 @@ if get_option('tracy')
 	sources += ['src/utils/TracyAlloc.cpp']
 endif
 
+a11y_dep = dependency('', required: false)
+if get_option('a11y').enabled()
+    a11y_dep = dependency('accesskit-c-0.23',
+                          required: true,
+                          fallback: ['accesskit-c', 'accesskit_c_dep'])
+    add_project_arguments('-DMC_A11Y_ENABLED=1', language: 'cpp')
+endif
+
+dependencies += a11y_dep
 
 stb_image_impl = static_library(
     'stb_image_impl',

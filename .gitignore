@@ -6,6 +6,5 @@ skia.zip
 .wraplock
 subprojects/*-*
 packagecache
-AGENTS.md
-graphify-out
 .clangd
+!accesskit-c.wrap
