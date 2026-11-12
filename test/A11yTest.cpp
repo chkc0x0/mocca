@@ -7,6 +7,11 @@
 #include "widgets/Button.h"
 #include <memory>
 
+#if defined(MC_A11Y_ENABLED)
+#include "a11y/AccessKitBridge.h"
+#include <accesskit.h>
+#endif
+
 namespace mtest
 {
 	auto sampleProps() -> mocca::aria::Props
@@ -849,4 +854,32 @@ namespace mtest
 		EXPECT_EQ(seen[0], "inner");
 		EXPECT_EQ(seen[1], "outer");
 	}
+
+#ifdef MC_A11Y_ENABLED
+	TEST(A11yAccessKit, EveryRoleMaps)
+	{
+		for (int i = static_cast<int>(mocca::aria::Role::None);
+			 i <= static_cast<int>(mocca::aria::Role::Scrollbar);
+			 ++i)
+		{
+			auto role = static_cast<mocca::aria::Role>(i);
+			auto mapped = mocca::aria::accessKitRole(role);
+
+			if (role == mocca::aria::Role::None)
+			{
+				EXPECT_EQ(
+					mapped,
+					static_cast<uint8_t>(ACCESSKIT_ROLE_UNKNOWN)
+				);
+			}
+			else
+			{
+				EXPECT_NE(
+					mapped,
+					static_cast<uint8_t>(ACCESSKIT_ROLE_UNKNOWN)
+				) << "unmapped aria role index " << i;
+			}
+		}
+	}
+#endif
 }

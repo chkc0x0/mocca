@@ -1,52 +1,52 @@
 project('mocca', 'cpp', version: '0.0.1', default_options: ['cpp_std=c++23'])
 
 sources = [
-    'src/core/Application.cpp',
-    'src/core/Logger.cpp',
-    'src/core/Surface.cpp',
-    'src/core/Node.cpp',
-    'src/core/NodeRef.cpp',
-    'src/core/HookStore.cpp',
-    'src/core/Context.cpp',
-    'src/gfx/Canvas.cpp',
-    'src/gfx/TextureRegistry.cpp',
-    'src/gfx/TextureCache.cpp',
-    'src/gfx/ImageDecoderRegistry.cpp',
-    'src/gfx/StbImageDecoder.cpp',
-    'src/style/StyleApply.cpp',
-    'src/style/StylePaintApply.cpp',
-    'src/core/Element.cpp',
-    'src/a11y/A11y.cpp',
-    'src/a11y/Snapshot.cpp',
-    'src/core/HookFrame.cpp',
-    'src/text/Measure.cpp',
-    'src/text/Unicode.cpp',
-    'src/core/Identifiers.cpp',
-    'src/input/Scroll.cpp',
-    'src/style/StyleList.cpp',
-    'src/style/StyleSet.cpp',
-    'src/style/ComputedStyle.cpp',
-    'src/anim/Curve.cpp',
-    'src/style/StyleValue.cpp',
-    'src/text/FontRegistry.cpp',
-    'src/text/FontMatcher.cpp',
-    'src/text/HarfbuzzUtils.cpp',
-    'src/text/TextResolve.cpp',
-    'src/text/TextShaper.cpp',
-    'src/text/Itemizer.cpp',
-    'src/text/FontCoverage.cpp',
-    'src/text/ShapeCache.cpp',
-    'src/text/TextUtils.cpp',
-    'src/text/TextGeometry.cpp',
-    'src/text/TextEditor.cpp',
-    'src/text/TextKeymap.cpp',
-    'src/text/TextLayoutBuilder.cpp',
-    'src/text/LayoutCache.cpp',
-    'src/text/Bidi.cpp',
+	'src/core/Application.cpp',
+	'src/core/Logger.cpp',
+	'src/core/Surface.cpp',
+	'src/core/Node.cpp',
+	'src/core/NodeRef.cpp',
+	'src/core/HookStore.cpp',
+	'src/core/Context.cpp',
+	'src/gfx/Canvas.cpp',
+	'src/gfx/TextureRegistry.cpp',
+	'src/gfx/TextureCache.cpp',
+	'src/gfx/ImageDecoderRegistry.cpp',
+	'src/gfx/StbImageDecoder.cpp',
+	'src/style/StyleApply.cpp',
+	'src/style/StylePaintApply.cpp',
+	'src/core/Element.cpp',
+	'src/a11y/A11y.cpp',
+	'src/a11y/Snapshot.cpp',
+	'src/core/HookFrame.cpp',
+	'src/text/Measure.cpp',
+	'src/text/Unicode.cpp',
+	'src/core/Identifiers.cpp',
+	'src/input/Scroll.cpp',
+	'src/style/StyleList.cpp',
+	'src/style/StyleSet.cpp',
+	'src/style/ComputedStyle.cpp',
+	'src/anim/Curve.cpp',
+	'src/style/StyleValue.cpp',
+	'src/text/FontRegistry.cpp',
+	'src/text/FontMatcher.cpp',
+	'src/text/HarfbuzzUtils.cpp',
+	'src/text/TextResolve.cpp',
+	'src/text/TextShaper.cpp',
+	'src/text/Itemizer.cpp',
+	'src/text/FontCoverage.cpp',
+	'src/text/ShapeCache.cpp',
+	'src/text/TextUtils.cpp',
+	'src/text/TextGeometry.cpp',
+	'src/text/TextEditor.cpp',
+	'src/text/TextKeymap.cpp',
+	'src/text/TextLayoutBuilder.cpp',
+	'src/text/LayoutCache.cpp',
+	'src/text/Bidi.cpp',
 	'src/utils/Math.cpp',
 	'src/gfx/Capabilities.cpp',
 
-	'src/widgets/Button.cpp'
+	'src/widgets/Button.cpp',
 ]
 
 cmake = import('cmake')
@@ -57,107 +57,119 @@ cmake_options.add_cmake_defines({'WITH_PIC': true})
 yoga_dep = cmake.subproject('yoga', options: cmake_options).dependency('yogacore')
 
 dependencies = [
-    yoga_dep,
-    dependency('harfbuzz'), 
-    subproject('SheenBidi').get_variable('sheenbidi_dep'),
-    subproject('stb').get_variable('stb_image_dep'),
-    dependency('libunibreak'),
-    dependency('libutf8proc'),
-    dependency('simdutf')
+	yoga_dep,
+	dependency('harfbuzz'),
+	subproject('SheenBidi').get_variable('sheenbidi_dep'),
+	subproject('stb').get_variable('stb_image_dep'),
+	dependency('libunibreak'),
+	dependency('libutf8proc'),
+	dependency('simdutf'),
 ]
 
 if get_option('debug')
-    add_project_arguments('-DDEBUG', language: 'cpp')
+	add_project_arguments('-DDEBUG', language: 'cpp')
 endif
 
+add_project_arguments(
+	'-DMC_VERSION="@0@"'.format(meson.project_version()),
+	language: 'cpp',
+)
+
 if get_option('tracy')
-    add_project_arguments('-DMC_TRACY', language: 'cpp')
-    dependencies += dependency(
-        'tracy',
-        default_options: ['tracy_enable=true', 'on_demand=true'],
-    )
+	add_project_arguments('-DMC_TRACY', language: 'cpp')
+	dependencies += dependency(
+		'tracy',
+		default_options: ['tracy_enable=true', 'on_demand=true'],
+	)
 
 	sources += ['src/utils/TracyAlloc.cpp']
 endif
 
 a11y_dep = dependency('', required: false)
 if get_option('a11y').enabled()
-    a11y_dep = dependency('accesskit-c-0.23',
-                          required: true,
-                          fallback: ['accesskit-c', 'accesskit_c_dep'])
-    add_project_arguments('-DMC_A11Y_ENABLED=1', language: 'cpp')
+	a11y_dep = dependency(
+		'accesskit-c-0.23',
+		required: true,
+		fallback: ['accesskit-c', 'accesskit_c_dep'],
+	)
+	add_project_arguments('-DMC_A11Y_ENABLED=1', language: 'cpp')
 endif
 
 dependencies += a11y_dep
 
+if a11y_dep.found()
+	sources += ['src/a11y/AccessKitBridge.cpp']
+endif
+
 stb_image_impl = static_library(
-    'stb_image_impl',
-    'src/gfx/StbImageImpl.cpp',
-    include_directories: include_directories('subprojects/stb'),
-    override_options: ['optimization=2', 'b_sanitize=none'],
-    cpp_args: ['-fvisibility=hidden'],
+	'stb_image_impl',
+	'src/gfx/StbImageImpl.cpp',
+	include_directories: include_directories('subprojects/stb'),
+	override_options: ['optimization=2', 'b_sanitize=none'],
+	cpp_args: ['-fvisibility=hidden'],
 )
 
 mocca_lib = library(
-    'mocca',
-    sources: sources,
-    dependencies: dependencies,
-    include_directories: include_directories('mocca'),
-    cpp_pch: 'mocca/core/pch.h',
-    link_with: stb_image_impl,
+	'mocca',
+	sources: sources,
+	dependencies: dependencies,
+	include_directories: include_directories('mocca'),
+	cpp_pch: 'mocca/core/pch.h',
+	link_with: stb_image_impl,
 )
 
 mocca_dep = declare_dependency(
-    link_with: mocca_lib,
-    dependencies: dependencies,
-    include_directories: include_directories('mocca'),
+	link_with: mocca_lib,
+	dependencies: dependencies,
+	include_directories: include_directories('mocca'),
 )
 
 if get_option('sandbox')
-    executable(
-        'sandbox',
-        dependencies: [mocca_dep, dependency('sdl3'), subproject('kurva').get_variable('nanovg_dep'), dependency('glew')],
-        sources: [
-            'sandbox/main.cpp',
-            'sandbox/SDL3PlatformSurface.cpp',
-            'sandbox/NVGRenderDevice.cpp',
-            'sandbox/SDL3PlatformInterface.cpp'
-        ],
-        include_directories: include_directories('sandbox'),
-    )
+	executable(
+		'sandbox',
+		dependencies: [
+			mocca_dep,
+			dependency('sdl3'),
+			subproject('kurva').get_variable('nanovg_dep'),
+			dependency('glew'),
+		],
+		sources: [
+			'sandbox/main.cpp',
+			'sandbox/SDL3PlatformSurface.cpp',
+			'sandbox/NVGRenderDevice.cpp',
+			'sandbox/SDL3PlatformInterface.cpp',
+		],
+		include_directories: include_directories('sandbox'),
+	)
 endif
 
 if get_option('tests')
-    test_exe = executable(
-        'mocca_tests',
-        dependencies: [mocca_dep, dependency('gtest', main: true)],
-        sources: files(
-            'test/A11yTest.cpp',
-            'test/AnimationTest.cpp',
-            'test/ApplicationIdTest.cpp',
-            'test/EventBusTest.cpp',
-            'test/EventViewTest.cpp',
-            'test/GfxApiTest.cpp',
-            'test/HookTest.cpp',
-            'test/LayoutTest.cpp',
-            'test/NodeRefTest.cpp',
-            'test/RenderTest.cpp',
-            'test/StyleCacheTest.cpp',
-            'test/SurfaceLifecycleTest.cpp',
-            'test/FontTest.cpp',
-            'test/TextLayoutTest.cpp'
-        ),
-        include_directories: include_directories('test'),
-        cpp_args: [
-            '-Dmc_testFont="@0@"'.format(
-                meson.project_source_root() / 'sandbox' / 'Inter.ttf'
-            ),
-            '-Dmc_testCjkFont="@0@"'.format(
-                meson.project_source_root() / 'sandbox' / 'NotoSansTC.ttf'
-            )
-        ],
-        override_options: ['unity=on', 'unity_size=8'],
-    )
+	test_exe = executable(
+		'mocca_tests',
+		dependencies: [mocca_dep, dependency('gtest', main: true)],
+		sources: files(
+			'test/A11yTest.cpp',
+			'test/AnimationTest.cpp',
+			'test/ApplicationIdTest.cpp',
+			'test/EventBusTest.cpp',
+			'test/EventViewTest.cpp',
+			'test/FontTest.cpp',
+			'test/GfxApiTest.cpp',
+			'test/HookTest.cpp',
+			'test/LayoutTest.cpp',
+			'test/NodeRefTest.cpp',
+			'test/RenderTest.cpp',
+			'test/StyleCacheTest.cpp',
+			'test/SurfaceLifecycleTest.cpp',
+			'test/TextLayoutTest.cpp',
+		),
+		include_directories: include_directories('test'),
+		cpp_args: [
+			'-Dmc_testFont="@0@"'.format(meson.project_source_root() / 'sandbox' / 'Inter.ttf'),
+			'-Dmc_testCjkFont="@0@"'.format(meson.project_source_root() / 'sandbox' / 'NotoSansTC.ttf'),
+		],
+		override_options: ['unity=on', 'unity_size=8'],
+	)
 
-    test('mocca', test_exe, timeout: 60)
+	test('mocca', test_exe, timeout: 60)
 endif
