@@ -3,8 +3,6 @@
 ## Content
 
 - [ ] add font fallback outside the font stack (registered fonts and FontProvider)
-- [ ] a11y: [accesskit](https://github.com/AccessKit/accesskit-c)
-- [ ] a11y: kbd nav
 - [ ] optimize text (i feel like its slow)
 - [ ] docs lol
 - [ ] css text properties
@@ -29,3 +27,5 @@
 - [x] refactor Node::Paint
 - [x] refactor drawing api
 - [x] a11y: aria struct
+- [x] a11y: [accesskit](https://github.com/AccessKit/accesskit-c)
+- [x] a11y: kbd nav
