@@ -694,6 +694,10 @@ namespace mocca::aria
 			&AccessKitBridge::DeactivationCallback,
 			this
 		);
+		accesskit_unix_adapter_update_window_focus_state(
+			_adapter,
+			_window.Focused
+		);
 #endif
 	}
 
