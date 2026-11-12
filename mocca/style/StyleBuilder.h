@@ -602,4 +602,34 @@ namespace mocca::styles
 	// i somehow got the order wrong lol
 	// but i already applied it everywhere so i wont change it
 	// ^ (it was trbl instead of tlbr)
+
+	inline auto Translate(Length x, Length y)
+	{
+		return Translate({.X=x, .Y=y});
+	}
+
+	inline auto Translate(Length xy)
+	{
+		return Translate({.X = xy, .Y = xy});
+	}
+
+	inline auto Translate(float x, float y)
+	{
+		return Translate({.X = x, .Y = y});
+	}
+
+	inline auto Translate(float xy)
+	{
+		return Translate({.X = xy, .Y = xy});
+	}
+
+	inline auto Scale(float x, float y)
+	{
+		return Scale({.X = x, .Y = y});
+	}
+
+	inline auto Scale(float xy)
+	{
+		return Scale({.X = xy, .Y = xy});
+	}
 }

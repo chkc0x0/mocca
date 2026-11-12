@@ -216,7 +216,7 @@ namespace mocca::widgets::basic
 
 			base.AddIf(
 				press.State.Pressed,
-				{styles::Scale({.X = 0.95F, .Y = 0.95F})}
+				{styles::Scale(0.95F)}
 			);
 		}
 
