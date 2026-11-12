@@ -613,6 +613,35 @@ namespace mocca
 			if (ev.EventType == SurfaceEvent::Type::DPIChange)
 			{
 				MarkA11yDirty();
+				if (_a11y != nullptr)
+				{
+					_a11y->SetScale(ev.Data1);
+				}
+			}
+			if (ev.EventType == SurfaceEvent::Type::FocusGained)
+			{
+				if (_a11y != nullptr)
+				{
+					_a11y->SetWindowFocused(true);
+				}
+			}
+			if (ev.EventType == SurfaceEvent::Type::FocusLost)
+			{
+				if (_a11y != nullptr)
+				{
+					_a11y->SetWindowFocused(false);
+				}
+			}
+			if (ev.EventType == SurfaceEvent::Type::RootBoundsChanged)
+			{
+				if (_a11y != nullptr && _platform != nullptr)
+				{
+					if (auto bounds = _platform->A11yRootBounds();
+						bounds.has_value())
+					{
+						_a11y->SetRootBounds(*bounds);
+					}
+				}
 			}
 		}
 

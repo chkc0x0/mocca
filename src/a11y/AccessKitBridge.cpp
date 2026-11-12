@@ -2,11 +2,7 @@
 #include <accesskit.h>
 #include <algorithm>
 #include <atomic>
-#include <mutex>
-#include <optional>
-#include <string>
 #include <utility>
-#include <vector>
 
 #if defined(_WIN32)
 #	define MC_AK_WINDOWS 1
@@ -336,8 +332,6 @@ namespace mocca::aria
 		NativeWindow _window;
 		std::atomic<bool> _isActive{false};
 		std::atomic<float> _scale{1.0F};
-		mutable std::mutex _boundsMutex;
-		std::optional<RootBounds> _rootBounds;
 
 #ifdef MC_AK_WINDOWS
 		accesskit_windows_subclassing_adapter* _adapter = nullptr;
@@ -350,23 +344,7 @@ namespace mocca::aria
 
 	auto AccessKitBridge::_rootTransform() const -> accesskit_affine
 	{
-		auto transform = accesskit_affine_scale(_scale.load());
-
-		std::scoped_lock lock(_boundsMutex);
-		if (_rootBounds.has_value())
-		{
-			const auto& bounds = *_rootBounds;
-			accesskit_vec2 inset{
-				.x = bounds.Inner.X - bounds.Outer.X,
-				.y = bounds.Inner.Y - bounds.Outer.Y,
-			};
-			transform = accesskit_affine_mul(
-				accesskit_affine_translate(inset),
-				transform
-			);
-		}
-
-		return transform;
+		return accesskit_affine_scale(_scale.load());
 	}
 
 	auto AccessKitBridge::_buildTreeUpdate() -> accesskit_tree_update*
@@ -823,11 +801,6 @@ namespace mocca::aria
 
 	void AccessKitBridge::SetRootBounds(const RootBounds& bounds)
 	{
-		{
-			std::scoped_lock lock(_boundsMutex);
-			_rootBounds = bounds;
-		}
-
 #ifdef MC_AK_UNIX
 		if (_adapter != nullptr)
 		{
@@ -837,6 +810,8 @@ namespace mocca::aria
 				toAccessKitRect(bounds.Inner)
 			);
 		}
+#else
+		(void)bounds;
 #endif
 	}
 

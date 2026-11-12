@@ -1,9 +1,11 @@
 #include "SDL3PlatformSurface.h"
 #include "SDL3PlatformInterface.h"
+#include "a11y/AccessKitBridge.h"
 #include "core/Logger.h"
 #include "gfx/GfxTypes.h"
 #include "utils/Math.h"
 #include <SDL3/SDL.h>
+#include <string_view>
 #include "GL/glew.h"
 
 SDL3PlatformSurface::SDL3PlatformSurface(
@@ -14,12 +16,18 @@ SDL3PlatformSurface::SDL3PlatformSurface(
 {
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
+	SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+							SDL_WINDOW_HIGH_PIXEL_DENSITY;
+#if defined(MC_A11Y_ENABLED) && (defined(_WIN32) || defined(__APPLE__))
+	// native adapters must be installed before the window is shown
+	flags |= SDL_WINDOW_HIDDEN;
+#endif
+
 	_window = SDL_CreateWindow(
 		desc.Title.c_str(),
 		static_cast<int>(desc.Width),
 		static_cast<int>(desc.Height),
-		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
-			SDL_WINDOW_HIGH_PIXEL_DENSITY
+		flags
 	);
 	if (_window == nullptr)
 	{
@@ -188,6 +196,17 @@ void SDL3PlatformSurface::HandleEvent(const SDL_Event& event)
 			.EventType = mocca::SurfaceEvent::Type::Resize,
 			.Data1 = static_cast<float>(event.window.data1),
 			.Data2 = static_cast<float>(event.window.data2),
+		});
+		_pending.Surface.push_back({
+			.EventType = mocca::SurfaceEvent::Type::RootBoundsChanged,
+		});
+		break;
+	case SDL_EVENT_WINDOW_MOVED:
+	case SDL_EVENT_WINDOW_MAXIMIZED:
+	case SDL_EVENT_WINDOW_RESTORED:
+	case SDL_EVENT_WINDOW_SHOWN:
+		_pending.Surface.push_back({
+			.EventType = mocca::SurfaceEvent::Type::RootBoundsChanged,
 		});
 		break;
 	case SDL_EVENT_WINDOW_MOUSE_ENTER:
@@ -576,4 +595,104 @@ void SDL3PlatformSurface::SetImeCursorRect(mocca::Rectangle rect)
 		.h = static_cast<int>(rect.Height),
 	};
 	SDL_SetTextInputArea(_window, &area, 0);
+}
+
+auto SDL3PlatformSurface::CreateA11yBridge(mocca::Surface& owner)
+	-> std::unique_ptr<mocca::aria::Bridge>
+{
+#ifdef MC_A11Y_ENABLED
+	if (_window == nullptr)
+	{
+		return nullptr;
+	}
+
+	mocca::aria::NativeWindow window{};
+	window.Focused =
+		(SDL_GetWindowFlags(_window) & SDL_WINDOW_INPUT_FOCUS) != 0;
+	window.Scale = Scale().X;
+
+#ifdef _WIN32
+	auto props = SDL_GetWindowProperties(_window);
+	window.Kind = mocca::aria::NativeWindow::Kind::Win32;
+	window.Handle = SDL_GetPointerProperty(
+		props,
+		SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+		nullptr
+	);
+#elifdef __APPLE__
+	auto props = SDL_GetWindowProperties(_window);
+	window.Kind = mocca::aria::NativeWindow::Kind::MacOS;
+	window.Handle = SDL_GetPointerProperty(
+		props,
+		SDL_PROP_WINDOW_COCOA_WINDOW_POINTER,
+		nullptr
+	);
+	window.MacWindowClass = "SDL3Window";
+#else
+	window.Kind = mocca::aria::NativeWindow::Kind::Unix;
+#endif
+
+	auto bridge = mocca::aria::createAccessKitBridge(owner, window);
+
+	if ((SDL_GetWindowFlags(_window) & SDL_WINDOW_HIDDEN) != 0)
+	{
+		SDL_ShowWindow(_window);
+	}
+
+	return bridge;
+#else
+	(void)owner;
+	return nullptr;
+#endif
+}
+
+auto SDL3PlatformSurface::A11yRootBounds()
+	-> std::optional<mocca::aria::RootBounds>
+{
+#ifdef MC_A11Y_ENABLED
+	if (_window == nullptr)
+	{
+		return std::nullopt;
+	}
+
+	const char* driver = SDL_GetCurrentVideoDriver();
+	if (driver != nullptr && std::string_view{driver} == "wayland")
+	{
+		return std::nullopt;
+	}
+
+	int x = 0;
+	int y = 0;
+	if (!SDL_GetWindowPosition(_window, &x, &y))
+	{
+		return std::nullopt;
+	}
+
+	int width = 0;
+	int height = 0;
+	SDL_GetWindowSize(_window, &width, &height);
+
+	int top = 0;
+	int left = 0;
+	int bottom = 0;
+	int right = 0;
+	SDL_GetWindowBordersSize(_window, &top, &left, &bottom, &right);
+
+	return mocca::aria::RootBounds{
+		.Outer = {
+			.X = static_cast<float>(x - left),
+			.Y = static_cast<float>(y - top),
+			.Width = static_cast<float>(width + left + right),
+			.Height = static_cast<float>(height + top + bottom),
+		},
+		.Inner = {
+			.X = static_cast<float>(x),
+			.Y = static_cast<float>(y),
+			.Width = static_cast<float>(width),
+			.Height = static_cast<float>(height),
+		},
+	};
+#else
+	return std::nullopt;
+#endif
 }

@@ -235,6 +235,7 @@ namespace mocca
 			FocusGained,
 			FocusLost,
 			DPIChange,
+			RootBoundsChanged,
 		};
 
 		Type EventType = Type::Resize;

@@ -5,6 +5,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <optional>
 
 struct SDL_Window;
 struct SDL_Cursor;
@@ -40,6 +42,10 @@ public:
 
 	void SetCursor(mocca::CursorShapeType shape) override;
 	void SetImeCursorRect(mocca::Rectangle rect) override;
+
+	auto CreateA11yBridge(mocca::Surface& owner)
+		-> std::unique_ptr<mocca::aria::Bridge> override;
+	auto A11yRootBounds() -> std::optional<mocca::aria::RootBounds> override;
 
 private:
 	static auto ToKeyCode(int scancode) -> mocca::KeyCode;
