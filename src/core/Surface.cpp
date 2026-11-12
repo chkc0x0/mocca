@@ -619,7 +619,7 @@ namespace mocca
 			if (ev.EventType == PointerEvent::Type::Move)
 			{
 				if (i + 1 < batch.Pointer.size() &&
-					batch.Pointer[i].EventType == PointerEvent::Type::Move)
+					batch.Pointer[i + 1].EventType == PointerEvent::Type::Move)
 				{
 					continue;
 				}
@@ -660,7 +660,7 @@ namespace mocca
 			return;
 		}
 
-		if (hit == nullptr)
+		if (hit == nullptr && ev.EventType != PointerEvent::Type::Leave)
 		{
 			hit = detail::Node::HitTest(_root.get(), ev.X, ev.Y);
 		}
@@ -718,6 +718,20 @@ namespace mocca
 	void Surface::RoutePointer(PointerEvent ev)
 	{
 		mc_profileFunction();
+
+		if (ev.EventType == PointerEvent::Type::Leave)
+		{
+			for (auto& c : _children)
+			{
+				if (c->GetState() == SurfaceState::Alive && !c->IsPlatformBacked())
+				{
+					c->RoutePointer(ev);
+				}
+			}
+
+			UpdateHover(nullptr, ev);
+			return;
+		}
 
 		if (_captureSurface != nullptr)
 		{

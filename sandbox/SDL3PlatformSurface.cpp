@@ -190,6 +190,24 @@ void SDL3PlatformSurface::HandleEvent(const SDL_Event& event)
 			.Data2 = static_cast<float>(event.window.data2),
 		});
 		break;
+	case SDL_EVENT_WINDOW_MOUSE_ENTER:
+	{
+		float x = 0.0F;
+		float y = 0.0F;
+		SDL_GetMouseState(&x, &y);
+		_pending.Pointer.push_back({
+			.EventType = mocca::PointerEvent::Type::Move,
+			.X = x,
+			.Y = y,
+			.Mods = ToModifiers(SDL_GetModState()),
+		});
+		break;
+	}
+	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+		_pending.Pointer.push_back({
+			.EventType = mocca::PointerEvent::Type::Leave,
+		});
+		break;
 	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 		PushClose();
 		break;
@@ -438,11 +456,6 @@ auto SDL3PlatformSurface::_cursorFor(mocca::CursorShapeType shape)
 	if (_cursors[index] != nullptr)
 	{
 		return _cursors[index];
-	}
-
-	if (shape == mocca::CursorShapeType::Default)
-	{
-		return nullptr;
 	}
 
 	auto systemCursor = SDL_SYSTEM_CURSOR_DEFAULT;
