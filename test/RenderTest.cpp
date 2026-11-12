@@ -1,5 +1,6 @@
 #include "TestSupport.h"
 #include "core/Hooks.h"
+#include "core/Node.h"
 #include "gfx/Canvas.h"
 
 namespace mtest
@@ -142,6 +143,234 @@ namespace mtest
 			<< "an idle frame must not lose or duplicate the content";
 	}
 
+	TEST_F(RenderTest, TranslateEmitsConcatWithOffset)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "translate",
+			},
+			[]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style = {
+							Width(px(40)),
+							Height(px(40)),
+							BackgroundColor(mocca::colors::Red),
+							Translate(
+								Vector2Length{
+									px(10),
+									px(20),
+								}
+							),
+						},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		const auto* concat = firstConcat(commandsOf(*s));
+		ASSERT_NE(concat, nullptr);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[2], 10.0F);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[5], 20.0F);
+	}
+
+	TEST_F(RenderTest, ScaleUsesTransformOrigin)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "scale",
+			},
+			[]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style = {
+							Width(px(40)),
+							Height(px(40)),
+							BackgroundColor(mocca::colors::Red),
+							Scale(mocca::Vector2{2.0F, 2.0F}),
+						},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		const auto* concat = firstConcat(commandsOf(*s));
+		ASSERT_NE(concat, nullptr);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[0], 2.0F);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[2], -20.0F);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[4], 2.0F);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[5], -20.0F);
+	}
+
+	TEST_F(RenderTest, ScaleOriginUsesComponentSpace)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "scale-component-space",
+			},
+			[]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(100)),
+								Height(px(100)),
+							},
+						.Children = {
+							mocca::box(
+								mocca::BoxDescriptor{
+									.Style = {
+										Position(PositionType::Absolute),
+										Left(px(30)),
+										Top(px(20)),
+										Width(px(40)),
+										Height(px(40)),
+										BackgroundColor(mocca::colors::Red),
+										Scale(
+											mocca::Vector2{
+												2.0F,
+												2.0F,
+											}
+										),
+									},
+								}
+							),
+						},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		const auto* concat = firstConcat(commandsOf(*s));
+		ASSERT_NE(concat, nullptr);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[0], 2.0F);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[2], -50.0F);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[4], 2.0F);
+		EXPECT_FLOAT_EQ(concat->Matrix.M[5], -40.0F);
+	}
+
+	TEST_F(RenderTest, TransformedSubtreeIsNotCulled)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "transform-cull",
+			},
+			[]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(100)),
+								Height(px(100)),
+							},
+						.Children = {
+							mocca::box(
+								mocca::BoxDescriptor{
+									.Style = {
+										Position(PositionType::Absolute),
+										Left(px(200)),
+										Top(px(0)),
+										Width(px(10)),
+										Height(px(10)),
+										BackgroundColor(mocca::colors::Red),
+										Translate(
+											Vector2Length{
+												px(-150),
+												px(0),
+											}
+										),
+									},
+								}
+							),
+						},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Red)
+			<< "a transformed subtree must be culled in its transformed "
+			   "bounds";
+	}
+
+	TEST_F(RenderTest, HitTestUsesInverseTransform)
+	{
+		auto* s = AddSurface(
+			{
+				.Width = 100,
+				.Height = 100,
+				.Title = "transform-hit",
+			},
+			[]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(100)),
+								Height(px(100)),
+							},
+						.Children = {
+							mocca::box(
+								mocca::BoxDescriptor{
+									.Style = {
+										Position(PositionType::Absolute),
+										Left(px(200)),
+										Top(px(0)),
+										Width(px(10)),
+										Height(px(10)),
+										BackgroundColor(mocca::colors::Red),
+										Translate(
+											Vector2Length{
+												.X = px(-150),
+												.Y = px(0),
+											}
+										),
+									},
+								}
+							),
+						},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		auto* root = s->Tree();
+		ASSERT_NE(root, nullptr);
+		ASSERT_EQ(root->Children.size(), 1U);
+		auto* child = root->Children.front().get();
+
+		EXPECT_EQ(mocca::detail::Node::HitTest(root, 55.0F, 5.0F), child);
+		EXPECT_EQ(mocca::detail::Node::HitTest(root, 205.0F, 5.0F), nullptr);
+	}
+
 	TEST_F(RenderTest, RoundedRectResolved)
 	{
 		auto* s = AddSurface(
@@ -154,17 +383,14 @@ namespace mtest
 			{
 				return mocca::box(
 					mocca::BoxDescriptor{
-						.Style =
-							{
-								mocca::styles::Width(mocca::styles::px(100)),
-								mocca::styles::Height(mocca::styles::px(40)),
-								mocca::styles::BackgroundColor(
-									mocca::colors::Red
-								),
-								mocca::styles::BorderRadius(
-									mocca::styles::percent(50)
-								),
-							},
+						.Style = {
+							mocca::styles::Width(mocca::styles::px(100)),
+							mocca::styles::Height(mocca::styles::px(40)),
+							mocca::styles::BackgroundColor(mocca::colors::Red),
+							mocca::styles::BorderRadius(
+								mocca::styles::percent(50)
+							),
+						},
 					}
 				);
 			}
@@ -192,15 +418,12 @@ namespace mtest
 			{
 				return mocca::box(
 					mocca::BoxDescriptor{
-						.Style =
-							{
-								mocca::styles::Width(mocca::styles::px(50)),
-								mocca::styles::Height(mocca::styles::px(50)),
-								mocca::styles::BorderColor(
-									mocca::colors::Red
-								),
-								mocca::styles::Border(mocca::styles::px(3)),
-							},
+						.Style = {
+							mocca::styles::Width(mocca::styles::px(50)),
+							mocca::styles::Height(mocca::styles::px(50)),
+							mocca::styles::BorderColor(mocca::colors::Red),
+							mocca::styles::Border(mocca::styles::px(3)),
+						},
 					}
 				);
 			}
@@ -227,8 +450,7 @@ namespace mtest
 				.Height = 20,
 				.Title = "plain",
 			},
-			[]() -> mocca::Element
-			{ return box(20, 20, mocca::colors::Black); }
+			[]() -> mocca::Element { return box(20, 20, mocca::colors::Black); }
 		);
 
 		Tick();
@@ -274,38 +496,32 @@ namespace mtest
 								Width(px(100)),
 								Height(px(100)),
 							},
-						.Children =
-							{
-								mocca::box(
-									mocca::BoxDescriptor{
-										.Style =
-											{
-												Width(px(10)),
-												Height(px(10)),
-												BackgroundColor(
-													mocca::colors::Lime
-												),
-											},
-									}
-								),
-								mocca::box(
-									mocca::BoxDescriptor{
-										.Style =
-											{
-												Position(
-													PositionType::Absolute
-												),
-												Left(px(500)),
-												Top(px(500)),
-												Width(px(50)),
-												Height(px(50)),
-												BackgroundColor(
-													mocca::colors::Blue
-												),
-											},
-									}
-								),
-							},
+						.Children = {
+							mocca::box(
+								mocca::BoxDescriptor{
+									.Style =
+										{
+											Width(px(10)),
+											Height(px(10)),
+											BackgroundColor(
+												mocca::colors::Lime
+											),
+										},
+								}
+							),
+							mocca::box(
+								mocca::BoxDescriptor{
+									.Style = {
+										Position(PositionType::Absolute),
+										Left(px(500)),
+										Top(px(500)),
+										Width(px(50)),
+										Height(px(50)),
+										BackgroundColor(mocca::colors::Blue),
+									},
+								}
+							),
+						},
 					}
 				);
 			}
@@ -338,38 +554,32 @@ namespace mtest
 								Height(px(100)),
 								Overflow(OverflowType::Hidden),
 							},
-						.Children =
-							{
-								mocca::box(
-									mocca::BoxDescriptor{
-										.Style =
-											{
-												Width(px(10)),
-												Height(px(10)),
-												BackgroundColor(
-													mocca::colors::Lime
-												),
-											},
-									}
-								),
-								mocca::box(
-									mocca::BoxDescriptor{
-										.Style =
-											{
-												Position(
-													PositionType::Absolute
-												),
-												Left(px(500)),
-												Top(px(500)),
-												Width(px(50)),
-												Height(px(50)),
-												BackgroundColor(
-													mocca::colors::Blue
-												),
-											},
-									}
-								),
-							},
+						.Children = {
+							mocca::box(
+								mocca::BoxDescriptor{
+									.Style =
+										{
+											Width(px(10)),
+											Height(px(10)),
+											BackgroundColor(
+												mocca::colors::Lime
+											),
+										},
+								}
+							),
+							mocca::box(
+								mocca::BoxDescriptor{
+									.Style = {
+										Position(PositionType::Absolute),
+										Left(px(500)),
+										Top(px(500)),
+										Width(px(50)),
+										Height(px(50)),
+										BackgroundColor(mocca::colors::Blue),
+									},
+								}
+							),
+						},
 					}
 				);
 			}

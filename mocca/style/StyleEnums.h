@@ -108,4 +108,14 @@ namespace mocca::styles
 
 		auto operator==(const FontStyleType& b) const -> bool = default;
 	};
+
+	enum class TransformOrderType : char
+	{
+		TRS,
+		TSR,
+		RTS,
+		RST,
+		STR,
+		SRT,
+	};
 }

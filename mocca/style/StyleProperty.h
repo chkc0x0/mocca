@@ -12,7 +12,7 @@ namespace mocca::styles
 #undef mc_styleProperty
 #define mc_styleProperty(name, ...) name,
 		mc_textProperties mc_layoutProperties mc_renderProperties
-			mc_miscProperties
+			mc_miscProperties mc_transformProperties
 #undef mc_styleProperty
 				StylePropertyCount,
 		All = StylePropertyCount,
@@ -26,6 +26,7 @@ namespace mocca::styles
 		LayoutPosition,
 		Render,
 		Inherited,
+		Transform,
 	};
 
 	constexpr auto GroupBit(StylePropertyGroup g) -> std::uint8_t
@@ -36,48 +37,57 @@ namespace mocca::styles
 	inline constexpr std::size_t StylePropertyCount =
 		static_cast<std::size_t>(StyleProperty::StylePropertyCount);
 
-	inline constexpr std::array<std::uint8_t, StylePropertyCount> GroupBitsOf
-		= {
-			  0U,
+	inline constexpr std::array<std::uint8_t, StylePropertyCount> GroupBitsOf =
+		{
+			0U,
 #undef mc_styleProperty
 #define mc_styleProperty(name, ...) GroupBit(StylePropertyGroup::mc_styleGroup),
 #define mc_styleGroup Inherited
-			  mc_textPropertiesInh
+			mc_textPropertiesInh
 #undef mc_styleGroup
 #define mc_styleGroup LayoutSizing
-			  mc_layoutSizingProps
+				mc_layoutSizingProps
 #undef mc_styleGroup
 #define mc_styleGroup LayoutSpacing
-			  mc_layoutSpacingProps
+					mc_layoutSpacingProps
 #undef mc_styleGroup
 #define mc_styleGroup LayoutFlex
-			  mc_layoutFlexProps
+						mc_layoutFlexProps
 #undef mc_styleGroup
 #define mc_styleGroup LayoutPosition
-			  mc_layoutPosProps
+							mc_layoutPosProps
 #undef mc_styleGroup
 #define mc_styleGroup Inherited
-			  mc_layoutPropertiesInh
+								mc_layoutPropertiesInh
 #undef mc_styleGroup
 #define mc_styleGroup Render
-			  mc_renderPropertiesReset
+									mc_renderPropertiesReset
 #undef mc_styleGroup
 #define mc_styleGroup Inherited
-			  mc_miscPropertiesInh
+										mc_miscPropertiesInh
+#undef mc_styleGroup
+#define mc_styleGroup Transform
+											mc_transformProperties
 #undef mc_styleGroup
 #undef mc_styleProperty
-		  };
+	};
 
-	inline constexpr std::uint8_t AllGroups = (1U << 6U) - 1U;
+	inline constexpr std::uint8_t AllGroups = (1U << 7U) - 1U;
 	inline constexpr std::uint8_t InheritedGroupBit =
 		GroupBit(StylePropertyGroup::Inherited);
 	inline constexpr std::uint8_t RenderGroupBit =
 		GroupBit(StylePropertyGroup::Render);
+	inline constexpr std::uint8_t TransformGroupBit =
+		GroupBit(StylePropertyGroup::Transform);
 	inline constexpr std::uint8_t LayoutGroups =
-		static_cast<std::uint8_t>(AllGroups & ~RenderGroupBit);
-	inline constexpr std::uint8_t PaintGroups = RenderGroupBit | InheritedGroupBit;
+		static_cast<std::uint8_t>(
+			AllGroups & ~RenderGroupBit & ~TransformGroupBit
+		);
+	inline constexpr std::uint8_t PaintGroups =
+		RenderGroupBit | InheritedGroupBit | TransformGroupBit;
 	inline constexpr std::uint8_t DecorationGroups =
 		static_cast<std::uint8_t>(
-			PaintGroups | GroupBit(StylePropertyGroup::LayoutSpacing)
+			RenderGroupBit | InheritedGroupBit |
+			GroupBit(StylePropertyGroup::LayoutSpacing)
 		);
 }

@@ -87,6 +87,13 @@
 #define mc_miscPropertiesInh \
 	mc_styleProperty(CursorShape, CursorShapeType, true, CursorShapeType::Default)
 
+#define mc_transformProperties \
+	mc_styleProperty(Translate, Vector2Length, false, (Vector2Length){}) \
+	mc_styleProperty(Scale, Vector2, false, (Vector2{1.0F, 1.0F})) \
+	mc_styleProperty(Rotate, float, false, 0.0F) \
+	mc_styleProperty(TransformOrder, TransformOrderType, false, TransformOrderType::TRS) \
+	mc_styleProperty(TransformOrigin, Vector2Length, false, ((Vector2Length){{LengthUnit::Percent, 50}, {LengthUnit::Percent, 50}}))
+
 #define mc_layoutProperties mc_layoutPropertiesReset mc_layoutPropertiesInh
 #define mc_renderProperties mc_renderPropertiesReset
 #define mc_textProperties mc_textPropertiesInh
@@ -108,4 +115,8 @@
     mc_animatable(BorderTop) \
     mc_animatable(BorderRight) \
     mc_animatable(BorderBottom) \
-    mc_animatable(BorderLeft)
+    mc_animatable(BorderLeft) \
+    mc_animatable(Translate) \
+    mc_animatable(Scale) \
+    mc_animatable(Rotate) \
+    mc_animatable(TransformOrigin)

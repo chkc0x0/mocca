@@ -395,6 +395,60 @@ namespace mtest
 		EXPECT_EQ(firstFillColor(commandsOf(*s)), mocca::colors::Red);
 	}
 
+	TEST_F(AnimationTest, StyleTransitionTranslate)
+	{
+		std::optional<mocca::StateSetter<bool>> setOnOuter;
+
+		auto* s = AddSurface(
+			{.Width = 200, .Height = 100, .Title = "transform-transition"},
+			[&]() -> mocca::Element
+			{
+				using namespace mocca::styles;
+				auto [on, setOn] = mocca::useState(false);
+				if (!setOnOuter)
+				{
+					setOnOuter.emplace(setOn);
+				}
+
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style = {
+							Width(px(40)),
+							Height(px(40)),
+							Translate(
+								Vector2Length{
+									.X=px(on ? 100.0F : 0.0F),
+									.Y=px(0),
+								}
+							),
+							Transition(
+								StyleProperty::Translate,
+								ms(100),
+								mocca::anim::LinearCurve
+							),
+						},
+					}
+				);
+			}
+		);
+
+		Tick();
+		EXPECT_EQ(firstConcat(commandsOf(*s)), nullptr);
+
+		(*setOnOuter)(true);
+		Tick(0.05, 1);
+
+		const auto* mid = firstConcat(commandsOf(*s));
+		ASSERT_NE(mid, nullptr);
+		EXPECT_GT(mid->Matrix.M[2], 0.0F);
+		EXPECT_LT(mid->Matrix.M[2], 100.0F);
+
+		Tick(0.05, 4);
+		const auto* end = firstConcat(commandsOf(*s));
+		ASSERT_NE(end, nullptr);
+		EXPECT_FLOAT_EQ(end->Matrix.M[2], 100.0F);
+	}
+
 	TEST_F(AnimationTest, SpringColorSettles)
 	{
 		animToggler.reset();

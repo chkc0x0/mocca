@@ -24,6 +24,7 @@ namespace mocca::styles
 		Color,
 		Handle,
 		FontStyle,
+		Vector2,
 	};
 
 	struct StyleEntry;
@@ -55,6 +56,7 @@ namespace mocca::styles
 			uint8_t Enum;
 			struct Length Length;
 			struct Color Color;
+			struct Vector2 Vector2;
 			uint32_t Handle = 0;
 			FontStyleType FontStyle;
 		} Payload;
@@ -126,6 +128,22 @@ namespace mocca::styles
 		static auto Read(const StyleEntry& s) -> FontStyleType
 		{
 			return s.Payload.FontStyle;
+		}
+	};
+
+	template <> struct StyleEntryReader<Vector2>
+	{
+		static auto Read(const StyleEntry& s) -> Vector2
+		{
+			return s.Payload.Vector2;
+		}
+	};
+
+	template <> struct StyleEntryReader<Vector2Length>
+	{
+		static auto Read(const StyleEntry& s) -> Vector2Length
+		{
+			return detail::resolveVector2Length(s.Payload.Handle);
 		}
 	};
 
@@ -204,6 +222,8 @@ namespace mocca::styles
 				   x.Length.Unit == y.Length.Unit;
 		case StyleValueType::Color:
 			return std::memcmp(&x.Color, &y.Color, sizeof(Color)) == 0;
+		case StyleValueType::Vector2:
+			return x.Vector2 == y.Vector2;
 		case StyleValueType::Handle:
 			return x.Handle == y.Handle;
 		case StyleValueType::FontStyle:

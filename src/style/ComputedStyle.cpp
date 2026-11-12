@@ -108,7 +108,7 @@ namespace mocca::styles
 		layoutFlexEqual,
 		LayoutFlexProps,
 		mc_layoutFlexProps
-	) mc_groupEqual(layoutPositionEqual, LayoutPositionProps, mc_layoutPosProps) mc_groupEqual(renderEqual, RenderProps, mc_renderPropertiesReset) mc_groupEqual(inheritedEqual, InheritedProps, mc_inheritProperties)
+	) mc_groupEqual(layoutPositionEqual, LayoutPositionProps, mc_layoutPosProps) mc_groupEqual(renderEqual, RenderProps, mc_renderPropertiesReset) mc_groupEqual(inheritedEqual, InheritedProps, mc_inheritProperties) mc_groupEqual(transformEqual, TransformProps, mc_transformProperties)
 
 #undef mc_groupEqual
 #undef mc_styleProperty
@@ -153,7 +153,7 @@ namespace mocca::styles
 		switch (e.Prop)
 		{
 			mc_textProperties mc_layoutProperties mc_renderProperties
-				mc_miscProperties default
+				mc_miscProperties mc_transformProperties default
 				: mc_error(
 					  ErrorCode::InvalidArgument,
 					  "how did we get to this style? ({})",
@@ -215,6 +215,10 @@ namespace mocca::styles
 		if (a.Inherited != b.Inherited)
 		{
 			groups |= GroupBit(StylePropertyGroup::Inherited);
+		}
+		if (a.Transform != b.Transform)
+		{
+			groups |= GroupBit(StylePropertyGroup::Transform);
 		}
 		return groups;
 	}

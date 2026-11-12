@@ -242,6 +242,20 @@ namespace mtest
 		);
 	}
 
+	inline auto firstConcat(const Commands& cmds)
+		-> const mocca::gfx::cmds::ConcatCmd*
+	{
+		for (const auto& c : cmds)
+		{
+			if (const auto* concat =
+					std::get_if<mocca::gfx::cmds::ConcatCmd>(&c))
+			{
+				return concat;
+			}
+		}
+		return nullptr;
+	}
+
 	inline auto commandsOf(const mocca::Surface& s) -> Commands
 	{
 		return s.GetDrawData();

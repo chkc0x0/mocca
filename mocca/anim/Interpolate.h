@@ -1,6 +1,7 @@
 #pragma once
 #include "style/Length.h"
 #include "utils/Color.h"
+#include "utils/Math.h"
 #include <algorithm>
 #include <type_traits>
 
@@ -54,10 +55,59 @@ namespace mocca::anim
 		return {a.Unit, value < 0.0F ? 0.0F : value};
 	}
 
+	inline auto lerp(const Vector2& a, const Vector2& b, float t) -> Vector2
+	{
+		return {
+			.X = a.X + ((b.X - a.X) * t),
+			.Y = a.Y + ((b.Y - a.Y) * t),
+		};
+	}
+
+	inline auto lerp(
+		const styles::Length& a,
+		const styles::Length& b,
+		float t,
+		bool& discrete
+	) -> styles::Length
+	{
+		if (a.Unit != b.Unit)
+		{
+			discrete = true;
+			return t < 0.5F ? a : b;
+		}
+
+		return styles::Length{
+			a.Unit,
+			a.Value + ((b.Value - a.Value) * t),
+		};
+	}
+
+	inline auto lerp(
+		const styles::Vector2Length& a,
+		const styles::Vector2Length& b,
+		float t
+	) -> styles::Vector2Length
+	{
+		bool discrete = false;
+		styles::Vector2Length result{
+			.X = lerp(a.X, b.X, t, discrete),
+			.Y = lerp(a.Y, b.Y, t, discrete),
+		};
+
+		if (discrete)
+		{
+			return t < 0.5F ? a : b;
+		}
+
+		return result;
+	}
+
 	template <typename T>
 	inline constexpr bool IsInterpolatable = std::is_same_v<T, float> ||
 											 std::is_same_v<T, Color> ||
-											 std::is_same_v<T, styles::Length>;
+											 std::is_same_v<T, Vector2> ||
+											 std::is_same_v<T, styles::Length> ||
+											 std::is_same_v<T, styles::Vector2Length>;
 
 	template <typename T>
 	auto interpolate(const T& a, const T& b, float t) -> T

@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <ranges>
 #include <vector>
 
 namespace mocca::styles
@@ -69,22 +70,20 @@ namespace mocca::styles
 	) -> const TransitionType*
 	{
 		const TransitionType* all = nullptr;
-		for (auto it = transitions.Specs.rbegin();
-			 it != transitions.Specs.rend();
-			 ++it)
+		for (const auto & Spec : std::views::reverse(transitions.Specs))
 		{
-			if (it->Props == AllProperties)
+			if (Spec.Props == AllProperties)
 			{
 				if (all == nullptr)
 				{
-					all = &*it;
+					all = &Spec;
 				}
 				continue;
 			}
 
-			if ((it->Props & propBit) != 0)
+			if ((Spec.Props & propBit) != 0)
 			{
-				return &*it;
+				return &Spec;
 			}
 		}
 		return all;

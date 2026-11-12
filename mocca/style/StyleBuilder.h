@@ -74,6 +74,16 @@ namespace mocca::styles
 			};
 		}
 
+		constexpr auto encodeStyleEntry(StyleProperty prop, Vector2 v)
+			-> StyleEntry
+		{
+			return {
+				.Prop = prop,
+				.Type = StyleValueType::Vector2,
+				.Payload = {.Vector2 = v},
+			};
+		}
+
 		constexpr auto encodeStyleEntry(StyleProperty prop, Alignment a)
 			-> StyleEntry
 		{
@@ -174,6 +184,16 @@ namespace mocca::styles
 			};
 		}
 
+		constexpr auto encodeStyleEntry(StyleProperty prop, TransformOrderType d)
+			-> StyleEntry
+		{
+			return {
+				.Prop = prop,
+				.Type = StyleValueType::Enum,
+				.Payload = {.Enum = static_cast<uint8_t>(d)},
+			};
+		}
+
 		template <class T>
 		constexpr auto encodeStyleEntry(StyleProperty prop, EnumValue<T> k)
 			-> StyleEntry
@@ -263,6 +283,12 @@ namespace mocca::styles
 				.Type = StyleValueType::Handle,
 				.Payload = {.Handle = ref},
 			};
+		}
+
+		inline auto encodeStyleEntry(StyleProperty prop, Vector2Length v)
+			-> StyleEntry
+		{
+			return encodeStyleEntry(prop, internVector2Length(v));
 		}
 
 		constexpr auto encodeStyleEntry(StyleProperty prop, FontStyleType style)
@@ -374,6 +400,7 @@ namespace mocca::styles
 		return detail::encodeStyleEntry(StyleProperty::name, val);             \
 	}
 	mc_textProperties mc_layoutProperties mc_renderProperties mc_miscProperties
+		mc_transformProperties
 #undef mc_styleProperty
 
 #undef mc_stylePropertyEdge

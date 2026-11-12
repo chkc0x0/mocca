@@ -8,6 +8,7 @@
 #include "text/TextLayout.h"
 #include "text/TextLayoutBuilder.h"
 #include "style/StyleApply.h"
+#include "style/StyleHelpers.h"
 #include "utils/ScopedProfiler.h"
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
@@ -99,6 +100,116 @@ namespace mocca::detail
 		SyncYogaChildren();
 	}
 
+	static auto ResolveTransformLength(
+		const styles::Length& value,
+		float basis,
+		float emBasis
+	) -> float
+	{
+		switch (value.Unit)
+		{
+		case styles::LengthUnit::Percent:
+			return value.Value / 100.0F * basis;
+		case styles::LengthUnit::Em:
+			return value.Value * emBasis;
+		case styles::LengthUnit::Rem:
+			return value.Value * styles::RootFontSize;
+		case styles::LengthUnit::Pixels:
+			break;
+		}
+
+		return value.Value;
+	}
+
+	static auto ComputeNodeTransform(const Node& node, const Rectangle& box)
+		-> gfx::Matrix
+	{
+		if (node.IsComponent())
+		{
+			return gfx::Matrix::Identity();
+		}
+
+		const auto& transform = node.Style.Transform;
+		if (transform.Translate == styles::Vector2Length{} &&
+			transform.Scale == Vector2{1.0F, 1.0F} && transform.Rotate == 0.0F)
+		{
+			return gfx::Matrix::Identity();
+		}
+
+		float emBasis = node.Style.Inherited.FontSize.Value;
+		auto resolveX = [&](const styles::Length& value) -> float
+		{ return ResolveTransformLength(value, box.Width, emBasis); };
+		auto resolveY = [&](const styles::Length& value) -> float
+		{ return ResolveTransformLength(value, box.Height, emBasis); };
+
+		float originX = resolveX(transform.TransformOrigin.X);
+		float originY = resolveY(transform.TransformOrigin.Y);
+
+		auto translate = gfx::Matrix::Translate(
+			resolveX(transform.Translate.X),
+			resolveY(transform.Translate.Y)
+		);
+		auto rotate = gfx::Matrix::Rotate(transform.Rotate);
+		auto scale = gfx::Matrix::Scale(transform.Scale.X, transform.Scale.Y);
+
+		gfx::Matrix core = gfx::Matrix::Identity();
+		switch (transform.TransformOrder)
+		{
+		case styles::TransformOrderType::TRS:
+			core = gfx::Matrix::Concat(
+				translate,
+				gfx::Matrix::Concat(rotate, scale)
+			);
+			break;
+		case styles::TransformOrderType::TSR:
+			core = gfx::Matrix::Concat(
+				translate,
+				gfx::Matrix::Concat(scale, rotate)
+			);
+			break;
+		case styles::TransformOrderType::RTS:
+			core = gfx::Matrix::Concat(
+				rotate,
+				gfx::Matrix::Concat(translate, scale)
+			);
+			break;
+		case styles::TransformOrderType::RST:
+			core = gfx::Matrix::Concat(
+				rotate,
+				gfx::Matrix::Concat(scale, translate)
+			);
+			break;
+		case styles::TransformOrderType::STR:
+			core = gfx::Matrix::Concat(
+				scale,
+				gfx::Matrix::Concat(translate, rotate)
+			);
+			break;
+		case styles::TransformOrderType::SRT:
+			core = gfx::Matrix::Concat(
+				scale,
+				gfx::Matrix::Concat(rotate, translate)
+			);
+			break;
+		}
+
+		auto localTransform = gfx::Matrix::Concat(
+			gfx::Matrix::Translate(originX, originY),
+			gfx::Matrix::Concat(
+				core,
+				gfx::Matrix::Translate(-originX, -originY)
+			)
+		);
+
+		return gfx::Matrix::Concat(
+			gfx::Matrix::Translate(box.X, box.Y),
+			gfx::Matrix::Concat(
+				localTransform,
+				gfx::Matrix::Translate(-box.X, -box.Y)
+			)
+		);
+	}
+
 	static auto AccumulateSubtreeBounds(Node& n, float parentX, float parentY)
 		-> Rectangle
 	{
@@ -112,10 +223,10 @@ namespace mocca::detail
 
 		n.LayoutPos = {.X = x, .Y = y};
 
-		Rectangle bounds{};
+		Rectangle rect{};
 		if (n.YogaNode != nullptr)
 		{
-			bounds = {
+			rect = {
 				.X = x,
 				.Y = y,
 				.Width = YGNodeLayoutGetWidth(n.YogaNode),
@@ -123,11 +234,16 @@ namespace mocca::detail
 			};
 		}
 
+		gfx::Matrix transform = ComputeNodeTransform(n, rect);
+		Rectangle bounds = transform.MapRect(rect);
+
 		for (auto& child : n.Children)
 		{
 			if (child)
 			{
-				bounds = bounds.Union(AccumulateSubtreeBounds(*child, x, y));
+				bounds = bounds.Union(transform.MapRect(
+					AccumulateSubtreeBounds(*child, x, y)
+				));
 			}
 		}
 
@@ -356,7 +472,7 @@ namespace mocca::detail
 		gfx::Matrix ParentToLocal = gfx::Matrix::Identity();
 	};
 
-	auto computeNodeSpace(const Node& node) -> NodeSpace
+	auto computeNodeSpace(const Node& node, const Rectangle& box) -> NodeSpace
 	{
 		NodeSpace space{};
 
@@ -367,6 +483,8 @@ namespace mocca::detail
 						  overflow == styles::OverflowType::Scroll;
 			space.Scrolls = overflow == styles::OverflowType::Scroll;
 		}
+
+		space.NodeTransform = ComputeNodeTransform(node, box);
 
 		if (auto inverse = space.NodeTransform.Invert(); inverse)
 		{
@@ -707,7 +825,7 @@ namespace mocca::detail
 		mc_profileFunction();
 
 		Rectangle box{.X = x, .Y = y, .Width = w, .Height = h};
-		NodeSpace space = computeNodeSpace(node);
+		NodeSpace space = computeNodeSpace(node, box);
 
 		if (!space.Invertible)
 		{
@@ -1100,13 +1218,14 @@ namespace mocca::detail
 			box = layoutRect(*node);
 		}
 
-		NodeSpace space = computeNodeSpace(*node);
+		NodeSpace space = computeNodeSpace(*node, box);
 		if (!space.Invertible)
 		{
 			return nullptr;
 		}
 
-		bool inside = !node->IsComponent() && box.Contains(parentPoint);
+		Vector2 localPoint = space.ParentToLocal.MapPoint(parentPoint);
+		bool inside = !node->IsComponent() && box.Contains(localPoint);
 
 		auto childPoint =
 			mapPointToChild(space, box, node->ScrollOffset, parentPoint);
@@ -1133,7 +1252,6 @@ namespace mocca::detail
 		return hitTestImpl(root, x, y);
 	}
 
-	// we should also add an id -> node* mapping in the surface later
 	auto Node::FindNodeById(Node* root, NodeId id) -> Node*
 	{
 		if (getCtx() == nullptr)

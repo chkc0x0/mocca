@@ -39,7 +39,7 @@ namespace mocca
 
 	auto Context::FindNodeById(detail::NodeId id) -> detail::Node*
 	{
-		if (!_nodes.contains(id))
+		if (id == 0 || !_nodes.contains(id))
 		{
 			return nullptr;
 		}

@@ -71,6 +71,16 @@ namespace mocca::styles::detail
 		return Application::main->GetInterners()->BackgroundImages.Get(ref);
 	}
 
+	auto internVector2Length(const Vector2Length& value) -> uint32_t
+	{
+		return Application::main->GetInterners()->Vector2Lengths.Intern(value);
+	}
+
+	auto resolveVector2Length(uint32_t ref) -> const Vector2Length&
+	{
+		return Application::main->GetInterners()->Vector2Lengths.Get(ref);
+	}
+
 	auto loadImageFile(std::string_view path, uint32_t flags) -> gfx::TextureId
 	{
 		std::string key(path);

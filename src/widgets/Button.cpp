@@ -1,4 +1,5 @@
 #include "widgets/Button.h"
+#include "anim/Curve.h"
 #include "core/Hooks.h"
 #include "style/StyleBuilder.h"
 #include "style/StyleHelpers.h"
@@ -166,6 +167,10 @@ namespace mocca::widgets::basic
 				styles::BorderRadius(styles::px(10)),
 				styles::Transition(0.45F, anim::bezier(0.23F, 1, 0.32F, 1)),
 				styles::Border(styles::px(2)),
+				styles::Transition(
+					styles::StyleProperty::Scale,
+					anim::spring(250, 12, 1)
+				)
 			};
 
 			base.AddIf(
@@ -207,6 +212,11 @@ namespace mocca::widgets::basic
 				{
 					styles::BorderColor(Color(0, 0, 255)),
 				}
+			);
+
+			base.AddIf(
+				press.State.Pressed,
+				{styles::Scale({.X = 0.95F, .Y = 0.95F})}
 			);
 		}
 

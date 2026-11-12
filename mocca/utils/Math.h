@@ -7,6 +7,8 @@ namespace mocca
 	{
 		float X;
 		float Y;
+
+		constexpr auto operator==(const Vector2&) const -> bool = default;
 	};
 
 	struct IVec2

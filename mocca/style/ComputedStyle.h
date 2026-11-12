@@ -59,6 +59,14 @@ namespace mocca::styles
 				operator==(const RenderProps& b) const -> bool;
 		} Render;
 
+		struct TransformProps
+		{
+			mc_transformProperties
+
+				auto
+				operator==(const TransformProps& b) const -> bool;
+		} Transform;
+
 		// maybe switch to per category later
 		// if it's a problem
 		struct InheritedProps
@@ -133,6 +141,9 @@ namespace mocca::styles
 #undef mc_styleGroup
 #define mc_styleGroup Inherited
 						mc_inheritProperties
+#undef mc_styleGroup
+#define mc_styleGroup Transform
+							mc_transformProperties
 #undef mc_styleGroup
 #undef mc_styleProperty
 #undef mc_cat_

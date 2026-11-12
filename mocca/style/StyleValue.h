@@ -3,6 +3,7 @@
 #include "style/BackgroundImageTypes.h"
 #include "style/FontStyleTypes.h"
 #include "style/TransitionType.h"
+#include "utils/Math.h"
 #include <cstdint>
 #include <span>
 #include <string_view>
@@ -41,6 +42,9 @@ namespace mocca::styles
 
 		auto internBackgroundImage(const BackgroundImageType& image) -> uint32_t;
 		auto resolveBackgroundImage(uint32_t ref) -> const BackgroundImageType&;
+
+		auto internVector2Length(const Vector2Length& value) -> uint32_t;
+		auto resolveVector2Length(uint32_t ref) -> const Vector2Length&;
 
 		auto loadImageFile(std::string_view path, uint32_t flags)
 			-> gfx::TextureId;

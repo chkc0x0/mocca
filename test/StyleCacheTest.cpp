@@ -23,6 +23,75 @@ namespace mtest
 			GroupBitsOf[static_cast<std::size_t>(StyleProperty::FontSize)],
 			InheritedGroupBit
 		);
+		EXPECT_EQ(
+			GroupBitsOf[static_cast<std::size_t>(StyleProperty::Translate)],
+			TransformGroupBit
+		);
+	}
+
+	TEST(TransformStyleTest, DefaultsToIdentity)
+	{
+		ComputedStyle style;
+
+		EXPECT_EQ(style.Transform.Translate, (Vector2Length{}));
+		EXPECT_EQ(style.Transform.Scale, (mocca::Vector2{1.0F, 1.0F}));
+		EXPECT_FLOAT_EQ(style.Transform.Rotate, 0.0F);
+		EXPECT_EQ(
+			style.Transform.TransformOrder,
+			TransformOrderType::TRS
+		);
+		EXPECT_EQ(
+			style.Transform.TransformOrigin,
+			((Vector2Length){
+				{LengthUnit::Percent, 50},
+				{LengthUnit::Percent, 50},
+			})
+		);
+	}
+
+	TEST(TransformStyleTest, CascadesAllProperties)
+	{
+		mocca::Application app("mocca.test.transform");
+
+		StyleList list{
+			Translate(
+				Vector2Length{
+					{LengthUnit::Pixels, 10},
+					{LengthUnit::Percent, 25},
+				}
+			),
+			Scale(mocca::Vector2{2.0F, 3.0F}),
+			Rotate(45.0F),
+			TransformOrder(TransformOrderType::SRT),
+			TransformOrigin(
+				Vector2Length{
+					{LengthUnit::Percent, 0},
+					{LengthUnit::Percent, 100},
+				}
+			),
+		};
+
+		StyleSet set(list);
+		ComputedStyle parent;
+		auto style = ComputedStyle::Cascade(set, parent);
+
+		EXPECT_EQ(
+			style.Transform.Translate,
+			(Vector2Length{
+				{LengthUnit::Pixels, 10},
+				{LengthUnit::Percent, 25},
+			})
+		);
+		EXPECT_EQ(style.Transform.Scale, (mocca::Vector2{2.0F, 3.0F}));
+		EXPECT_FLOAT_EQ(style.Transform.Rotate, 45.0F);
+		EXPECT_EQ(style.Transform.TransformOrder, TransformOrderType::SRT);
+		EXPECT_EQ(
+			style.Transform.TransformOrigin,
+			(Vector2Length{
+				{LengthUnit::Percent, 0},
+				{LengthUnit::Percent, 100},
+			})
+		);
 	}
 
 	TEST(ChangedGroupsTest, DefaultStylesEqual)
@@ -53,6 +122,15 @@ namespace mtest
 			ComputedStyle::ChangedGroups(a, b),
 			GroupBit(StylePropertyGroup::LayoutSizing)
 		);
+	}
+
+	TEST(ChangedGroupsTest, TransformChangeCategorised)
+	{
+		ComputedStyle a;
+		ComputedStyle b;
+		b.Set<StyleProperty::Scale>(mocca::Vector2{2.0F, 2.0F});
+
+		EXPECT_EQ(ComputedStyle::ChangedGroups(a, b), TransformGroupBit);
 	}
 
 	TEST(DependentGroupsTest, DefaultsToInherited)
