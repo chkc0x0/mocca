@@ -459,6 +459,11 @@ namespace mocca
 			}
 		}
 
+		if (surface->_platform != nullptr)
+		{
+			surface->_a11y = surface->_platform->CreateA11yBridge(*surface);
+		}
+
 		if (!EmitEvent(ApplicationEvent::SurfaceCreated, ptr))
 		{
 			return nullptr;

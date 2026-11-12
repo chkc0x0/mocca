@@ -1,10 +1,15 @@
 #pragma once
+#include "a11y/Snapshot.h"
 #include "gfx/GfxTypes.h"
 #include "input/InputTypes.h"
 #include "utils/Math.h"
+#include <memory>
+#include <optional>
 
 namespace mocca
 {
+	class Surface;
+
 	class PlatformSurface
 	{
 	public:
@@ -28,6 +33,17 @@ namespace mocca
 
 		virtual void SetImeCursorRect(Rectangle pos)
 		{
+		}
+
+		virtual auto CreateA11yBridge(Surface& owner)
+			-> std::unique_ptr<aria::Bridge>
+		{
+			return nullptr;
+		}
+
+		virtual auto A11yRootBounds() -> std::optional<aria::RootBounds>
+		{
+			return std::nullopt;
 		}
 	};
 }

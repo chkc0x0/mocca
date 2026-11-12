@@ -55,7 +55,7 @@ namespace mocca
 		ComponentFn Root;
 	};
 
-	class Surface
+	class Surface : public aria::Provider
 	{
 	public:
 		Surface(const SurfaceDesc& desc)
@@ -188,8 +188,9 @@ namespace mocca
 			return _a11yDirty;
 		}
 
-		[[nodiscard]] auto GetA11ySnapshot() const
-			-> std::shared_ptr<const aria::Snapshot>;
+		[[nodiscard]] auto A11ySnapshot()
+			-> std::shared_ptr<const aria::Snapshot> override;
+		void QueueA11yAction(aria::ActionRequest req) override;
 
 		[[nodiscard]] auto BuildA11ySnapshot() const
 			-> std::shared_ptr<const aria::Snapshot>;
@@ -267,6 +268,7 @@ namespace mocca
 		);
 		void _updateCursor(detail::Node* node);
 		void _advanceAnimations(double dt);
+		void _drainA11yActions();
 		static void AnnounceSubtreeDestroyed(Surface* s);
 
 		SurfaceDesc _desc;
@@ -307,6 +309,8 @@ namespace mocca
 		mutable std::mutex _a11yMutex;
 		std::shared_ptr<const aria::Snapshot> _a11ySnapshot;
 		bool _a11yDirty = true;
+		std::vector<aria::ActionRequest> _a11yActions;
+		std::mutex _a11yActionsMutex;
 
 		friend class Application;
 		friend class aria::SnapshotBuilder;

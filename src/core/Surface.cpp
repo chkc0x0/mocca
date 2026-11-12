@@ -341,6 +341,11 @@ namespace mocca
 			}
 		);
 
+		if (_a11y != nullptr)
+		{
+			_drainA11yActions();
+		}
+
 		if (GetState() == SurfaceState::Alive && IsPlatformBacked())
 		{
 			auto* ctx = getCtx();
@@ -1149,11 +1154,31 @@ namespace mocca
 		}
 	}
 
-	auto Surface::GetA11ySnapshot() const
+	auto Surface::A11ySnapshot()
 		-> std::shared_ptr<const aria::Snapshot>
 	{
 		std::scoped_lock lock(_a11yMutex);
 		return _a11ySnapshot;
+	}
+
+	void Surface::QueueA11yAction(aria::ActionRequest req)
+	{
+		std::scoped_lock lock(_a11yActionsMutex);
+		_a11yActions.push_back(std::move(req));
+	}
+
+	void Surface::_drainA11yActions()
+	{
+		std::vector<aria::ActionRequest> actions;
+		{
+			std::scoped_lock lock(_a11yActionsMutex);
+			actions.swap(_a11yActions);
+		}
+
+		for (const auto& action : actions)
+		{
+			DispatchA11yAction(action);
+		}
 	}
 
 	auto Surface::ActivateNode(detail::NodeId id, ActivationSource source)
