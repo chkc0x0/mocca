@@ -8,7 +8,6 @@ on:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -31,7 +30,7 @@ jobs:
             meson \
             ninja-build \
             cmake \
-            libudev-dev
+            libsdl3-dev
 
       - name: Configure
         run: meson setup build --buildtype=debugoptimized

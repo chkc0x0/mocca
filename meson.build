@@ -146,7 +146,7 @@ endif
 if get_option('tests')
 	test_exe = executable(
 		'mocca_tests',
-		dependencies: [mocca_dep, dependency('gtest', main: true)],
+		dependencies: [mocca_dep, dependency('gtest'), dependency('gtest_main')],
 		sources: files(
 			'test/A11yTest.cpp',
 			'test/AnimationTest.cpp',
