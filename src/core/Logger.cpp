@@ -15,7 +15,7 @@ namespace mocca
 					"err ({:.{}}:{}): {}\nif you see this, it means an error "
 					"occurred but you havent set up a log callback for mocca",
 					message.File.data(),
-					(int)message.File.size(),
+					static_cast<int>(message.File.size()),
 					message.Line,
 					std::string(message.Message)
 				);
@@ -31,11 +31,11 @@ namespace mocca
 		if (message.Code == ErrorCode::AssertFailed)
 		{
 #ifdef DEBUG
-#	if defined(_MSC_VER)
+#	ifdef _WIN32
 			__debugbreak();
-#	elif defined(__clang__)
+#	elifdef __clang__
 			__builtin_debugtrap();
-#	elif defined(__GNUC__)
+#	elif defined(__unix__) || defined(__APPLE__)
 			std::raise(SIGTRAP);
 #	else
 			((void)0);

@@ -737,7 +737,7 @@ namespace mocca
 			}
 		}
 
-		for (unsigned long& it : std::views::reverse(next))
+		for (auto& it : std::views::reverse(next))
 		{
 			if (std::ranges::find(prev, it) == prev.end())
 			{

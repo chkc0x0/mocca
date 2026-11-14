@@ -102,6 +102,7 @@ namespace mocca::styles
 		FontStyleEnum Style;
 		float Angle = 0;
 
+		FontStyleType() = default;
 		FontStyleType(FontStyleEnum style) : Style(style) {};
 		FontStyleType(FontStyleEnum style, float angle)
 			: Style(style), Angle(angle) {};

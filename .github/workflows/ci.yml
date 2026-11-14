@@ -30,7 +30,8 @@ jobs:
             build-essential \
             meson \
             ninja-build \
-            cmake
+            cmake \
+            libudev-dev
 
       - name: Configure
         run: meson setup build --buildtype=debugoptimized
