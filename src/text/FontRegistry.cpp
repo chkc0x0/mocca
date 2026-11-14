@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <fstream>
 #include <utility>
-#include <unistd.h>
 
 namespace mocca::mtext
 {
@@ -88,7 +88,8 @@ namespace mocca::mtext
 		const FontDescriptorOverrides& overrides
 	)
 	{
-		if (access(path.c_str(), F_OK | R_OK) != 0)
+		std::ifstream file(path, std::ios::binary);
+		if (!file)
 		{
 			mc_error(
 				ErrorCode::InvalidArgument,

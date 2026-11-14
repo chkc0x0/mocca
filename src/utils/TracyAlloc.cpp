@@ -8,7 +8,7 @@
 #	include <cstdlib>
 #	include <new>
 
-#	if defined(__GLIBC__)
+#	if defined(__GLIBC__) || defined(_WIN32)
 #		include <malloc.h>
 #	endif
 
@@ -51,12 +51,16 @@ namespace
 	inline auto RawAlignedAlloc(std::size_t n, std::size_t align) -> void*
 	{
 		align = std::max(align, sizeof(void*));
+#	if defined(_WIN32)
+		return _aligned_malloc(n == 0 ? 1 : n, align);
+#	else
 		void* p = nullptr;
 		if (posix_memalign(&p, align, n == 0 ? 1 : n) != 0)
 		{
 			return nullptr;
 		}
 		return p;
+#	endif
 	}
 }
 
@@ -125,6 +129,16 @@ namespace
 	{
 		Untrack(p);
 		std::free(p);
+	}
+
+	void DeleteAlignedImpl(void* p) noexcept
+	{
+		Untrack(p);
+#	if defined(_WIN32)
+		_aligned_free(p);
+#	else
+		std::free(p);
+#	endif
 	}
 }
 
@@ -198,23 +212,23 @@ auto operator new[](
 
 void operator delete(void* p, std::align_val_t) noexcept
 {
-	DeleteImpl(p);
+	DeleteAlignedImpl(p);
 }
 void operator delete[](void* p, std::align_val_t) noexcept
 {
-	DeleteImpl(p);
+	DeleteAlignedImpl(p);
 }
 void operator delete(void* p, std::size_t, std::align_val_t) noexcept
 {
-	DeleteImpl(p);
+	DeleteAlignedImpl(p);
 }
 void operator delete[](void* p, std::size_t, std::align_val_t) noexcept
 {
-	DeleteImpl(p);
+	DeleteAlignedImpl(p);
 }
 void operator delete(void* p, std::align_val_t, const std::nothrow_t&) noexcept
 {
-	DeleteImpl(p);
+	DeleteAlignedImpl(p);
 }
 void operator delete[](
 	void* p,
@@ -222,13 +236,14 @@ void operator delete[](
 	const std::nothrow_t&
 ) noexcept
 {
-	DeleteImpl(p);
+	DeleteAlignedImpl(p);
 }
 
 namespace mocca::detail
 {
 	auto readRssBytes() -> double
 	{
+#	if defined(__linux__)
 		std::FILE* f = std::fopen("/proc/self/statm", "r");
 		if (f == nullptr)
 		{
@@ -243,6 +258,9 @@ namespace mocca::detail
 			return 0.0;
 		}
 		return static_cast<double>(resident) * 4096.0;
+#	else
+		return 0.0;
+#	endif
 	}
 
 	void plotMemory()

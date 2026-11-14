@@ -106,7 +106,7 @@ stb_image_impl = static_library(
 	'src/gfx/StbImageImpl.cpp',
 	include_directories: include_directories('subprojects/stb'),
 	override_options: ['optimization=2', 'b_sanitize=none'],
-	cpp_args: ['-fvisibility=hidden'],
+	gnu_symbol_visibility: 'hidden',
 )
 
 mocca_lib = library(
