@@ -2,6 +2,7 @@
 #include "core/HookStore.h"
 #include "core/NodeRef.h"
 #include "gfx/Decoration.h"
+#include "input/Scroll.h"
 #include "style/StyleProperty.h"
 #include "text/Measure.h"
 #include "text/TextGeometry.h"
@@ -662,14 +663,11 @@ namespace mocca::detail
 		const auto& textElement = std::get<TextElement>(node.Kind);
 		const std::string& content = textElement.Content;
 
-		float x = box.X;
-		float y = box.Y;
-		float w = box.Width;
+		const Rectangle contentBox = contentRect(node, box);
 
-		float caretWidth = textElement.Caret
-							   ? std::max(0.0F, textElement.Caret->Width)
-							   : 0.0F;
-		float textWidth = std::max(0.0F, w - caretWidth);
+		float x = contentBox.X;
+		float y = contentBox.Y;
+		float textWidth = contentBox.Width;
 
 		auto layout = mtext::detail::TextLayoutBuilder::ResolveTextLayout(
 			node.Style,

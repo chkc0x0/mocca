@@ -48,14 +48,10 @@ namespace mocca
 		-> std::shared_ptr<const mtext::TextLayout>
 	{
 		const auto& text = std::get<TextElement>(node.Kind);
-		float caretWidth = text.Caret ? std::max(0.0F, text.Caret->Width)
-									  : 0.0F;
-		float textWidth =
-			std::max(0.0F, YGNodeLayoutGetWidth(node.YogaNode) - caretWidth);
 		return mtext::detail::TextLayoutBuilder::ResolveTextLayout(
 			node.Style,
 			text.Content,
-			textWidth,
+			detail::contentRect(node).Width,
 			true
 		);
 	}
@@ -198,16 +194,12 @@ namespace mocca
 		}
 
 		auto layout = textLayoutFor(*node);
-		Rectangle rect = detail::paintedRect(*node);
-		const auto& text = std::get<TextElement>(node->Kind);
-		float caretWidth = text.Caret ? std::max(0.0F, text.Caret->Width)
-									  : 0.0F;
-		float textWidth = std::max(0.0F, rect.Width - caretWidth);
+		Rectangle rect = detail::contentRect(*node);
 
 		return mtext::TextGeometry::PositionAtPoint(
 			*layout,
 			{.X = surfacePoint.X - rect.X, .Y = surfacePoint.Y - rect.Y},
-			textWidth,
+			rect.Width,
 			node->Style.Get<styles::StyleProperty::TextAlign>()
 		);
 	}
@@ -221,25 +213,18 @@ namespace mocca
 		}
 
 		auto layout = textLayoutFor(*node);
-		Rectangle rect = detail::paintedRect(*node);
-		const auto& text = std::get<TextElement>(node->Kind);
-		float caretWidth = text.Caret ? std::max(0.0F, text.Caret->Width)
-									  : 1.0F;
-		float textWidth = std::max(
-			0.0F,
-			rect.Width - (text.Caret ? std::max(0.0F, text.Caret->Width) : 0.0F)
-		);
+		Rectangle rect = detail::contentRect(*node);
 		auto caret = mtext::TextGeometry::CaretAt(
 			*layout,
 			position,
-			textWidth,
+			rect.Width,
 			node->Style.Get<styles::StyleProperty::TextAlign>()
 		);
 
 		return Rectangle{
 			.X = std::round(rect.X + caret.X),
 			.Y = std::round(rect.Y + caret.Y),
-			.Width = std::max(1.0F, std::round(caretWidth)),
+			.Width = 1.0F,
 			.Height = std::round(caret.Height),
 		};
 	}

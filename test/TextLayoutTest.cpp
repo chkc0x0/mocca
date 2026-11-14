@@ -813,4 +813,153 @@ namespace mtest
 		textRef->ScrollIntoView();
 		EXPECT_GT(surface->Tree()->ScrollOffset.X, 0.0F) << "should scroll";
 	}
+
+	class ContentBoxTest : public SurfaceTest
+	{
+	public:
+		ContentBoxTest() : SurfaceTest("mocca.test.contentbox")
+		{
+		}
+
+	protected:
+		void SetUp() override
+		{
+			SurfaceTest::SetUp();
+			if (mc_testFont[0] == '\0')
+			{
+				GTEST_SKIP() << "test font path was not defined at build time";
+			}
+			App().Fonts().RegisterFile(
+				mc_testFont,
+				FontDescriptorOverrides{.Family = "sans-serif"}
+			);
+		}
+	};
+
+	namespace
+	{
+		constexpr float PaddingPx = 8.0F;
+		constexpr float TextWidthPx = 80.0F;
+	}
+
+	TEST_F(ContentBoxTest, PaddedTextPaintsAtContentBox)
+	{
+		mocca::NodeRef* textRef = nullptr;
+		std::string content =
+			"the quick brown fox jumps over the lazy dog";
+
+		auto* s = AddSurface(
+			{.Width = 200, .Height = 200, .Title = "content-box"},
+			[&]() -> mocca::Element
+			{
+				textRef = mocca::useNode();
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(200)),
+								Height(px(200)),
+								FlexDirection(FlexDirections::Column),
+								AlignItems(Alignment::FlexStart),
+							},
+						.Children = {
+							mocca::text(
+								mocca::TextDescriptor{
+									.Style =
+										{
+											Width(px(TextWidthPx)),
+											Padding(px(PaddingPx)),
+											FontFamily("sans-serif"),
+											FontSize(px(16)),
+										},
+									.Content = content,
+									.Ref = textRef,
+								}
+							),
+						},
+					}
+				);
+			}
+		);
+		Tick();
+
+		ASSERT_NE(textRef, nullptr);
+		ASSERT_TRUE(textRef->Valid());
+
+		const auto* cmd = firstText(commandsOf(*s));
+		ASSERT_NE(cmd, nullptr);
+		ASSERT_NE(cmd->Layout, nullptr);
+		ASSERT_GT(cmd->Layout->Lines.size(), 1U) << "content must wrap";
+
+		auto rect = textRef->LayoutRect();
+		EXPECT_FLOAT_EQ(cmd->BoxWidth, rect.Width - (PaddingPx * 2.0F))
+			<< "paint must use the content width";
+		EXPECT_FLOAT_EQ(cmd->Position.X, rect.X + PaddingPx)
+			<< "text must start after the left padding";
+		EXPECT_FLOAT_EQ(cmd->Position.Y, rect.Y + PaddingPx)
+			<< "text must start after the top padding";
+		EXPECT_NEAR(cmd->Layout->Size.Y + (PaddingPx * 2.0F), rect.Height, 1.0F)
+			<< "painted lines must match measured height";
+	}
+
+	TEST_F(ContentBoxTest, CaretAndHitTestUseContentBox)
+	{
+		mocca::NodeRef* textRef = nullptr;
+
+		auto* s = AddSurface(
+			{.Width = 200, .Height = 200, .Title = "content-box-caret"},
+			[&]() -> mocca::Element
+			{
+				textRef = mocca::useNode();
+				return mocca::box(
+					mocca::BoxDescriptor{
+						.Style =
+							{
+								Width(px(200)),
+								Height(px(200)),
+								FlexDirection(FlexDirections::Column),
+								AlignItems(Alignment::FlexStart),
+							},
+						.Children = {
+							mocca::text(
+								mocca::TextDescriptor{
+									.Style =
+										{
+											Width(px(TextWidthPx)),
+											Padding(px(PaddingPx)),
+											FontFamily("sans-serif"),
+											FontSize(px(16)),
+										},
+									.Content = "hello world",
+									.Ref = textRef,
+								}
+							),
+						},
+					}
+				);
+			}
+		);
+		(void)s;
+		Tick();
+
+		ASSERT_NE(textRef, nullptr);
+		ASSERT_TRUE(textRef->Valid());
+
+		auto rect = textRef->LayoutRect();
+		auto caret = textRef->CaretRect(
+			{.Offset = 0, .Affinity = mocca::mtext::CaretAffinity::Downstream}
+		);
+
+		EXPECT_FLOAT_EQ(caret.X, rect.X + PaddingPx);
+		EXPECT_FLOAT_EQ(caret.Y, rect.Y + PaddingPx);
+		EXPECT_FLOAT_EQ(caret.Width, 1.0F)
+			<< "caret is one px";
+		EXPECT_GT(caret.Height, 0.0F);
+
+		auto position = textRef->PositionAtPoint(
+			{.X = rect.X + PaddingPx, .Y = rect.Y + PaddingPx}
+		);
+		EXPECT_EQ(position.Offset, 0U)
+			<< "point at content origin must hit first character";
+	}
 }

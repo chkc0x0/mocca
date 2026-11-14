@@ -16,5 +16,7 @@ namespace mocca::detail
 	auto reclampScrollOffsets(Node* n) -> void;
 
 	auto paintedRect(const Node& node) -> Rectangle;
+	auto contentRect(const Node& node) -> Rectangle;
+	auto contentRect(const Node& node, const Rectangle& borderBox) -> Rectangle;
 	void scrollRectIntoView(Node* node, Surface* surface, Rectangle target);
 }

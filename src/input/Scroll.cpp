@@ -71,6 +71,36 @@ namespace mocca::detail
 		return rect;
 	}
 
+	auto contentRect(const Node& node) -> Rectangle
+	{
+		return contentRect(node, paintedRect(node));
+	}
+
+	auto contentRect(const Node& node, const Rectangle& borderBox) -> Rectangle
+	{
+		if (node.YogaNode == nullptr)
+		{
+			return borderBox;
+		}
+
+		const float left = YGNodeLayoutGetPadding(node.YogaNode, YGEdgeLeft) +
+						   YGNodeLayoutGetBorder(node.YogaNode, YGEdgeLeft);
+		const float right = YGNodeLayoutGetPadding(node.YogaNode, YGEdgeRight) +
+							YGNodeLayoutGetBorder(node.YogaNode, YGEdgeRight);
+		const float top = YGNodeLayoutGetPadding(node.YogaNode, YGEdgeTop) +
+						  YGNodeLayoutGetBorder(node.YogaNode, YGEdgeTop);
+		const float bottom =
+			YGNodeLayoutGetPadding(node.YogaNode, YGEdgeBottom) +
+			YGNodeLayoutGetBorder(node.YogaNode, YGEdgeBottom);
+
+		return {
+			.X = borderBox.X + left,
+			.Y = borderBox.Y + top,
+			.Width = std::max(0.0F, borderBox.Width - left - right),
+			.Height = std::max(0.0F, borderBox.Height - top - bottom),
+		};
+	}
+
 	void scrollRectIntoView(Node* node, Surface* surface, Rectangle target)
 	{
 		if (node == nullptr || surface == nullptr)
