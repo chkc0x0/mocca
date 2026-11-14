@@ -21,4 +21,5 @@
 #include "style/StyleBuilder.h"
 #include "style/ComputedStyle.h"
 #include "style/StyleApply.h"
+#include "style/PaintApply.h"
 #include "utils/Color.h"

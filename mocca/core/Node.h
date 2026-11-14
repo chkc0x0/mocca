@@ -14,9 +14,9 @@ namespace mocca
 {
 	class Surface;
 
-	namespace gfx
+	namespace styles
 	{
-		struct BoxDecoration;
+		struct BoxVisual;
 	}
 }
 
@@ -39,7 +39,7 @@ namespace mocca::detail
 
 	struct Node
 	{
-		Node() = default;
+		Node();
 		~Node();
 
 		NodeId Id;
@@ -59,7 +59,7 @@ namespace mocca::detail
 		bool StyleDirty = false;
 		bool YogaDirty = true;
 
-		std::unique_ptr<gfx::BoxDecoration> Deco;
+		std::unique_ptr<styles::BoxVisual> Deco;
 		float DecoWidth = -1.0F;
 		float DecoHeight = -1.0F;
 		bool DecoDirty = true;
@@ -239,7 +239,7 @@ namespace mocca::detail
 
 		void Print(int depth = 0) const;
 		void Paint(gfx::Canvas& canvas, const Rectangle& cull);
-		auto ResolveDecoration(float w, float h) -> const gfx::BoxDecoration*;
+		auto ResolveDecoration(float w, float h) -> const styles::BoxVisual*;
 
 		static auto HitTest(Node* root, float x, float y) -> Node*;
 		static auto FindNodeById(Node* root, NodeId id) -> Node*;

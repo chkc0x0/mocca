@@ -9,6 +9,7 @@
 #include "text/TextLayout.h"
 #include "text/TextLayoutBuilder.h"
 #include "style/StyleApply.h"
+#include "style/PaintApply.h"
 #include "style/StyleHelpers.h"
 #include "utils/ScopedProfiler.h"
 #include "yoga/YGNode.h"
@@ -24,6 +25,8 @@
 
 namespace mocca::detail
 {
+	Node::Node() = default;
+
 	Node::~Node()
 	{
 		getCtx()->_nodes.erase(Id);
@@ -552,7 +555,7 @@ namespace mocca::detail
 
 	void paintBorder(
 		gfx::Canvas& canvas,
-		const gfx::BoxDecoration& deco,
+		const styles::BoxVisual& deco,
 		const RRect& outer
 	)
 	{
@@ -571,7 +574,7 @@ namespace mocca::detail
 
 	void paintDecoration(
 		gfx::Canvas& canvas,
-		const gfx::BoxDecoration& deco,
+		const styles::BoxVisual& deco,
 		const Rectangle& rect
 	)
 	{
@@ -597,7 +600,7 @@ namespace mocca::detail
 		}
 	}
 
-	auto Node::ResolveDecoration(float w, float h) -> const gfx::BoxDecoration*
+	auto Node::ResolveDecoration(float w, float h) -> const styles::BoxVisual*
 	{
 		bool sizeChanged = w != DecoWidth || h != DecoHeight;
 		if (DecoDirty ||
@@ -611,27 +614,11 @@ namespace mocca::detail
 
 	void Node::_resolveDecoration(float w, float h)
 	{
-		gfx::BoxDecoration deco{};
-		const styles::detail::applying::paint::PaintContext ctx{
-			.Width = w,
-			.Height = h,
-		};
-
-#define mc_styleProperty(name, ...)                                            \
-	styles::detail::applying::paint::apply##name(deco, Style.Render.name, ctx);
-		mc_renderPropertiesReset
-#undef mc_styleProperty
-
-			namespace paint = styles::detail::applying::paint;
-		paint::applyBorderTop(deco, Style.LayoutSpacing.BorderTop, ctx);
-		paint::applyBorderRight(deco, Style.LayoutSpacing.BorderRight, ctx);
-		paint::applyBorderBottom(deco, Style.LayoutSpacing.BorderBottom, ctx);
-		paint::applyBorderLeft(deco, Style.LayoutSpacing.BorderLeft, ctx);
-		paint::normalizeRadius(deco, w, h);
+		styles::BoxVisual deco = styles::resolveBoxVisual(Style, w, h);
 
 		Deco = deco.IsEmpty()
 				   ? nullptr
-				   : std::make_unique<gfx::BoxDecoration>(std::move(deco));
+				   : std::make_unique<styles::BoxVisual>(std::move(deco));
 		DecoWidth = w;
 		DecoHeight = h;
 		DecoDirty = false;

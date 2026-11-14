@@ -1,5 +1,5 @@
-#include "style/StyleApply.h"
-#include "gfx/Decoration.h"
+#include "style/PaintApply.h"
+#include "style/ComputedStyle.h"
 #include "style/StyleValue.h"
 #include <algorithm>
 
@@ -53,7 +53,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBackgroundColor(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Color& value,
 		const PaintContext&
 	)
@@ -63,7 +63,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBorderColor(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Color& value,
 		const PaintContext&
 	)
@@ -72,7 +72,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBorderRadiusTopLeft(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Length& value,
 		const PaintContext& ctx
 	)
@@ -81,7 +81,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBorderRadiusTopRight(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Length& value,
 		const PaintContext& ctx
 	)
@@ -90,7 +90,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBorderRadiusBottomLeft(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Length& value,
 		const PaintContext& ctx
 	)
@@ -99,7 +99,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBorderRadiusBottomRight(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Length& value,
 		const PaintContext& ctx
 	)
@@ -108,7 +108,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBackgroundImage(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const uint32_t& value,
 		const PaintContext& ctx
 	)
@@ -129,12 +129,12 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void
-	applyTransition(gfx::BoxDecoration&, const uint32_t&, const PaintContext&)
+	applyTransition(BoxVisual&, const uint32_t&, const PaintContext&)
 	{
 	}
 
 	void applyBorderTop(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Length& value,
 		const PaintContext& ctx
 	)
@@ -144,7 +144,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBorderRight(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Length& value,
 		const PaintContext& ctx
 	)
@@ -154,7 +154,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBorderBottom(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Length& value,
 		const PaintContext& ctx
 	)
@@ -165,7 +165,7 @@ namespace mocca::styles::detail::applying::paint
 	}
 
 	void applyBorderLeft(
-		gfx::BoxDecoration& d,
+		BoxVisual& d,
 		const Length& value,
 		const PaintContext& ctx
 	)
@@ -174,7 +174,7 @@ namespace mocca::styles::detail::applying::paint
 		d.HasBorder = d.BorderColor.A > 0 && anyBorder(d.Border);
 	}
 
-	void normalizeRadius(gfx::BoxDecoration& d, float width, float height)
+	void normalizeRadius(BoxVisual& d, float width, float height)
 	{
 		CornerRadii& radius = d.Radius;
 
@@ -215,5 +215,46 @@ namespace mocca::styles::detail::applying::paint
 			radius.BottomRight *= scale;
 			radius.BottomLeft *= scale;
 		}
+	}
+}
+
+namespace mocca::styles
+{
+	auto ResolveBoxVisual(const ComputedStyle& style, float w, float h) -> BoxVisual
+	{
+		BoxVisual visual{};
+		const detail::applying::paint::PaintContext ctx{
+			.Width = w,
+			.Height = h,
+		};
+
+#define mc_styleProperty(name, ...)                                            \
+	detail::applying::paint::apply##name(visual, style.Render.name, ctx);
+		mc_renderPropertiesReset
+#undef mc_styleProperty
+
+		detail::applying::paint::applyBorderTop(
+			visual,
+			style.LayoutSpacing.BorderTop,
+			ctx
+		);
+		detail::applying::paint::applyBorderRight(
+			visual,
+			style.LayoutSpacing.BorderRight,
+			ctx
+		);
+		detail::applying::paint::applyBorderBottom(
+			visual,
+			style.LayoutSpacing.BorderBottom,
+			ctx
+		);
+		detail::applying::paint::applyBorderLeft(
+			visual,
+			style.LayoutSpacing.BorderLeft,
+			ctx
+		);
+		detail::applying::paint::normalizeRadius(visual, w, h);
+
+		return visual;
 	}
 }
