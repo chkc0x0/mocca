@@ -14,7 +14,7 @@ namespace mocca
 				std::fprintf(
 					stderr,
 					"err (%.*s:%d): %.*s\nif you see this, it means an error "
-					"occurred but you havent set up a log callback for mocca",
+					"occurred but you havent set up a log callback for mocca\n",
 					static_cast<int>(message.File.size()),
 					message.File.data(),
 					message.Line,
@@ -76,15 +76,16 @@ namespace mocca
 					break;
 				}
 
-				std::println(
+				std::fprintf(
 					stderr,
-					"{} {} ({:.{}}:{}): {}",
+					"%s %s (%.*s:%d): %.*s\n",
 					buf,
 					severityStr,
+					static_cast<int>(message.File.size()),
 					message.File.data(),
-					(int)message.File.size(),
 					message.Line,
-					std::string(message.Message)
+					static_cast<int>(message.Message.size()),
+					message.Message.data()
 				);
 			}
 		);
@@ -119,7 +120,7 @@ namespace mocca
 			.File = file,
 			.Function = function,
 			.Line = line,
-			.Code = code
+			.Code = code,
 		};
 		Log(logMessage);
 	}
