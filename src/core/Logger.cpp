@@ -1,5 +1,6 @@
 #include "core/Application.h"
 #include <csignal>
+#include <cstdio>
 #include <print>
 
 namespace mocca
@@ -10,14 +11,15 @@ namespace mocca
 		{
 			if (message.Severity == LogLevel::Error)
 			{
-				std::println(
+				std::fprintf(
 					stderr,
-					"err ({:.{}}:{}): {}\nif you see this, it means an error "
+					"err (%.*s:%d): %.*s\nif you see this, it means an error "
 					"occurred but you havent set up a log callback for mocca",
-					message.File.data(),
 					static_cast<int>(message.File.size()),
+					message.File.data(),
 					message.Line,
-					std::string(message.Message)
+					static_cast<int>(message.Message.size()),
+					message.Message.data()
 				);
 				goto fail;
 			}

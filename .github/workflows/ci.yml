@@ -30,7 +30,8 @@ jobs:
             meson \
             ninja-build \
             cmake \
-            libsdl3-dev
+            libsdl3-dev \
+            libglew-dev mesa-common-dev freeglut3-dev libglu1-mesa-dev
 
       - name: Configure
         run: meson setup build --buildtype=debugoptimized
