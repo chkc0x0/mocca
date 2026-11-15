@@ -142,7 +142,7 @@ namespace mtest
 	TEST(DependentGroupsTest, TracksExplicitInherit)
 	{
 		StyleList list{
-			detail::encodeStyleEntry(
+			mocca::styles::detail::encodeStyleEntry(
 				StyleProperty::BorderColor,
 				StyleKeyword::Inherit
 			)
@@ -282,7 +282,7 @@ namespace mtest
 											{
 												Width(px(20)),
 												Height(px(20)),
-												detail::encodeStyleEntry(
+												mocca::styles::detail::encodeStyleEntry(
 													StyleProperty::BorderColor,
 													StyleKeyword::Inherit
 												),

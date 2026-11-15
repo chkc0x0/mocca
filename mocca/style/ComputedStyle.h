@@ -7,6 +7,7 @@
 #include "input/InputTypes.h"
 #include "utils/Color.h"
 #include <cstdint>
+#include <span>
 
 namespace mocca::styles
 {
@@ -78,9 +79,13 @@ namespace mocca::styles
 		} Inherited;
 #undef mc_styleProperty
 
-		void Apply(const StyleEntry& e, ComputedStyle& parent);
-		static auto Cascade(const StyleSet& s, ComputedStyle& parent)
+		void Apply(const StyleEntry& e, const ComputedStyle& parent);
+		static auto Cascade(const StyleSet& s, const ComputedStyle& parent)
 			-> ComputedStyle;
+		static auto Cascade(
+			std::span<const StyleEntry> entries,
+			const ComputedStyle& parent
+		) -> ComputedStyle;
 
 		template <StyleProperty P>
 		[[nodiscard]] auto Get() const -> const PropTraits<P>::Value&;

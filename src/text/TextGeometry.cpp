@@ -286,36 +286,4 @@ namespace mocca::mtext
 
 		return boxes;
 	}
-
-	auto TextGeometry::SelectionRects(
-		const TextLayout& layout,
-		uint32_t anchor,
-		uint32_t active,
-		float boxWidth,
-		styles::TextAlignment align
-	) -> std::vector<Rectangle>
-	{
-		std::vector<Rectangle> rects;
-		if (anchor == active)
-		{
-			return rects;
-		}
-
-		uint32_t lo = std::min(anchor, active);
-		uint32_t hi = std::max(anchor, active);
-
-		for (const TextSpanBox& span : SpanBoxes(layout, lo, hi, boxWidth, align))
-		{
-			rects.push_back(
-				Rectangle{
-					.X = span.X,
-					.Y = span.Top,
-					.Width = span.Width,
-					.Height = span.Height,
-				}
-			);
-		}
-
-		return rects;
-	}
 }

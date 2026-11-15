@@ -5,6 +5,7 @@
 #include "style/ComputedStyle.h"
 #include "style/StyleHelpers.h"
 #include "text/Measure.h"
+#include "text/TextGeometry.h"
 #include "text/TextLayoutBuilder.h"
 #include "text/FontRegistry.h"
 #include "text/TextLayout.h"

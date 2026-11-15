@@ -137,7 +137,7 @@ namespace mocca::styles
 		}
 	}
 
-	void ComputedStyle::Apply(const StyleEntry& e, ComputedStyle& parent)
+	void ComputedStyle::Apply(const StyleEntry& e, const ComputedStyle& parent)
 	{
 		mc_profileFunction();
 
@@ -145,7 +145,7 @@ namespace mocca::styles
 #define mc_styleProperty(name, ...)                                            \
 	case StyleProperty::name:                                                  \
 		_ref<StyleProperty::name>() = e.Resolve(                               \
-			parent._ref<StyleProperty::name>(),                                \
+			parent.Get<StyleProperty::name>(),                                 \
 			PropTraits<StyleProperty::name>()                                  \
 		);                                                                     \
 		break;
@@ -163,13 +163,21 @@ namespace mocca::styles
 		}
 	}
 
-	auto ComputedStyle::Cascade(const StyleSet& s, ComputedStyle& parent)
+	auto ComputedStyle::Cascade(const StyleSet& s, const ComputedStyle& parent)
 		-> ComputedStyle
+	{
+		return Cascade(s.Entries(), parent);
+	}
+
+	auto ComputedStyle::Cascade(
+		std::span<const StyleEntry> entries,
+		const ComputedStyle& parent
+	) -> ComputedStyle
 	{
 		ComputedStyle out;
 		out.Inherited = parent.Inherited;
 
-		for (const auto& e : s.Entries())
+		for (const auto& e : entries)
 		{
 			out.Apply(e, parent);
 		}

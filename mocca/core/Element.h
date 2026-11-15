@@ -1,14 +1,13 @@
 #pragma once
 #include "a11y/A11y.h"
 #include "core/ElementEvents.h"
+#include "core/Part.h"
 #include "Identifiers.h"
 #include "style/StyleList.h"
-#include "gfx/Decoration.h"
 #include "utils/ScopedProfiler.h"
 #include <any>
 #include <cstdint>
 #include <functional>
-#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -39,8 +38,6 @@ namespace mocca
 	struct TextElement
 	{
 		std::string Content;
-		std::optional<gfx::CaretDecoration> Caret;
-		std::optional<std::vector<gfx::TextDecoration>> Decorations;
 	};
 
 	struct ComponentElement
@@ -58,6 +55,7 @@ namespace mocca
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
 		aria::A11y A11y = nullptr;
+		PartList Parts;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -88,6 +86,7 @@ namespace mocca
 		styles::StyleList Style;
 		EventView Events;
 		std::vector<Element> Children;
+		std::vector<Part> Parts;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
 	};
@@ -100,8 +99,7 @@ namespace mocca
 		styles::StyleList Style;
 		EventView Events;
 		std::string Content;
-		std::optional<gfx::CaretDecoration> Caret;
-		std::optional<std::vector<gfx::TextDecoration>> Decorations;
+		std::vector<Part> Parts;
 		NodeRef* Ref = nullptr;
 		FocusMode Focus = FocusMode::None;
 	};
@@ -125,6 +123,7 @@ namespace mocca
 			.Ref = desc.Ref,
 			.Focus = desc.Focus,
 			.A11y = std::move(desc.A11y),
+			.Parts = partList(std::move(desc.Parts)),
 		};
 	}
 
@@ -142,17 +141,14 @@ namespace mocca
 	{
 		mc_profilePlot("text");
 		return Element{
-			.Node = TextElement{
-				.Content = std::move(desc.Content),
-				.Caret = desc.Caret,
-				.Decorations = std::move(desc.Decorations),
-			},
+			.Node = TextElement{.Content = std::move(desc.Content)},
 			.Key = desc.Key,
 			.Style = desc.Style,
 			.Events = EventView::From(std::move(desc.Events)),
 			.Ref = desc.Ref,
 			.Focus = desc.Focus,
 			.A11y = std::move(desc.A11y),
+			.Parts = partList(std::move(desc.Parts)),
 		};
 	}
 

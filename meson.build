@@ -158,6 +158,7 @@ if get_option('tests')
 			'test/HookTest.cpp',
 			'test/LayoutTest.cpp',
 			'test/NodeRefTest.cpp',
+			'test/PartsTest.cpp',
 			'test/RenderTest.cpp',
 			'test/StyleCacheTest.cpp',
 			'test/SurfaceLifecycleTest.cpp',

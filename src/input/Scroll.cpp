@@ -26,7 +26,7 @@ namespace mocca::detail
 		return nullptr;
 	}
 
-	auto contentExtent(Node* n, float& maxX, float& maxY) -> void
+	auto contentExtent(const Node* n, float& maxX, float& maxY) -> void
 	{
 		if (n == nullptr)
 		{

@@ -220,7 +220,7 @@ namespace mocca::styles::detail::applying::paint
 
 namespace mocca::styles
 {
-	auto ResolveBoxVisual(const ComputedStyle& style, float w, float h) -> BoxVisual
+	auto resolveBoxVisual(const ComputedStyle& style, float w, float h) -> BoxVisual
 	{
 		BoxVisual visual{};
 		const detail::applying::paint::PaintContext ctx{

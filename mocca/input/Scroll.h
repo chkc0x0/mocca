@@ -12,7 +12,7 @@ namespace mocca::detail
 	
 	auto findScrollableAncestor(Node* node) -> Node*;
 
-	auto contentExtent(Node* n, float& maxX, float& maxY) -> void;
+	auto contentExtent(const Node* n, float& maxX, float& maxY) -> void;
 	auto reclampScrollOffsets(Node* n) -> void;
 
 	auto paintedRect(const Node& node) -> Rectangle;

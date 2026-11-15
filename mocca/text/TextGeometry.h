@@ -1,5 +1,6 @@
 #pragma once
 #include "style/StyleEnums.h"
+#include "text/CaretAffinity.h"
 #include "text/TextLayout.h"
 #include "utils/Math.h"
 #include <cstdint>
@@ -7,12 +8,6 @@
 
 namespace mocca::mtext
 {
-	enum class CaretAffinity : uint8_t
-	{
-		Downstream,
-		Upstream,
-	};
-
 	struct TextPosition
 	{
 		uint32_t Offset = 0;
@@ -77,13 +72,5 @@ namespace mocca::mtext
 			float boxWidth,
 			styles::TextAlignment align
 		) -> std::vector<TextSpanBox>;
-
-		[[nodiscard]] static auto SelectionRects(
-			const TextLayout& layout,
-			uint32_t anchor,
-			uint32_t active,
-			float boxWidth,
-			styles::TextAlignment align
-		) -> std::vector<Rectangle>;
 	};
 }

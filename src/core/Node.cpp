@@ -1,7 +1,7 @@
 #include "core/Node.h"
 #include "core/HookStore.h"
 #include "core/NodeRef.h"
-#include "gfx/Decoration.h"
+#include "core/Part.h"
 #include "input/Scroll.h"
 #include "style/StyleProperty.h"
 #include "text/Measure.h"
@@ -439,6 +439,7 @@ namespace mocca::detail
 		node->Events = element.Events;
 		node->Focus = element.Focus;
 		node->A11y = element.A11y;
+		node->Parts = element.Parts;
 
 		if (!node->IsComponent())
 		{
@@ -575,7 +576,8 @@ namespace mocca::detail
 	void paintDecoration(
 		gfx::Canvas& canvas,
 		const styles::BoxVisual& deco,
-		const Rectangle& rect
+		const Rectangle& rect,
+		bool squareAsRect = false
 	)
 	{
 		RRect outer{
@@ -585,7 +587,14 @@ namespace mocca::detail
 
 		if (deco.HasFill)
 		{
-			canvas.DrawRRect(outer, deco.Fill);
+			if (squareAsRect && !deco.Radius.HasRadius())
+			{
+				canvas.DrawRect(rect, deco.Fill);
+			}
+			else
+			{
+				canvas.DrawRRect(outer, deco.Fill);
+			}
 		}
 		if (deco.HasImage)
 		{
@@ -618,183 +627,258 @@ namespace mocca::detail
 
 		Deco = deco.IsEmpty()
 				   ? nullptr
-				   : std::make_unique<styles::BoxVisual>(std::move(deco));
+				   : std::make_unique<styles::BoxVisual>(deco);
 		DecoWidth = w;
 		DecoHeight = h;
 		DecoDirty = false;
 	}
 
-	auto lineDecorationY(
-		gfx::TextDecorationKind kind,
-		const mtext::TextLayout& layout,
-		const mtext::TextSpanBox& span
-	) -> float
+	struct PartRefs
 	{
-		switch (kind)
+		Rectangle HostBox{};
+		Rectangle ContentBox{};
+		const mtext::TextLayout* Layout = nullptr;
+		Rectangle TextOrigin{};
+		styles::TextAlignment Align = styles::TextAlignment::Start;
+	};
+
+	auto contentExtentRect(const Node& node, const Rectangle& box) -> Rectangle
+	{
+		if (!node.IsBox() ||
+			node.Style.Get<styles::StyleProperty::Overflow>() !=
+				styles::OverflowType::Scroll)
 		{
-		case gfx::TextDecorationKind::Overline:
-			return span.Baseline - layout.Ascent;
-		case gfx::TextDecorationKind::Strikethrough:
-			return span.Baseline - (layout.Ascent * 0.4F);
-		case gfx::TextDecorationKind::Selection:
-		case gfx::TextDecorationKind::Underline:
-		default:
-			return span.Baseline + (layout.Descent * 0.5F);
+			return box;
+		}
+
+		float maxX = 0.0F;
+		float maxY = 0.0F;
+		contentExtent(&node, maxX, maxY);
+
+		return {
+			.X = box.X,
+			.Y = box.Y,
+			.Width = std::max(box.Width, maxX - node.GetX()),
+			.Height = std::max(box.Height, maxY - node.GetY()),
+		};
+	}
+
+	void paintPart(
+		gfx::Canvas& canvas,
+		const Part& part,
+		const styles::ComputedStyle& parentStyle,
+		const Rectangle& reference,
+		const Rectangle& hostBox
+	)
+	{
+		styles::ComputedStyle style =
+			styles::ComputedStyle::Cascade(part.Style.Entries(), parentStyle);
+
+		float emBasis = style.Inherited.FontSize.Value;
+
+		auto x = PartAxis::Resolve(
+			detail::specifiedLength(style.LayoutPosition.Left),
+			detail::specifiedLength(style.LayoutPosition.Right),
+			detail::specifiedLength(style.LayoutSizing.Width),
+			reference.X,
+			reference.Width,
+			reference.Width,
+			emBasis
+		);
+
+		auto y = PartAxis::Resolve(
+			detail::specifiedLength(style.LayoutPosition.Top),
+			detail::specifiedLength(style.LayoutPosition.Bottom),
+			detail::specifiedLength(style.LayoutSizing.Height),
+			reference.Y,
+			reference.Height,
+			reference.Height,
+			emBasis
+		);
+
+		Rectangle rect{
+			.X = x.Pos,
+			.Y = y.Pos,
+			.Width = x.Size,
+			.Height = y.Size,
+		};
+
+		if (part.Anchor.Tag == PartAnchor::Kind::Caret)
+		{
+			rect.Width = std::max(rect.Width, 1.0F);
+			rect.Height = std::max(rect.Height, 1.0F);
+			rect.X = std::clamp(
+				rect.X,
+				hostBox.X,
+				hostBox.X + hostBox.Width - rect.Width
+			);
+			rect.Y = std::clamp(
+				rect.Y,
+				hostBox.Y,
+				hostBox.Y + hostBox.Height - rect.Height
+			);
+		}
+
+		for (const Part& nested : part.Parts)
+		{
+			if (nested.Layer == PartLayer::Behind)
+			{
+				paintPart(canvas, nested, style, rect, hostBox);
+			}
+		}
+
+		if (!rect.IsEmpty())
+		{
+			styles::BoxVisual visual =
+				styles::resolveBoxVisual(style, rect.Width, rect.Height);
+
+			if (!visual.IsEmpty())
+			{
+				paintDecoration(canvas, visual, rect, true);
+			}
+		}
+
+		for (const Part& nested : part.Parts)
+		{
+			if (nested.Layer == PartLayer::Above)
+			{
+				paintPart(canvas, nested, style, rect, hostBox);
+			}
 		}
 	}
 
-	void paintTextContent(Node& node, gfx::Canvas& canvas, const Rectangle& box)
+	void paintParts(
+		gfx::Canvas& canvas,
+		std::span<const Part> parts,
+		PartLayer layer,
+		PartSpace space,
+		const styles::ComputedStyle& parentStyle,
+		const PartRefs& refs
+	)
+	{
+		for (const Part& part : parts)
+		{
+			if (part.Layer != layer)
+			{
+				continue;
+			}
+
+			auto effectiveSpace =
+				part.Anchor.Tag == PartAnchor::Kind::Box ? part.Space : PartSpace::Content;
+			if (effectiveSpace != space)
+			{
+				continue;
+			}
+
+			switch (part.Anchor.Tag)
+			{
+			case PartAnchor::Kind::Box:
+				paintPart(
+					canvas,
+					part,
+					parentStyle,
+					space == PartSpace::Content ? refs.ContentBox : refs.HostBox,
+					refs.HostBox
+				);
+				break;
+			case PartAnchor::Kind::Range:
+			{
+				mc_assert(
+					refs.Layout != nullptr,
+					"a Range part needs a text host"
+				);
+				if (refs.Layout == nullptr)
+				{
+					break;
+				}
+
+				for (const auto& span : mtext::TextGeometry::SpanBoxes(
+						 *refs.Layout,
+						 part.Anchor.Range.Start,
+						 part.Anchor.Range.End,
+						 refs.TextOrigin.Width,
+						 refs.Align
+					 ))
+				{
+					paintPart(
+						canvas,
+						part,
+						parentStyle,
+						{
+							.X = refs.TextOrigin.X + span.X,
+							.Y = refs.TextOrigin.Y + span.Top,
+							.Width = span.Width,
+							.Height = span.Height,
+						},
+						refs.HostBox
+					);
+				}
+				break;
+			}
+			case PartAnchor::Kind::Caret:
+			{
+				mc_assert(
+					refs.Layout != nullptr,
+					"a Caret part needs a text host"
+				);
+				if (refs.Layout == nullptr)
+				{
+					break;
+				}
+
+				auto caret = mtext::TextGeometry::CaretAt(
+					*refs.Layout,
+					{
+						.Offset = part.Anchor.Range.Start,
+						.Affinity = part.Anchor.Affinity,
+					},
+					refs.TextOrigin.Width,
+					refs.Align
+				);
+
+				paintPart(
+					canvas,
+					part,
+					parentStyle,
+					{
+						.X = std::round(refs.TextOrigin.X + caret.X),
+						.Y = std::round(refs.TextOrigin.Y + caret.Y),
+						.Width = 0.0F,
+						.Height = std::round(caret.Height),
+					},
+					refs.HostBox
+				);
+				break;
+			}
+			}
+		}
+	}
+
+	void paintTextContent(
+		Node& node,
+		gfx::Canvas& canvas,
+		const Rectangle& contentBox,
+		const std::shared_ptr<const mtext::TextLayout>& layout
+	)
 	{
 		mc_profileFunction();
 
 		const auto& textElement = std::get<TextElement>(node.Kind);
-		const std::string& content = textElement.Content;
-
-		const Rectangle contentBox = contentRect(node, box);
-
-		float x = contentBox.X;
-		float y = contentBox.Y;
-		float textWidth = contentBox.Width;
-
-		auto layout = mtext::detail::TextLayoutBuilder::ResolveTextLayout(
-			node.Style,
-			content,
-			textWidth,
-			true
-		);
-
-		auto align = node.Style.Get<styles::StyleProperty::TextAlign>();
-
-		auto emit =
-			[&](float rx, float ry, float rw, float rh, Color color) -> void
-		{
-			canvas.DrawRect(
-				{.X = x + rx, .Y = y + ry, .Width = rw, .Height = rh},
-				gfx::Paint::Fill(color)
-			);
-		};
-
-		if (textElement.Decorations)
-		{
-			for (const auto& decoration : *textElement.Decorations)
-			{
-				if (decoration.Kind != gfx::TextDecorationKind::Selection)
-				{
-					continue;
-				}
-
-				for (const auto& rect : mtext::TextGeometry::SelectionRects(
-						 *layout,
-						 decoration.Start,
-						 decoration.End,
-						 textWidth,
-						 align
-					 ))
-				{
-					emit(
-						rect.X,
-						rect.Y,
-						rect.Width,
-						rect.Height,
-						decoration.Color
-					);
-				}
-			}
-		}
 
 		canvas.DrawText(
 			gfx::cmds::DrawTextCmd{
-				.Position = {.X = x, .Y = y},
-				.Content = content,
+				.Position = {.X = contentBox.X, .Y = contentBox.Y},
+				.Content = textElement.Content,
 				.Paint = gfx::Paint::Fill(
 					node.Style.Get<styles::StyleProperty::TextColor>()
 				),
 				.Size = node.Style.Get<styles::StyleProperty::FontSize>().Value,
 				.Face = layout->Face,
 				.Layout = layout,
-				.BoxWidth = textWidth,
-				.Align = align,
+				.BoxWidth = contentBox.Width,
+				.Align = node.Style.Get<styles::StyleProperty::TextAlign>(),
 			}
 		);
-
-		if (textElement.Decorations)
-		{
-			for (const auto& decoration : *textElement.Decorations)
-			{
-				if (decoration.Kind == gfx::TextDecorationKind::Selection)
-				{
-					continue;
-				}
-
-				for (const auto& span : mtext::TextGeometry::SpanBoxes(
-						 *layout,
-						 decoration.Start,
-						 decoration.End,
-						 textWidth,
-						 align
-					 ))
-				{
-					emit(
-						span.X,
-						lineDecorationY(decoration.Kind, *layout, span),
-						span.Width,
-						decoration.Thickness,
-						decoration.Color
-					);
-				}
-			}
-		}
-
-		if (textElement.Caret)
-		{
-			const auto& caret = *textElement.Caret;
-			double now = getCtx()->TimeMs();
-
-			if (caret.BlinkResetToken != node.BlinkToken)
-			{
-				node.BlinkToken = caret.BlinkResetToken;
-				node.BlinkEpochMs = now;
-			}
-
-			bool visible = caret.BlinkPeriodMs == 0;
-			if (!visible)
-			{
-				auto period = static_cast<double>(caret.BlinkPeriodMs);
-				visible = std::fmod(now - node.BlinkEpochMs, period * 2.0) <
-						  period;
-				getCtx()->RequestRepaint();
-			}
-
-			if (visible)
-			{
-				auto position = mtext::TextPosition{
-					.Offset = caret.Offset,
-					.Affinity = caret.Affinity,
-				};
-				auto box = mtext::TextGeometry::CaretAt(
-					*layout,
-					position,
-					textWidth,
-					align
-				);
-				if (box.Height > 0.0F)
-				{
-					float drawX = std::round(x + box.X);
-					float drawY = std::round(y + box.Y);
-					float drawW = std::max(1.0F, std::round(caret.Width));
-					float drawH = std::round(box.Height);
-					canvas.DrawRect(
-						{
-							.X = drawX,
-							.Y = drawY,
-							.Width = drawW,
-							.Height = drawH,
-						},
-						gfx::Paint::Fill(caret.Color)
-					);
-				}
-			}
-		}
 	}
 
 	void paintNode(
@@ -828,9 +912,34 @@ namespace mocca::detail
 			paintDecoration(canvas, *deco, box);
 		}
 
+		PartRefs refs{};
+		refs.HostBox = box;
+		refs.ContentBox = contentExtentRect(node, box);
+
+		std::shared_ptr<const mtext::TextLayout> textLayout;
 		if (node.IsText())
 		{
-			paintTextContent(node, canvas, box);
+			refs.TextOrigin = contentRect(node, box);
+			refs.Align = node.Style.Get<styles::StyleProperty::TextAlign>();
+			textLayout = mtext::detail::TextLayoutBuilder::ResolveTextLayout(
+				node.Style,
+				std::get<TextElement>(node.Kind).Content,
+				refs.TextOrigin.Width,
+				true
+			);
+			refs.Layout = textLayout.get();
+		}
+
+		if (node.Parts != nullptr)
+		{
+			paintParts(
+				canvas,
+				*node.Parts,
+				PartLayer::Behind,
+				PartSpace::Host,
+				node.Style,
+				refs
+			);
 		}
 
 		bool scoped = space.Clips || space.Scrolls;
@@ -847,6 +956,23 @@ namespace mocca::detail
 			}
 		}
 
+		if (node.Parts != nullptr)
+		{
+			paintParts(
+				canvas,
+				*node.Parts,
+				PartLayer::Behind,
+				PartSpace::Content,
+				node.Style,
+				refs
+			);
+		}
+
+		if (node.IsText())
+		{
+			paintTextContent(node, canvas, refs.TextOrigin, textLayout);
+		}
+
 		Rectangle childCull =
 			narrowCull(cull, space, box, node.ScrollOffset);
 		for (auto& child : node.Children)
@@ -854,10 +980,35 @@ namespace mocca::detail
 			child->Paint(canvas, childCull);
 		}
 
+		if (node.Parts != nullptr)
+		{
+			paintParts(
+				canvas,
+				*node.Parts,
+				PartLayer::Above,
+				PartSpace::Content,
+				node.Style,
+				refs
+			);
+		}
+
 		if (scoped)
 		{
 			canvas.Restore();
 		}
+
+		if (node.Parts != nullptr)
+		{
+			paintParts(
+				canvas,
+				*node.Parts,
+				PartLayer::Above,
+				PartSpace::Host,
+				node.Style,
+				refs
+			);
+		}
+
 		if (space.HasTransform)
 		{
 			canvas.Restore();
@@ -1083,29 +1234,10 @@ namespace mocca::detail
 			const auto& incoming = std::get<TextElement>(newElement->Node);
 			const auto& current = std::get<TextElement>(oldNode->Kind);
 
-			bool contentChanged = current.Content != incoming.Content;
-			bool caretWidthChanged = false;
-			if (current.Caret.has_value() != incoming.Caret.has_value())
-			{
-				caretWidthChanged = true;
-			}
-			else if (current.Caret.has_value() && incoming.Caret.has_value())
-			{
-				caretWidthChanged = current.Caret->Width !=
-									incoming.Caret->Width;
-			}
-
-			bool overlayChanged = current.Caret != incoming.Caret ||
-								  current.Decorations != incoming.Decorations;
-
-			if (contentChanged || overlayChanged)
+			if (current.Content != incoming.Content)
 			{
 				oldNode->Kind = incoming;
-
-				if (contentChanged || caretWidthChanged)
-				{
-					YGNodeMarkDirty(oldNode->YogaNode);
-				}
+				YGNodeMarkDirty(oldNode->YogaNode);
 			}
 
 			YGNodeSetMeasureFunc(
@@ -1116,6 +1248,7 @@ namespace mocca::detail
 
 		oldNode->Events = newElement->Events;
 		oldNode->Focus = newElement->Focus;
+		oldNode->Parts = newElement->Parts;
 		if (!sameA11y(oldNode->A11y, newElement->A11y))
 		{
 			oldNode->A11y = newElement->A11y;
