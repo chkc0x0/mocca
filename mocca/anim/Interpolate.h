@@ -1,9 +1,11 @@
 #pragma once
 #include "style/Length.h"
+#include "style/StyleValue.h"
 #include "utils/Color.h"
 #include "utils/Math.h"
 #include <algorithm>
 #include <type_traits>
+#include <variant>
 
 namespace mocca::anim
 {
@@ -53,6 +55,65 @@ namespace mocca::anim
 	{
 		float value = a.Value + ((b.Value - a.Value) * t);
 		return {a.Unit, value < 0.0F ? 0.0F : value};
+	}
+
+	inline auto lerpUnclamped(
+		const styles::Length& a,
+		const styles::Length& b,
+		float t
+	) -> styles::Length
+	{
+		return {a.Unit, a.Value + ((b.Value - a.Value) * t)};
+	}
+
+	inline auto lerpEnumLength(
+		const styles::EnumValue<styles::Length>& a,
+		const styles::EnumValue<styles::Length>& b,
+		float t,
+		bool clamp
+	) -> styles::EnumValue<styles::Length>
+	{
+		if (a.index() != b.index())
+		{
+			return t < 0.5F ? a : b;
+		}
+
+		const auto* aLength = std::get_if<styles::Length>(&a);
+		if (aLength == nullptr)
+		{
+			return t < 0.5F ? a : b;
+		}
+
+		const auto& bLength = std::get<styles::Length>(b);
+		if (aLength->Unit != bLength.Unit)
+		{
+			return t < 0.5F ? a : b;
+		}
+
+		float value = aLength->Value + ((bLength.Value - aLength->Value) * t);
+		if (clamp && value < 0.0F)
+		{
+			value = 0.0F;
+		}
+		return styles::Length{aLength->Unit, value};
+	}
+
+	inline auto lerp(
+		const styles::EnumValue<styles::Length>& a,
+		const styles::EnumValue<styles::Length>& b,
+		float t
+	) -> styles::EnumValue<styles::Length>
+	{
+		return lerpEnumLength(a, b, t, true);
+	}
+
+	inline auto lerpUnclamped(
+		const styles::EnumValue<styles::Length>& a,
+		const styles::EnumValue<styles::Length>& b,
+		float t
+	) -> styles::EnumValue<styles::Length>
+	{
+		return lerpEnumLength(a, b, t, false);
 	}
 
 	inline auto lerp(const Vector2& a, const Vector2& b, float t) -> Vector2
@@ -107,7 +168,11 @@ namespace mocca::anim
 											 std::is_same_v<T, Color> ||
 											 std::is_same_v<T, Vector2> ||
 											 std::is_same_v<T, styles::Length> ||
-											 std::is_same_v<T, styles::Vector2Length>;
+											 std::is_same_v<T, styles::Vector2Length> ||
+											 std::is_same_v<
+												 T,
+												 styles::EnumValue<
+													 styles::Length>>;
 
 	template <typename T>
 	auto interpolate(const T& a, const T& b, float t) -> T
@@ -115,6 +180,26 @@ namespace mocca::anim
 		if constexpr (IsInterpolatable<T>)
 		{
 			return lerp(a, b, t);
+		}
+		else
+		{
+			return t < 0.5F ? a : b;
+		}
+	}
+
+	template <typename T>
+	auto interpolateUnclamped(const T& a, const T& b, float t) -> T
+	{
+		if constexpr (IsInterpolatable<T>)
+		{
+			if constexpr (requires { lerpUnclamped(a, b, t); })
+			{
+				return lerpUnclamped(a, b, t);
+			}
+			else
+			{
+				return lerp(a, b, t);
+			}
 		}
 		else
 		{

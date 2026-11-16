@@ -121,4 +121,8 @@
     mc_animatable(Rotate) \
     mc_animatable(TransformOrigin) \
 	mc_animatable(Width) \
-	mc_animatable(Height)
+	mc_animatable(Height) \
+	mc_animatable(Left) \
+	mc_animatable(Right) \
+	mc_animatable(Top) \
+	mc_animatable(Bottom)

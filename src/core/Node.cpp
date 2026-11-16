@@ -3,6 +3,7 @@
 #include "core/NodeRef.h"
 #include "core/Part.h"
 #include "input/Scroll.h"
+#include "style/StyleBuilder.h"
 #include "style/StyleProperty.h"
 #include "text/Measure.h"
 #include "text/TextGeometry.h"
@@ -347,6 +348,151 @@ namespace mocca::detail
 		}
 	}
 
+	auto findActiveTransition(
+		std::vector<ActiveTransition>& transitions,
+		styles::StyleProperty prop
+	) -> ActiveTransition*
+	{
+		for (auto& transition : transitions)
+		{
+			if (transition.Prop == prop)
+			{
+				return &transition;
+			}
+		}
+		return nullptr;
+	}
+
+	void removeActiveTransition(
+		std::vector<ActiveTransition>& transitions,
+		styles::StyleProperty prop
+	)
+	{
+		std::erase_if(
+			transitions,
+			[prop](const ActiveTransition& t) -> auto { return t.Prop == prop; }
+		);
+	}
+
+	template <styles::StyleProperty P>
+	void StepOne(
+		styles::ComputedStyle& current,
+		std::vector<ActiveTransition>& transitions,
+		styles::ComputedStyle& target,
+		double dt,
+		bool& anyActive
+	)
+	{
+		uint32_t transitionRef =
+			target.Get<styles::StyleProperty::Transition>();
+		if (transitionRef == 0)
+		{
+			removeActiveTransition(transitions, P);
+			return;
+		}
+
+		using Value = styles::PropTraits<P>::Value;
+
+		const styles::TransitionList& transitionList =
+			styles::detail::resolveTransition(transitionRef);
+
+		const styles::TransitionType* spec =
+			transitionList.Find(styles::PropertySet::Set(P));
+
+		if (spec == nullptr)
+		{
+			removeActiveTransition(transitions, P);
+			return;
+		}
+
+		Value goal = target.Get<P>();
+		ActiveTransition* tr = findActiveTransition(transitions, P);
+
+		if (tr == nullptr)
+		{
+			Value present = current.Get<P>();
+			if (present == goal)
+			{
+				return;
+			}
+
+			ActiveTransition fresh;
+			fresh.Prop = P;
+			fresh.From = styles::detail::encodeStyleEntry(P, present);
+			fresh.Goal = styles::detail::encodeStyleEntry(P, goal);
+			fresh.Duration = spec->Duration;
+			fresh.Curve = spec->Curve;
+			transitions.push_back(fresh);
+			tr = &transitions.back();
+		}
+		else if (styles::getStyleEntryValue<Value>(tr->Goal) != goal)
+		{
+			tr->From = styles::detail::encodeStyleEntry(P, current.Get<P>());
+			tr->Goal = styles::detail::encodeStyleEntry(P, goal);
+			tr->Elapsed = 0.0F;
+			tr->Progress = 0.0F;
+			tr->Spring = {};
+			tr->Duration = spec->Duration;
+			tr->Curve = spec->Curve;
+		}
+
+		float t = 1.0F;
+		bool settled = false;
+		if (tr->Curve.Kind == anim::CurveKind::Spring)
+		{
+			tr->Progress = anim::springStep(
+				tr->Progress,
+				1.0F,
+				tr->Spring,
+				tr->Curve,
+				static_cast<float>(dt)
+			);
+			t = tr->Progress;
+			settled = anim::springSettled(tr->Progress, 1.0F, tr->Spring);
+		}
+		else
+		{
+			tr->Elapsed += static_cast<float>(dt);
+			float p = tr->Duration > 0.0F
+						  ? std::min(tr->Elapsed / tr->Duration, 1.0F)
+						  : 1.0F;
+			t = anim::sample(tr->Curve, p);
+			settled = tr->Elapsed >= tr->Duration;
+		}
+
+		target.Blend(P, tr->From, tr->Goal, t);
+
+		if (settled)
+		{
+			target.Set<P>(goal);
+			removeActiveTransition(transitions, P);
+		}
+		else
+		{
+			anyActive = true;
+		}
+	}
+
+	void advanceAll(
+		styles::ComputedStyle& current,
+		std::vector<ActiveTransition>& transitions,
+		styles::ComputedStyle& target,
+		double dt,
+		bool& anyActive
+	)
+	{
+#define mc_animatable(name)                                                    \
+	StepOne<styles::StyleProperty::name>(                                      \
+		current,                                                               \
+		transitions,                                                           \
+		target,                                                                \
+		dt,                                                                    \
+		anyActive                                                              \
+	);
+		mc_animatableProperties
+#undef mc_animatable
+	}
+
 	void Node::AdvanceTransitions(styles::ComputedStyle& target, double dt)
 	{
 		if (Transitions.empty() &&
@@ -358,12 +504,9 @@ namespace mocca::detail
 
 		bool anyActive = false;
 
-#define mc_animatable(name)                                                    \
-	StepTransition<styles::StyleProperty::name>(target, dt, anyActive);
-		mc_animatableProperties
-#undef mc_animatable
+		advanceAll(Style, Transitions, target, dt, anyActive);
 
-			Style = target;
+		Style = target;
 
 		if (anyActive)
 		{

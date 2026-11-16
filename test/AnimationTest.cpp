@@ -4,6 +4,7 @@
 #include "anim/Presets.h"
 #include "anim/Spring.h"
 #include "core/Hooks.h"
+#include "style/StyleBuilder.h"
 #include "style/StyleValue.h"
 #include <optional>
 
@@ -107,6 +108,71 @@ namespace mtest
 		);
 	}
 
+	TEST(AnimationMath, SizingValueInterpolates)
+	{
+		using mocca::styles::Length;
+		using mocca::styles::SizingValue;
+
+		auto mid = mocca::anim::interpolate(
+			SizingValue{Length{10}},
+			SizingValue{Length{20}},
+			0.5F
+		);
+		EXPECT_EQ(mid, (SizingValue{Length{15}}));
+
+		auto early = mocca::anim::interpolate(
+			SizingValue{uint8_t{0}},
+			SizingValue{Length{20}},
+			0.49F
+		);
+		EXPECT_EQ(early, (SizingValue{uint8_t{0}}));
+
+		auto late = mocca::anim::interpolate(
+			SizingValue{uint8_t{0}},
+			SizingValue{Length{20}},
+			0.5F
+		);
+		EXPECT_EQ(late, (SizingValue{Length{20}}));
+	}
+
+	TEST(AnimationMath, LeftDoesNotClamp)
+	{
+		using mocca::styles::Length;
+		using mocca::styles::SizingValue;
+
+		auto mid = mocca::anim::interpolateUnclamped(
+			SizingValue{Length{-10}},
+			SizingValue{Length{10}},
+			0.5F
+		);
+		EXPECT_EQ(mid, (SizingValue{Length{0}}));
+
+		auto quarter = mocca::anim::interpolateUnclamped(
+			SizingValue{Length{-10}},
+			SizingValue{Length{10}},
+			0.25F
+		);
+		EXPECT_EQ(quarter, (SizingValue{Length{-5}}));
+	}
+
+	TEST_F(AnimationTest, TransitionNamesLayoutProperty)
+	{
+		using namespace mocca::styles;
+
+		StyleList style{
+			Transition(StyleProperty::FlexDirection, 0.2F),
+		};
+
+		const StyleEntry* entry = style.Find(StyleProperty::Transition);
+		ASSERT_NE(entry, nullptr);
+
+		const auto& specs =
+			detail::resolveTransition(entry->Payload.Handle).Specs;
+		ASSERT_EQ(specs.size(), 1U);
+		EXPECT_TRUE(specs[0].Props.Test(StyleProperty::FlexDirection));
+		EXPECT_TRUE(specs[0].Props.Intersects(PropertySet::LayoutAffecting()));
+	}
+
 	TEST(AnimationMath, FadesAlphaWithoutDarkening)
 	{
 		auto fromTransparent = mocca::anim::interpolate(
@@ -163,14 +229,8 @@ namespace mtest
 		const auto& specs =
 			detail::resolveTransition(entry->Payload.Handle).Specs;
 		ASSERT_EQ(specs.size(), 2U);
-		EXPECT_NE(
-			specs[0].Props & propertyBit<StyleProperty::BackgroundColor>(),
-			0U
-		);
-		EXPECT_NE(
-			specs[1].Props & propertyBit<StyleProperty::BorderColor>(),
-			0U
-		);
+		EXPECT_TRUE(specs[0].Props.Test(StyleProperty::BackgroundColor));
+		EXPECT_TRUE(specs[1].Props.Test(StyleProperty::BorderColor));
 		EXPECT_FLOAT_EQ(specs[0].Duration, 0.2F);
 		EXPECT_FLOAT_EQ(specs[1].Duration, 0.4F);
 	}

@@ -15,6 +15,17 @@ namespace mocca::styles
 	{
 	};
 
+	template <StyleProperty P> inline constexpr bool ClampsInterpolation = true;
+
+	template <>
+	inline constexpr bool ClampsInterpolation<StyleProperty::Left> = false;
+	template <>
+	inline constexpr bool ClampsInterpolation<StyleProperty::Right> = false;
+	template <>
+	inline constexpr bool ClampsInterpolation<StyleProperty::Top> = false;
+	template <>
+	inline constexpr bool ClampsInterpolation<StyleProperty::Bottom> = false;
+
 	class ComputedStyle
 	{
 	public:

@@ -2,6 +2,7 @@
 #include "core/Application.h"
 #include "gfx/DrawCommands.h"
 #include "core/Element.h"
+#include "style/StyleBuilder.h"
 #include "style/StyleHelpers.h"
 #include "gtest/gtest.h"
 #include <algorithm>

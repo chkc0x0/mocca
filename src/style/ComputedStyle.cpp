@@ -125,11 +125,30 @@ namespace mocca::styles
 #undef mc_animatable
 #define mc_animatable(name)                                                    \
 	case StyleProperty::name:                                                  \
-		_ref<StyleProperty::name>() = anim::interpolate(                       \
-			getStyleEntryValue<PropTraits<StyleProperty::name>::Value>(from),  \
-			getStyleEntryValue<PropTraits<StyleProperty::name>::Value>(goal),  \
-			t                                                                  \
-		);                                                                     \
+		if constexpr (ClampsInterpolation<StyleProperty::name>)                \
+		{                                                                      \
+			_ref<StyleProperty::name>() = anim::interpolate(                   \
+				getStyleEntryValue<PropTraits<StyleProperty::name>::Value>(    \
+					from                                                       \
+				),                                                             \
+				getStyleEntryValue<PropTraits<StyleProperty::name>::Value>(    \
+					goal                                                       \
+				),                                                             \
+				t                                                              \
+			);                                                                 \
+		}                                                                      \
+		else                                                                   \
+		{                                                                      \
+			_ref<StyleProperty::name>() = anim::interpolateUnclamped(          \
+				getStyleEntryValue<PropTraits<StyleProperty::name>::Value>(    \
+					from                                                       \
+				),                                                             \
+				getStyleEntryValue<PropTraits<StyleProperty::name>::Value>(    \
+					goal                                                       \
+				),                                                             \
+				t                                                              \
+			);                                                                 \
+		}                                                                      \
 		break;
 			mc_animatableProperties
 #undef mc_animatable

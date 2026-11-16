@@ -3,6 +3,7 @@
 #include "core/Element.h"
 #include "sandbox/NVGRenderDevice.h"
 #include <iostream>
+#include "style/StyleBuilder.h"
 #include "style/StyleHelpers.h"
 #include "utils/Color.h"
 #include "widgets/Button.h"

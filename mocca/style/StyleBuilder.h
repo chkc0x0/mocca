@@ -3,8 +3,7 @@
 #include "StyleProperty.h"
 #include "StyleValue.h"
 #include "FontStyleTypes.h"
-#include "FontVariants.h"
-#include "Transition.h"
+#include "TransitionType.h"
 #include "StyleEnums.h"
 #include "Length.h"
 #include "input/InputTypes.h"
@@ -521,7 +520,7 @@ namespace mocca::styles
 	{
 		return detail::makeTransition(
 			TransitionType{
-				.Props = animatableBit(prop),
+				.Props = PropertySet::Set(prop),
 				.Duration = duration,
 				.Curve = curve,
 			}
@@ -539,10 +538,10 @@ namespace mocca::styles
 		anim::Curve curve = anim::presets::cubic::InOut
 	) -> StyleEntry
 	{
-		std::uint32_t mask = 0;
+		PropertySet mask{};
 		for (StyleProperty prop : props)
 		{
-			mask |= animatableBit(prop);
+			mask = mask | PropertySet::Set(prop);
 		}
 		return detail::makeTransition(
 			TransitionType{.Props = mask, .Duration = duration, .Curve = curve}
