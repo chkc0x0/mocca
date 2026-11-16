@@ -1,31 +1,28 @@
 #include "SDL3PlatformInterface.h"
 #include "core/Application.h"
 #include "core/Element.h"
-#include "core/Hooks.h"
 #include "sandbox/NVGRenderDevice.h"
 #include <iostream>
 #include "style/StyleHelpers.h"
 #include "utils/Color.h"
 #include "widgets/Button.h"
-#include "widgets/ComponentTypes.h"
+#include "widgets/Switch.h"
 
 using namespace mocca;
 
-auto Sandbox() -> Element
+auto buttonShowcase() -> Element
 {
 	using namespace mocca::styles;
 
-	auto [counter, setCounter] = useState(0);
-
-	std::vector<widgets::basic::ButtonProps> buttons = {
-		{.State = widgets::ButtonVariant::Default},
-		{.State = widgets::ButtonVariant::Secondary},
-		{.State = widgets::ButtonVariant::Outline},
-		{.State = widgets::ButtonVariant::Ghost},
-		{.State = widgets::ButtonVariant::Destructive},
+	std::vector<widgets::ButtonProps> buttons = {
+		{.Variant = widgets::ButtonVariant::Default},
+		{.Variant = widgets::ButtonVariant::Secondary},
+		{.Variant = widgets::ButtonVariant::Outline},
+		{.Variant = widgets::ButtonVariant::Ghost},
+		{.Variant = widgets::ButtonVariant::Destructive},
 	};
 
-	auto press = [](auto& ev) -> auto { mc_info("clicked"); };
+	auto press = [](auto& ev) -> auto {};
 
 	std::vector<Element> childrenNormal;
 	std::vector<Element> disabledChildren;
@@ -35,12 +32,12 @@ auto Sandbox() -> Element
 	for (auto& btn : buttons)
 	{
 		childrenNormal.push_back(
-			widgets::basic::button({
-				.State = btn.State,
+			widgets::button({
 				.Children =
 					{
 						text("Click me!"),
 					},
+				.Variant = btn.Variant,
 				.OnPress = press,
 			})
 		);
@@ -50,13 +47,13 @@ auto Sandbox() -> Element
 	for (auto& btn : buttons)
 	{
 		disabledChildren.push_back(
-			widgets::basic::button({
-				.State = btn.State,
-				.Disabled = true,
+			widgets::button({
 				.Children =
 					{
 						text("Click me!"),
 					},
+				.Variant = btn.Variant,
+				.Disabled = true,
 				.OnPress = press,
 			})
 		);
@@ -65,36 +62,49 @@ auto Sandbox() -> Element
 	return box({
 		.Style =
 			{
-				BackgroundColor(Color(0x191919)),
-				FontFamily("Inter"),
-				Padding(px(16)),
-				GapHorizontal(px(16)),
+				GapVertical(px(16)),
+				FlexDirection(FlexDirections::Column),
 			},
 		.Children = {
 			box({
 				.Style =
 					{
-
-						FlexDirection(FlexDirections::Column),
-						GapVertical(px(16)),
+						FlexDirection(FlexDirections::Row),
+						GapHorizontal(px(16)),
 					},
 				.Children = childrenNormal,
 			}),
 			box({
 				.Style =
 					{
-						FlexDirection(FlexDirections::Column),
-						GapVertical(px(16)),
+						FlexDirection(FlexDirections::Row),
+						GapHorizontal(px(16)),
 					},
 				.Children = disabledChildren,
 			}),
-			widgets::basic::button({
-				.Children =
-					{
-						text("Counter: " + std::to_string(counter)),
-					},
-				.OnPress = [setCounter](auto& ev) -> auto
-				{ setCounter([](auto& c) -> auto { return c + 1; }); },
+		},
+	});
+}
+
+auto Sandbox() -> Element
+{
+	using namespace mocca::styles;
+
+	return box({
+		.Style =
+			{
+				BackgroundColor(Color(0x191919)),
+				FontFamily("Inter"),
+				Padding(px(16)),
+				GapVertical(px(16)),
+				FlexDirection(FlexDirections::Column),
+			},
+		.Children = {
+			buttonShowcase(),
+			widgets::Switch({
+				.Children = {
+					text("Airplane mode"),
+				},
 			}),
 		},
 	});

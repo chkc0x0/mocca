@@ -47,6 +47,8 @@ sources = [
 	'src/gfx/Capabilities.cpp',
 
 	'src/widgets/Button.cpp',
+	'src/widgets/Hooks.cpp',
+	'src/widgets/Switch.cpp'
 ]
 
 cmake = import('cmake')

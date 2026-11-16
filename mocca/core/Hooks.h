@@ -3,7 +3,7 @@
 #include "HookFrame.h"
 #include "NodeRef.h"
 #include "anim/AnimatedValue.h"
-#include "anim/Curve.h"
+#include "anim/Presets.h"
 #include <memory>
 
 namespace mocca
@@ -313,7 +313,7 @@ namespace mocca
 	template <typename T>
 	auto useAnimation(
 		T target,
-		anim::Curve curve = anim::EaseInOut,
+		anim::Curve curve = anim::presets::springs::Smooth,
 		float duration = 0.2F
 	) -> std::pair<T&, AnimationControl<T>>
 	{

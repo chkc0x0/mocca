@@ -119,4 +119,6 @@
     mc_animatable(Translate) \
     mc_animatable(Scale) \
     mc_animatable(Rotate) \
-    mc_animatable(TransformOrigin)
+    mc_animatable(TransformOrigin) \
+	mc_animatable(Width) \
+	mc_animatable(Height)

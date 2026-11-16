@@ -1,39 +1,26 @@
 #pragma once
 #include "core/Element.h"
-#include "style/StyleList.h"
-#include "widgets/ComponentTypes.h"
-#include <vector>
 
-namespace mocca::widgets::basic
+namespace mocca::widgets
 {
+	enum class ButtonVariant : char
+	{
+		Default,
+		Secondary,
+		Outline,
+		Ghost,
+		Destructive,
+	};
+
 	struct ButtonProps
 	{
-		ComponentSize Size = ComponentSize::Default;
-		ButtonVariant State = ButtonVariant::Default;
-		bool Disabled = false;
-		std::vector<Element> Children;
-		std::function<void(PointerEvent&)> OnPress;
-		styles::StyleList Style;
-		aria::A11y A11y = nullptr;
-	};
-
-	struct PressOptions
-	{
+	public:
+		mc_childComponentProps;
+		ButtonVariant Variant = ButtonVariant::Default;
 		bool Disabled = false;
 		std::function<void(PointerEvent&)> OnPress;
-	};
-
-	struct PressState
-	{
-		bool Hovered = false;
-		bool Pressed = false;
-	};
-
-	struct PressResult
-	{
-		PressState State;
-		EventView Events;
 	};
 
 	auto button(ButtonProps props) -> Element;
+	auto button(const std::string& text, std::function<void(PointerEvent&)> cb) -> Element;
 }

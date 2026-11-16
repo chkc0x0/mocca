@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <numbers>
 
 namespace mocca::anim
 {
@@ -23,11 +24,6 @@ namespace mocca::anim
 		constexpr auto operator==(const Curve&) const -> bool = default;
 	};
 
-	inline constexpr Curve LinearCurve{.Kind=CurveKind::Linear, .P1=0.0F, .P2=0.0F, .P3=1.0F, .P4=1.0F};
-	inline constexpr Curve EaseIn{.Kind=CurveKind::Bezier, .P1=0.42F, .P2=0.0F, .P3=1.0F, .P4=1.0F};
-	inline constexpr Curve EaseOut{.Kind=CurveKind::Bezier, .P1=0.0F, .P2=0.0F, .P3=0.58F, .P4=1.0F};
-	inline constexpr Curve EaseInOut{.Kind=CurveKind::Bezier, .P1=0.42F, .P2=0.0F, .P3=0.58F, .P4=1.0F};
-
 	constexpr auto bezier(float x1, float y1, float x2, float y2) -> Curve
 	{
 		return {.Kind=CurveKind::Bezier, .P1=x1, .P2=y1, .P3=x2, .P4=y2};
@@ -37,6 +33,17 @@ namespace mocca::anim
 		-> Curve
 	{
 		return {.Kind=CurveKind::Spring, .P1=stiffness, .P2=damping, .P3=mass, .P4=0.0F};
+	}
+
+	constexpr auto springPerceptual(float duration, float bounce = 0.0) -> Curve
+	{
+		float w = 2.0F * std::numbers::pi / duration;
+		float stiffness = w * w;
+		float damping = bounce >= 0.0
+							? 4.0 * std::numbers::pi * (1.0 - bounce) / duration
+							: 4.0 * std::numbers::pi /
+								  (duration * (1.0 + bounce));
+		return spring(stiffness, damping, 1.0);
 	}
 
 	namespace detail

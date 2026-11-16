@@ -8,8 +8,8 @@
 #include <memory>
 
 #if defined(MC_A11Y_ENABLED)
-#include "a11y/AccessKitBridge.h"
-#include <accesskit.h>
+#	include "a11y/AccessKitBridge.h"
+#	include <accesskit.h>
 #endif
 
 namespace mtest
@@ -684,12 +684,10 @@ namespace mtest
 					mocca::BoxDescriptor{
 						.Style = {Width(px(200)), Height(px(100))},
 						.Children = {
-							mocca::widgets::basic::button(
-								mocca::widgets::basic::ButtonProps{
-									.Children = {mocca::text("Save")},
-									.OnPress = [&presses](mocca::PointerEvent&)
-										-> void { presses++; },
-								}
+							mocca::widgets::button(
+								"Save",
+								[&presses](mocca::PointerEvent&) -> void
+								{ presses++; }
 							),
 						},
 					}
@@ -867,17 +865,12 @@ namespace mtest
 
 			if (role == mocca::aria::Role::None)
 			{
-				EXPECT_EQ(
-					mapped,
-					static_cast<uint8_t>(ACCESSKIT_ROLE_UNKNOWN)
-				);
+				EXPECT_EQ(mapped, static_cast<uint8_t>(ACCESSKIT_ROLE_UNKNOWN));
 			}
 			else
 			{
-				EXPECT_NE(
-					mapped,
-					static_cast<uint8_t>(ACCESSKIT_ROLE_UNKNOWN)
-				) << "unmapped aria role index " << i;
+				EXPECT_NE(mapped, static_cast<uint8_t>(ACCESSKIT_ROLE_UNKNOWN))
+					<< "unmapped aria role index " << i;
 			}
 		}
 	}

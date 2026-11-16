@@ -1,4 +1,8 @@
 #pragma once
+#include "core/ElementEvents.h"
+#include "core/NodeRef.h"
+#include "input/InputTypes.h"
+#include <functional>
 
 namespace mocca::widgets
 {
@@ -11,12 +15,24 @@ namespace mocca::widgets
 		XL,
 	};
 
-	enum class ButtonVariant : char
+	struct PressOptions
 	{
-		Default,
-		Secondary,
-		Outline,
-		Ghost,
-		Destructive,
+		NodeRef* Ref = nullptr;
+		bool Disabled = false;
+		std::function<void(PointerEvent&)> OnPress;
 	};
+
+	struct PressState
+	{
+		bool Hovered = false;
+		bool Pressed = false;
+	};
+
+	struct PressResult
+	{
+		PressState State;
+		EventView Events;
+	};
+
+	auto usePress(const PressOptions& opts) -> PressResult;
 }

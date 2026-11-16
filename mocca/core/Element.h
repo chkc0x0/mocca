@@ -112,6 +112,15 @@ namespace mocca
 		ComponentFn Fn;
 	};
 
+#define mc_baseComponentProps                                                  \
+	ElementKey Key = mc_keyNone;                                               \
+	styles::StyleList Style;                                                   \
+	aria::A11y A11y = nullptr
+
+#define mc_childComponentProps                                                 \
+	mc_baseComponentProps;                                                     \
+	std::vector<Element> Children
+
 	inline auto box(BoxDescriptor desc = {}) -> Element
 	{
 		mc_profilePlot("box");
@@ -236,6 +245,47 @@ namespace mocca
 		}
 
 		return result;
+	}
+
+	template <typename Arg, typename T>
+	concept ElementOrVector =
+		std::same_as<std::remove_cvref_t<Arg>, T> ||
+		std::same_as<std::remove_cvref_t<Arg>, std::vector<T>>;
+
+	template <ElementOrVector<Element>... Args> auto children(Args&&... args)
+	{
+		std::vector<Element> out;
+
+		auto get_size = []<typename T>(const T& item) -> std::size_t
+		{
+			if constexpr (std::same_as<std::remove_cvref_t<T>, Element>)
+			{
+				return 1;
+			}
+			else
+			{
+				return item.size();
+			}
+		};
+		out.reserve((get_size(args) + ... + 0));
+
+		auto append = [&]<typename T>(T&& item)
+		{
+			if constexpr (std::same_as<std::remove_cvref_t<T>, Element>)
+			{
+				out.emplace_back(std::forward<T>(item));
+			}
+			else
+			{
+				for (auto&& el : item)
+				{
+					out.emplace_back(std::forward_like<T>(el));
+				}
+			}
+		};
+		(append(std::forward<Args>(args)), ...);
+
+		return out;
 	}
 }
 

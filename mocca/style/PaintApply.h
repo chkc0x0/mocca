@@ -9,7 +9,7 @@
 
 namespace mocca::styles
 {
-	struct ComputedStyle;
+	class ComputedStyle;
 
 	struct BoxVisual
 	{

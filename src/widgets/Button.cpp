@@ -5,92 +5,17 @@
 #include "style/StyleHelpers.h"
 #include "style/StyleList.h"
 #include "utils/Color.h"
-
+#include "widgets/ComponentTypes.h"
 #include <utility>
 
-namespace mocca::widgets::basic
+namespace mocca::widgets
 {
-	auto usePress(const PressOptions& opts) -> PressResult
-	{
-		auto [state, setState] = useState(PressState{});
-		auto armed = useRef(false);
-
-		auto disabled = opts.Disabled;
-		auto onPress = opts.OnPress;
-
-		return {
-			.State = state,
-			.Events = {
-				on(events::PointerEnter,
-				   [=](PointerEvent&) -> auto
-				   {
-					   if (!disabled && !state.Hovered)
-					   {
-						   setState(
-							   {.Hovered = true, .Pressed = state.Pressed}
-						   );
-					   }
-				   }),
-				on(events::PointerLeave,
-				   [armed, setState](PointerEvent&) -> auto
-				   {
-					   armed.Current = false;
-					   setState(PressState{});
-				   }),
-				on(events::PointerDown,
-				   [armed, setState, disabled](PointerEvent&) -> auto
-				   {
-					   if (disabled)
-					   {
-						   return;
-					   }
-					   armed.Current = true;
-					   setState({.Hovered = true, .Pressed = true});
-				   }),
-				on(events::PointerUp,
-				   [armed, setState, disabled, onPress, state](PointerEvent& ev)
-					   -> auto
-				   {
-					   bool fire = armed.Current && !disabled;
-					   armed.Current = false;
-					   setState({.Hovered = state.Hovered, .Pressed = false});
-					   if (fire && onPress)
-					   {
-						   onPress(ev);
-					   }
-				   }),
-			},
-		};
-	}
-
 	auto buttonImpl(const ButtonProps& props) -> Element
 	{
-		auto press = usePress(
-			{.Disabled = props.Disabled, .OnPress = props.OnPress}
-		);
-
 		auto* node = useNode();
 
-		auto disabled = props.Disabled;
-		auto onPress = props.OnPress;
-
-		EventView events = std::move(press.Events);
-		events.Add(
-			on(events::Activate,
-			   [disabled, onPress, node](ActivateEvent&) -> void
-			   {
-				   if (disabled || !onPress)
-				   {
-					   return;
-				   }
-
-				   auto r = node->Rect();
-				   PointerEvent synth{};
-				   synth.EventType = PointerEvent::Type::Up;
-				   synth.X = r.X + (r.Width * 0.5F);
-				   synth.Y = r.Y + (r.Height * 0.5F);
-				   onPress(synth);
-			   })
+		auto press = usePress(
+			{.Ref = node, .Disabled = props.Disabled, .OnPress = props.OnPress}
 		);
 
 		styles::StyleList base = {
@@ -101,14 +26,13 @@ namespace mocca::widgets::basic
 			)
 		};
 
-		// styles - remove these or simplify them later, as they go in eclipse widgets
 		{
 			Color bg;
 			Color fg = Color(250, 250, 250);
 
 			if (!props.Disabled)
 			{
-				switch (props.State)
+				switch (props.Variant)
 				{
 				case ButtonVariant::Default:
 					bg = Color(237, 237, 237);
@@ -135,7 +59,7 @@ namespace mocca::widgets::basic
 			else
 			{
 				fg = Color(138, 138, 138);
-				switch (props.State)
+				switch (props.Variant)
 				{
 				case ButtonVariant::Default:
 					bg = Color(127, 127, 127);
@@ -165,43 +89,43 @@ namespace mocca::widgets::basic
 				styles::TextColor(fg),
 				styles::BackgroundColor(bg),
 				styles::BorderRadius(styles::px(10)),
-				styles::Transition(0.45F, anim::bezier(0.23F, 1, 0.32F, 1)),
+				styles::Transition(0.45F, anim::presets::cubic::OutQuint),
 				styles::Border(styles::px(2)),
 				styles::Transition(
 					styles::StyleProperty::Scale,
-					anim::spring(250, 12, 1)
+					anim::presets::springs::Lively
 				)
 			};
 
 			base.AddIf(
 				press.State.Hovered,
 				{styles::BackgroundColor(
-					props.State == ButtonVariant::Default ? bg.Darkened(0.1)
-														  : bg.Lightened(0.05)
+					props.Variant == ButtonVariant::Default ? bg.Darkened(0.1)
+															: bg.Lightened(0.05)
 				)}
 			);
 
 			base.AddIf(
-				props.State == ButtonVariant::Ghost && press.State.Hovered,
+				props.Variant == ButtonVariant::Ghost && press.State.Hovered,
 				{styles::BackgroundColor(Color(32, 32, 32))}
 			);
 
 			base.AddIf(
-				props.State == ButtonVariant::Outline,
+				props.Variant == ButtonVariant::Outline,
 				{
 					styles::BorderColor(Color(67, 67, 67)),
 				}
 			);
 
 			base.AddIf(
-				props.State == ButtonVariant::Outline && props.Disabled,
+				props.Variant == ButtonVariant::Outline && props.Disabled,
 				{
 					styles::BorderColor(Color(43, 43, 43)),
 				}
 			);
 
 			base.AddIf(
-				props.State == ButtonVariant::Outline && props.Disabled,
+				props.Variant == ButtonVariant::Outline && props.Disabled,
 				{
 					styles::BorderColor(Color(43, 43, 43)),
 				}
@@ -214,10 +138,7 @@ namespace mocca::widgets::basic
 				}
 			);
 
-			base.AddIf(
-				press.State.Pressed,
-				{styles::Scale(0.95F)}
-			);
+			base.AddIf(press.State.Pressed, {styles::Scale(0.95F)});
 		}
 
 		return box({
@@ -226,8 +147,8 @@ namespace mocca::widgets::basic
 												.Role = aria::Role::Button,
 												.Disabled = props.Disabled,
 											}),
-			.Style = base + props.Style,
-			.Events = std::move(events),
+			.Style = base,
+			.Events = std::move(press.Events),
 			.Children = props.Children,
 			.Ref = node,
 			.Focus = props.Disabled ? FocusMode::None : FocusMode::Tab,
@@ -236,6 +157,19 @@ namespace mocca::widgets::basic
 
 	auto button(ButtonProps props) -> Element
 	{
-		return component(buttonImpl, std::move(props));
+		return component(
+			buttonImpl,
+			std::move(props),
+			{.Key = props.Key, .Style = props.Style}
+		);
+	}
+
+	auto button(const std::string& text, std::function<void(PointerEvent&)> cb)
+		-> Element
+	{
+		return button({
+			.Children = {mocca::text(text)},
+			.OnPress = std::move(cb),
+		});
 	}
 }

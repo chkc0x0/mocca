@@ -1,6 +1,7 @@
 #include "TestSupport.h"
 #include "anim/Curve.h"
 #include "anim/Interpolate.h"
+#include "anim/Presets.h"
 #include "anim/Spring.h"
 #include "core/Hooks.h"
 #include "style/StyleValue.h"
@@ -13,11 +14,11 @@ namespace mtest
 	TEST(AnimationMath, BezierEndpoints)
 	{
 		EXPECT_FLOAT_EQ(
-			mocca::anim::sample(mocca::anim::EaseInOut, 0.0F),
+			mocca::anim::sample(mocca::anim::presets::cubic::InOut, 0.0F),
 			0.0F
 		);
 		EXPECT_FLOAT_EQ(
-			mocca::anim::sample(mocca::anim::EaseInOut, 1.0F),
+			mocca::anim::sample(mocca::anim::presets::cubic::InOut, 1.0F),
 			1.0F
 		);
 	}
@@ -147,12 +148,12 @@ namespace mtest
 			Transition(
 				StyleProperty::BackgroundColor,
 				0.2F,
-				mocca::anim::LinearCurve
+				mocca::anim::presets::cubic::Linear
 			),
 			Transition(
 				StyleProperty::BorderColor,
 				0.4F,
-				mocca::anim::LinearCurve
+				mocca::anim::presets::cubic::Linear
 			),
 		};
 
@@ -211,12 +212,12 @@ namespace mtest
 							Transition(
 								StyleProperty::BackgroundColor,
 								ms(100),
-								mocca::anim::LinearCurve
+								mocca::anim::presets::cubic::Linear
 							),
 							Transition(
 								StyleProperty::BorderColor,
 								ms(400),
-								mocca::anim::LinearCurve
+								mocca::anim::presets::cubic::Linear
 							),
 						},
 					}
@@ -277,7 +278,12 @@ namespace mtest
 		auto* s = AddSurface(
 			{.Width = 50, .Height = 50, .Title = "hook"},
 			[]() -> mocca::Element
-			{ return AnimComponent(mocca::anim::EaseInOut, 0.16F); }
+			{
+				return AnimComponent(
+					mocca::anim::presets::cubic::InOut,
+					0.16F
+				);
+			}
 		);
 		(void)s;
 
@@ -301,7 +307,7 @@ namespace mtest
 		auto* s = AddSurface(
 			{.Width = 50, .Height = 50, .Title = "settle"},
 			[]() -> mocca::Element
-			{ return AnimComponent(mocca::anim::EaseInOut, 0.1F); }
+			{ return AnimComponent(mocca::anim::presets::cubic::Linear, 0.1F); }
 		);
 		(void)s;
 
@@ -364,7 +370,7 @@ namespace mtest
 				style.Add(Transition(
 					mocca::styles::StyleProperty::BackgroundColor,
 					mocca::styles::ms(100),
-					mocca::anim::LinearCurve
+					mocca::anim::presets::cubic::Linear
 				));
 			}
 			return mocca::box(mocca::BoxDescriptor{.Style = std::move(style)});
@@ -417,14 +423,14 @@ namespace mtest
 							Height(px(40)),
 							Translate(
 								Vector2Length{
-									.X=px(on ? 100.0F : 0.0F),
-									.Y=px(0),
+									.X = px(on ? 100.0F : 0.0F),
+									.Y = px(0),
 								}
 							),
 							Transition(
 								StyleProperty::Translate,
 								ms(100),
-								mocca::anim::LinearCurve
+								mocca::anim::presets::cubic::Linear
 							),
 						},
 					}

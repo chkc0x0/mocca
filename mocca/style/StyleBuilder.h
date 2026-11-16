@@ -8,6 +8,7 @@
 #include "StyleEnums.h"
 #include "Length.h"
 #include "input/InputTypes.h"
+#include "anim/Presets.h"
 #include "utils/Color.h"
 #include <cassert>
 #include <concepts>
@@ -515,7 +516,7 @@ namespace mocca::styles
 	inline auto Transition(
 		StyleProperty prop,
 		float duration,
-		anim::Curve curve = anim::EaseInOut
+		anim::Curve curve = anim::presets::cubic::InOut
 	) -> StyleEntry
 	{
 		return detail::makeTransition(
@@ -535,7 +536,7 @@ namespace mocca::styles
 	inline auto Transition(
 		std::initializer_list<StyleProperty> props,
 		float duration,
-		anim::Curve curve = anim::EaseInOut
+		anim::Curve curve = anim::presets::cubic::InOut
 	) -> StyleEntry
 	{
 		std::uint32_t mask = 0;
@@ -556,7 +557,7 @@ namespace mocca::styles
 		return Transition(props, TransitionType{}.Duration, curve);
 	}
 
-	inline auto Transition(float duration, anim::Curve curve = anim::EaseInOut)
+	inline auto Transition(float duration, anim::Curve curve = anim::presets::cubic::InOut)
 		-> StyleEntry
 	{
 		return detail::makeTransition(
