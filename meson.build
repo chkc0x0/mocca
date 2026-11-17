@@ -45,6 +45,7 @@ sources = [
 	'src/text/Bidi.cpp',
 	'src/utils/Math.cpp',
 	'src/gfx/Capabilities.cpp',
+	'src/core/Part.cpp',
 
 	'src/widgets/Button.cpp',
 	'src/widgets/Hooks.cpp',

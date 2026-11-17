@@ -64,13 +64,15 @@ namespace mocca::widgets
 							part(
 								"thumb",
 								{
+									styles::Margin(styles::px(2)),
 									styles::Width(
 										press.State.Hovered ? 18 : 14
 									),
 									styles::Height(14),
-									styles::Left(value ? 17 : 2),
-									styles::Right(2),
-									styles::Top(2),
+									styles::Left(
+										value ? (press.State.Hovered ? 11 : 15)
+											  : 0
+									),
 									styles::BackgroundColor(
 										Color(value ? 0x171717 : 0xfafafa)
 									),

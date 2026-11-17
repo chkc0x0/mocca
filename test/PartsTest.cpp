@@ -160,6 +160,115 @@ namespace mtest
 		EXPECT_FLOAT_EQ(axis.Size, 0.0F);
 	}
 
+	TEST(ResolveAxisTest, MarginClampsExplicitSize)
+	{
+		auto axis = PartAxis::Resolve(
+			Length{17.0F},
+			std::nullopt,
+			Length{18.0F},
+			0.0F,
+			33.0F,
+			33.0F,
+			16.0F,
+			Length{2.0F},
+			Length{2.0F}
+		);
+
+		EXPECT_FLOAT_EQ(axis.Pos, 13.0F);
+		EXPECT_FLOAT_EQ(axis.Size, 18.0F);
+	}
+
+	TEST(ResolveAxisTest, MarginRightAnchorsInside)
+	{
+		auto axis = PartAxis::Resolve(
+			std::nullopt,
+			Length{0.0F},
+			Length{18.0F},
+			0.0F,
+			33.0F,
+			33.0F,
+			16.0F,
+			Length{2.0F},
+			Length{2.0F}
+		);
+
+		EXPECT_FLOAT_EQ(axis.Pos, 13.0F);
+		EXPECT_FLOAT_EQ(axis.Size, 18.0F);
+	}
+
+	TEST(ResolveAxisTest, MarginOvershootsWithinHostWhileAnimating)
+	{
+		auto axis = PartAxis::Resolve(
+			Length{17.0F},
+			std::nullopt,
+			Length{18.0F},
+			0.0F,
+			33.0F,
+			33.0F,
+			16.0F,
+			Length{2.0F},
+			Length{2.0F},
+			true
+		);
+
+		EXPECT_FLOAT_EQ(axis.Pos, 15.0F);
+		EXPECT_FLOAT_EQ(axis.Size, 18.0F);
+	}
+
+	TEST(ResolveAxisTest, MarginCapsOversizedExplicitSize)
+	{
+		auto axis = PartAxis::Resolve(
+			std::nullopt,
+			std::nullopt,
+			Length{500.0F},
+			0.0F,
+			33.0F,
+			33.0F,
+			16.0F,
+			Length{2.0F},
+			Length{2.0F}
+		);
+
+		EXPECT_FLOAT_EQ(axis.Pos, 2.0F);
+		EXPECT_FLOAT_EQ(axis.Size, 29.0F);
+	}
+
+	TEST(ResolveAxisTest, AutoMarginsCenter)
+	{
+		auto autoMargin = EnumValue<Length>{Auto};
+
+		auto axis = PartAxis::Resolve(
+			std::nullopt,
+			std::nullopt,
+			Length{10.0F},
+			0.0F,
+			100.0F,
+			100.0F,
+			16.0F,
+			autoMargin,
+			autoMargin
+		);
+
+		EXPECT_FLOAT_EQ(axis.Pos, 45.0F);
+		EXPECT_FLOAT_EQ(axis.Size, 10.0F);
+	}
+
+	TEST(ResolveAxisTest, ZeroMarginStillAllowsOverflow)
+	{
+		auto axis = PartAxis::Resolve(
+			Length{0.0F},
+			std::nullopt,
+			Length{500.0F},
+			0.0F,
+			100.0F,
+			100.0F,
+			16.0F
+		);
+
+		EXPECT_FLOAT_EQ(axis.Pos, 0.0F);
+		EXPECT_FLOAT_EQ(axis.Size, 500.0F);
+	}
+
 	TEST_F(PartsTest, RangePartPaintsBehindText)
 	{
 		auto* s = AddSurface(
@@ -416,6 +525,49 @@ namespace mtest
 		EXPECT_FLOAT_EQ(rect->Rect.Y, -2.0F);
 		EXPECT_FLOAT_EQ(rect->Rect.Width, 104.0F);
 		EXPECT_FLOAT_EQ(rect->Rect.Height, 104.0F);
+	}
+
+	TEST_F(PartsTest, MarginKeepsThumbInsideHost)
+	{
+		auto* s = AddSurface(
+			{.Width = 200, .Height = 200, .Title = "margin"},
+			[]() -> Element
+			{
+				return box(
+					BoxDescriptor{
+						.Style = {Width(px(33)), Height(px(18))},
+						.Parts =
+							{
+								part(
+									"thumb",
+									{
+										Margin(px(2)),
+										Left(px(17)),
+										Width(px(18)),
+										Height(px(14)),
+										BackgroundColor(colors::Red),
+									}
+								),
+							},
+					}
+				);
+			}
+		);
+
+		Tick();
+
+		auto cmds = commandsOf(*s);
+		auto rectAt = indexOfFirstRectWithColor(cmds, colors::Red);
+		ASSERT_GE(rectAt, 0);
+
+		const auto* rect = std::get_if<gfx::cmds::DrawRectCmd>(&cmds[rectAt]);
+		ASSERT_NE(rect, nullptr);
+
+		EXPECT_FLOAT_EQ(rect->Rect.X, 13.0F);
+		EXPECT_FLOAT_EQ(rect->Rect.Y, 2.0F);
+		EXPECT_FLOAT_EQ(rect->Rect.Width, 18.0F);
+		EXPECT_FLOAT_EQ(rect->Rect.Height, 14.0F);
+		EXPECT_LE(rect->Rect.X + rect->Rect.Width, 33.0F);
 	}
 
 	TEST_F(PartsTest, NestedPartPaintsInsideParentRect)

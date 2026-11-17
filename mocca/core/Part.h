@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -165,6 +166,20 @@ namespace mocca
 
 			return std::nullopt;
 		}
+
+		inline auto resolvedLength(
+			const std::optional<styles::Length>& value,
+			float basis,
+			float emBasis
+		) -> std::optional<float>
+		{
+			if (!value.has_value())
+			{
+				return std::nullopt;
+			}
+
+			return resolveLength(*value, basis, emBasis);
+		}
 	}
 
 	struct PartAxis
@@ -179,28 +194,10 @@ namespace mocca
 			float refPos,
 			float refSize,
 			float intrinsic,
-			float emBasis
-		) -> PartAxis
-		{
-			bool hasStart = start.has_value();
-			bool hasEnd = end.has_value();
-			float s = hasStart ? detail::resolveLength(*start, refSize, emBasis)
-							   : 0.0F;
-			float e = hasEnd ? detail::resolveLength(*end, refSize, emBasis)
-							 : 0.0F;
-
-			float w = intrinsic;
-			if (size.has_value())
-			{
-				w = detail::resolveLength(*size, refSize, emBasis);
-			}
-			else if (hasStart && hasEnd)
-			{
-				w = refSize - s - e;
-			}
-
-			float pos = (hasStart || !hasEnd) ? s : refSize - e - w;
-			return {.Pos = refPos + pos, .Size = std::max(w, 0.0F)};
-		}
+			float emBasis,
+			const styles::EnumValue<styles::Length>& marginStart = {},
+			const styles::EnumValue<styles::Length>& marginEnd = {},
+			bool allowOvershoot = false
+		) -> PartAxis;
 	};
 }

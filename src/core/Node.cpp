@@ -922,6 +922,112 @@ namespace mocca::detail
 		return &it->second.Current;
 	}
 
+	struct PartBox
+	{
+		Rectangle Border{};
+		Rectangle Content{};
+	};
+
+	auto partAnimating(const PartTransitionMap* states, std::uint64_t key)
+		-> bool
+	{
+		if (states == nullptr)
+		{
+			return false;
+		}
+
+		auto it = states->find(key);
+		return it != states->end() && !it->second.Transitions.empty();
+	}
+
+	auto partEdgeSize(
+		const styles::Length& padding,
+		const styles::Length& border,
+		float basis,
+		float emBasis
+	) -> float
+	{
+		return detail::resolveLength(padding, basis, emBasis) +
+			   detail::resolveLength(border, basis, emBasis);
+	}
+
+	auto resolvePartBox(
+		const styles::ComputedStyle& style,
+		const Rectangle& reference,
+		float emBasis,
+		bool allowOvershoot
+	) -> PartBox
+	{
+		auto x = PartAxis::Resolve(
+			detail::specifiedLength(style.LayoutPosition.Left),
+			detail::specifiedLength(style.LayoutPosition.Right),
+			detail::specifiedLength(style.LayoutSizing.Width),
+			reference.X,
+			reference.Width,
+			reference.Width,
+			emBasis,
+			style.LayoutSpacing.MarginLeft,
+			style.LayoutSpacing.MarginRight,
+			allowOvershoot
+		);
+
+		auto y = PartAxis::Resolve(
+			detail::specifiedLength(style.LayoutPosition.Top),
+			detail::specifiedLength(style.LayoutPosition.Bottom),
+			detail::specifiedLength(style.LayoutSizing.Height),
+			reference.Y,
+			reference.Height,
+			reference.Height,
+			emBasis,
+			style.LayoutSpacing.MarginTop,
+			style.LayoutSpacing.MarginBottom,
+			allowOvershoot
+		);
+
+		Rectangle border{
+			.X = x.Pos,
+			.Y = y.Pos,
+			.Width = x.Size,
+			.Height = y.Size,
+		};
+
+		float left = partEdgeSize(
+			style.LayoutSpacing.PaddingLeft,
+			style.LayoutSpacing.BorderLeft,
+			reference.Width,
+			emBasis
+		);
+		float right = partEdgeSize(
+			style.LayoutSpacing.PaddingRight,
+			style.LayoutSpacing.BorderRight,
+			reference.Width,
+			emBasis
+		);
+		float top = partEdgeSize(
+			style.LayoutSpacing.PaddingTop,
+			style.LayoutSpacing.BorderTop,
+			reference.Height,
+			emBasis
+		);
+		float bottom = partEdgeSize(
+			style.LayoutSpacing.PaddingBottom,
+			style.LayoutSpacing.BorderBottom,
+			reference.Height,
+			emBasis
+		);
+
+		return {
+			.Border = border,
+			.Content =
+				{
+					.X = border.X + left,
+					.Y = border.Y + top,
+					.Width = std::max(0.0F, border.Width - left - right),
+					.Height = std::max(0.0F, border.Height - top - bottom),
+				},
+		};
+	}
+
 	void paintPart(
 		gfx::Canvas& canvas,
 		const Part& part,
@@ -948,32 +1054,13 @@ namespace mocca::detail
 
 		float emBasis = style->Inherited.FontSize.Value;
 
-		auto x = PartAxis::Resolve(
-			detail::specifiedLength(style->LayoutPosition.Left),
-			detail::specifiedLength(style->LayoutPosition.Right),
-			detail::specifiedLength(style->LayoutSizing.Width),
-			reference.X,
-			reference.Width,
-			reference.Width,
-			emBasis
+		PartBox layout = resolvePartBox(
+			*style,
+			reference,
+			emBasis,
+			partAnimating(states, key)
 		);
-
-		auto y = PartAxis::Resolve(
-			detail::specifiedLength(style->LayoutPosition.Top),
-			detail::specifiedLength(style->LayoutPosition.Bottom),
-			detail::specifiedLength(style->LayoutSizing.Height),
-			reference.Y,
-			reference.Height,
-			reference.Height,
-			emBasis
-		);
-
-		Rectangle rect{
-			.X = x.Pos,
-			.Y = y.Pos,
-			.Width = x.Size,
-			.Height = y.Size,
-		};
+		Rectangle rect = layout.Border;
 
 		if (part.Anchor.Tag == PartAnchor::Kind::Caret)
 		{
@@ -1003,7 +1090,7 @@ namespace mocca::detail
 					key,
 					states,
 					*style,
-					rect,
+					layout.Content,
 					hostBox
 				);
 			}
@@ -1032,7 +1119,7 @@ namespace mocca::detail
 					key,
 					states,
 					*style,
-					rect,
+					layout.Content,
 					hostBox
 				);
 			}
