@@ -3,6 +3,7 @@
 #include "style/StyleHelpers.h"
 #include "style/StyleList.h"
 #include "text/CaretAffinity.h"
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -117,6 +118,19 @@ namespace mocca
 		}
 
 		return std::make_shared<const std::vector<Part>>(std::move(parts));
+	}
+
+	inline auto
+	partKey(std::uint64_t parentKey, const Part& part, std::size_t siblingIndex)
+		-> std::uint64_t
+	{
+		auto key = static_cast<std::size_t>(parentKey);
+		detail::hashCombine(
+			key,
+			static_cast<std::size_t>(static_cast<std::uint64_t>(part.Name))
+		);
+		detail::hashCombine(key, siblingIndex);
+		return static_cast<std::uint64_t>(key);
 	}
 
 	namespace detail

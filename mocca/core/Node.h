@@ -5,7 +5,9 @@
 #include "style/ComputedStyle.h"
 #include "anim/Curve.h"
 #include "anim/Spring.h"
+#include <cstdint>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 namespace mocca
@@ -33,6 +35,14 @@ namespace mocca::detail
 		float Progress = 0.0F;
 		anim::Curve Curve{};
 		anim::SpringState Spring{};
+	};
+
+	struct PartTransitionState
+	{
+	public:
+		styles::ComputedStyle Current;
+		std::vector<ActiveTransition> Transitions;
+		bool Initialized = false;
 	};
 
 	struct Node
@@ -72,6 +82,7 @@ namespace mocca::detail
 		FocusMode Focus = FocusMode::None;
 		aria::A11y A11y = nullptr;
 		PartList Parts;
+		std::unordered_map<std::uint64_t, PartTransitionState> PartTransitions;
 
 		[[nodiscard]] auto IsBox() const -> bool
 		{
@@ -116,6 +127,7 @@ namespace mocca::detail
 			uint8_t parentChangedGroups
 		);
 		void AdvanceTransitions(styles::ComputedStyle& target, double dt);
+		void AdvancePartTransitions(double dt, bool& anyActive);
 		auto FindTransition(styles::StyleProperty prop) -> ActiveTransition*;
 		void RemoveTransition(styles::StyleProperty prop);
 

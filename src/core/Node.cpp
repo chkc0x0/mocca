@@ -339,6 +339,20 @@ namespace mocca::detail
 			YGNodeMarkDirty(YogaNode);
 		}
 
+		if (Parts != nullptr || !PartTransitions.empty())
+		{
+			bool anyPartActive = false;
+			AdvancePartTransitions(dt, anyPartActive);
+
+			if (anyPartActive)
+			{
+				if (auto* ctx = getCtx(); ctx->_currentSurface != nullptr)
+				{
+					ctx->_currentSurface->MarkAnimating();
+				}
+			}
+		}
+
 		for (auto& child : Children)
 		{
 			if (child)
@@ -513,6 +527,88 @@ namespace mocca::detail
 			if (auto* ctx = getCtx(); ctx->_currentSurface != nullptr)
 			{
 				ctx->_currentSurface->MarkAnimating();
+			}
+		}
+	}
+
+	void Node::AdvancePartTransitions(double dt, bool& anyActive)
+	{
+		mc_profileFunction();
+
+		if (Parts == nullptr && PartTransitions.empty())
+		{
+			return;
+		}
+
+		std::vector<std::uint64_t> visited;
+		visited.reserve(PartTransitions.size() + 8);
+
+		auto advanceParts = [&](auto&& self,
+									  std::span<const Part> parts,
+									  const styles::ComputedStyle& parentStyle,
+									  std::uint64_t parentKey) -> void
+		{
+			for (std::size_t i = 0; i < parts.size(); ++i)
+			{
+				const Part& part = parts[i];
+				std::uint64_t key = partKey(parentKey, part, i);
+				visited.push_back(key);
+
+				styles::ComputedStyle target = styles::ComputedStyle::Cascade(
+					part.Style.Entries(),
+					parentStyle
+				);
+
+				PartTransitionState& state = PartTransitions[key];
+
+				if (!state.Initialized)
+				{
+					state.Current = target;
+					state.Transitions.clear();
+					state.Initialized = true;
+				}
+				else if (
+					state.Transitions.empty() &&
+					target.Get<styles::StyleProperty::Transition>() == 0
+				)
+				{
+					state.Current = target;
+				}
+				else
+				{
+					advanceAll(
+						state.Current,
+						state.Transitions,
+						target,
+						dt,
+						anyActive
+					);
+					state.Current = target;
+				}
+
+				self(self, part.Parts, target, key);
+			}
+		};
+
+		if (Parts != nullptr)
+		{
+			advanceParts(
+				advanceParts,
+				*Parts,
+				Style,
+				static_cast<std::uint64_t>(Id)
+			);
+		}
+
+		for (auto it = PartTransitions.begin(); it != PartTransitions.end();)
+		{
+			if (std::ranges::find(visited, it->first) == visited.end())
+			{
+				it = PartTransitions.erase(it);
+			}
+			else
+			{
+				++it;
 			}
 		}
 	}
@@ -806,23 +902,56 @@ namespace mocca::detail
 		};
 	}
 
+	using PartTransitionMap =
+		std::unordered_map<std::uint64_t, PartTransitionState>;
+
+	auto cachedPartStyle(const PartTransitionMap* states, std::uint64_t key)
+		-> const styles::ComputedStyle*
+	{
+		if (states == nullptr)
+		{
+			return nullptr;
+		}
+
+		auto it = states->find(key);
+		if (it == states->end() || !it->second.Initialized)
+		{
+			return nullptr;
+		}
+
+		return &it->second.Current;
+	}
+
 	void paintPart(
 		gfx::Canvas& canvas,
 		const Part& part,
+		std::size_t siblingIndex,
+		std::uint64_t parentKey,
+		const PartTransitionMap* states,
 		const styles::ComputedStyle& parentStyle,
 		const Rectangle& reference,
 		const Rectangle& hostBox
 	)
 	{
-		styles::ComputedStyle style =
-			styles::ComputedStyle::Cascade(part.Style.Entries(), parentStyle);
+		styles::ComputedStyle resolved;
+		std::uint64_t key = partKey(parentKey, part, siblingIndex);
+		const styles::ComputedStyle* style = cachedPartStyle(states, key);
 
-		float emBasis = style.Inherited.FontSize.Value;
+		if (style == nullptr)
+		{
+			resolved = styles::ComputedStyle::Cascade(
+				part.Style.Entries(),
+				parentStyle
+			);
+			style = &resolved;
+		}
+
+		float emBasis = style->Inherited.FontSize.Value;
 
 		auto x = PartAxis::Resolve(
-			detail::specifiedLength(style.LayoutPosition.Left),
-			detail::specifiedLength(style.LayoutPosition.Right),
-			detail::specifiedLength(style.LayoutSizing.Width),
+			detail::specifiedLength(style->LayoutPosition.Left),
+			detail::specifiedLength(style->LayoutPosition.Right),
+			detail::specifiedLength(style->LayoutSizing.Width),
 			reference.X,
 			reference.Width,
 			reference.Width,
@@ -830,9 +959,9 @@ namespace mocca::detail
 		);
 
 		auto y = PartAxis::Resolve(
-			detail::specifiedLength(style.LayoutPosition.Top),
-			detail::specifiedLength(style.LayoutPosition.Bottom),
-			detail::specifiedLength(style.LayoutSizing.Height),
+			detail::specifiedLength(style->LayoutPosition.Top),
+			detail::specifiedLength(style->LayoutPosition.Bottom),
+			detail::specifiedLength(style->LayoutSizing.Height),
 			reference.Y,
 			reference.Height,
 			reference.Height,
@@ -862,18 +991,28 @@ namespace mocca::detail
 			);
 		}
 
-		for (const Part& nested : part.Parts)
+		for (std::size_t i = 0; i < part.Parts.size(); ++i)
 		{
+			const Part& nested = part.Parts[i];
 			if (nested.Layer == PartLayer::Behind)
 			{
-				paintPart(canvas, nested, style, rect, hostBox);
+				paintPart(
+					canvas,
+					nested,
+					i,
+					key,
+					states,
+					*style,
+					rect,
+					hostBox
+				);
 			}
 		}
 
 		if (!rect.IsEmpty())
 		{
 			styles::BoxVisual visual =
-				styles::resolveBoxVisual(style, rect.Width, rect.Height);
+				styles::resolveBoxVisual(*style, rect.Width, rect.Height);
 
 			if (!visual.IsEmpty())
 			{
@@ -881,11 +1020,21 @@ namespace mocca::detail
 			}
 		}
 
-		for (const Part& nested : part.Parts)
+		for (std::size_t i = 0; i < part.Parts.size(); ++i)
 		{
+			const Part& nested = part.Parts[i];
 			if (nested.Layer == PartLayer::Above)
 			{
-				paintPart(canvas, nested, style, rect, hostBox);
+				paintPart(
+					canvas,
+					nested,
+					i,
+					key,
+					states,
+					*style,
+					rect,
+					hostBox
+				);
 			}
 		}
 	}
@@ -896,11 +1045,15 @@ namespace mocca::detail
 		PartLayer layer,
 		PartSpace space,
 		const styles::ComputedStyle& parentStyle,
-		const PartRefs& refs
+		const PartRefs& refs,
+		const PartTransitionMap* states,
+		std::uint64_t hostKey
 	)
 	{
-		for (const Part& part : parts)
+		for (std::size_t i = 0; i < parts.size(); ++i)
 		{
+			const Part& part = parts[i];
+
 			if (part.Layer != layer)
 			{
 				continue;
@@ -919,8 +1072,12 @@ namespace mocca::detail
 				paintPart(
 					canvas,
 					part,
+					i,
+					hostKey,
+					states,
 					parentStyle,
-					space == PartSpace::Content ? refs.ContentBox : refs.HostBox,
+					space == PartSpace::Content ? refs.ContentBox
+												: refs.HostBox,
 					refs.HostBox
 				);
 				break;
@@ -946,6 +1103,9 @@ namespace mocca::detail
 					paintPart(
 						canvas,
 						part,
+						i,
+						hostKey,
+						states,
 						parentStyle,
 						{
 							.X = refs.TextOrigin.X + span.X,
@@ -982,6 +1142,9 @@ namespace mocca::detail
 				paintPart(
 					canvas,
 					part,
+					i,
+					hostKey,
+					states,
 					parentStyle,
 					{
 						.X = std::round(refs.TextOrigin.X + caret.X),
@@ -1081,7 +1244,9 @@ namespace mocca::detail
 				PartLayer::Behind,
 				PartSpace::Host,
 				node.Style,
-				refs
+				refs,
+				&node.PartTransitions,
+				static_cast<std::uint64_t>(node.Id)
 			);
 		}
 
@@ -1107,7 +1272,9 @@ namespace mocca::detail
 				PartLayer::Behind,
 				PartSpace::Content,
 				node.Style,
-				refs
+				refs,
+				&node.PartTransitions,
+				static_cast<std::uint64_t>(node.Id)
 			);
 		}
 
@@ -1131,7 +1298,9 @@ namespace mocca::detail
 				PartLayer::Above,
 				PartSpace::Content,
 				node.Style,
-				refs
+				refs,
+				&node.PartTransitions,
+				static_cast<std::uint64_t>(node.Id)
 			);
 		}
 
@@ -1148,7 +1317,9 @@ namespace mocca::detail
 				PartLayer::Above,
 				PartSpace::Host,
 				node.Style,
-				refs
+				refs,
+				&node.PartTransitions,
+				static_cast<std::uint64_t>(node.Id)
 			);
 		}
 
