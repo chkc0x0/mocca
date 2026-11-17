@@ -550,7 +550,7 @@ namespace mocca
 		}
 	}
 
-	auto getCtx() -> Context*
+	auto useCtx() -> Context*
 	{
 		mc_assert(
 			Application::main != nullptr,

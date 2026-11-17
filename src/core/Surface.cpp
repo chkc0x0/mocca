@@ -148,7 +148,7 @@ namespace mocca
 
 		if (Application::main != nullptr && _root != nullptr)
 		{
-			getCtx()->_store->RemoveComponent(_root.get());
+			useCtx()->_store->RemoveComponent(_root.get());
 		}
 
 		if (Application::main != nullptr && IsPlatformBacked())
@@ -348,7 +348,7 @@ namespace mocca
 
 		if (GetState() == SurfaceState::Alive && IsPlatformBacked())
 		{
-			auto* ctx = getCtx();
+			auto* ctx = useCtx();
 			ctx->_currentSurface = this;
 
 			InputBatch batch;
@@ -400,7 +400,7 @@ namespace mocca
 
 	void Surface::Update(double dt)
 	{
-		auto* ctx = getCtx();
+		auto* ctx = useCtx();
 		ctx->_currentSurface = this;
 
 		bool wasAnim = _animating;
@@ -460,7 +460,7 @@ namespace mocca
 		_canvas.Clear();
 		_repaint = false;
 
-		auto* ctx = getCtx();
+		auto* ctx = useCtx();
 		Surface* previous = ctx->_currentSurface;
 		ctx->_currentSurface = this;
 
@@ -757,7 +757,8 @@ namespace mocca
 		{
 			for (auto& c : _children)
 			{
-				if (c->GetState() == SurfaceState::Alive && !c->IsPlatformBacked())
+				if (c->GetState() == SurfaceState::Alive &&
+					!c->IsPlatformBacked())
 				{
 					c->RoutePointer(ev);
 				}
@@ -1183,8 +1184,7 @@ namespace mocca
 		}
 	}
 
-	auto Surface::A11ySnapshot()
-		-> std::shared_ptr<const aria::Snapshot>
+	auto Surface::A11ySnapshot() -> std::shared_ptr<const aria::Snapshot>
 	{
 		std::scoped_lock lock(_a11yMutex);
 		return _a11ySnapshot;

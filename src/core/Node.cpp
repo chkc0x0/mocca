@@ -30,7 +30,7 @@ namespace mocca::detail
 
 	Node::~Node()
 	{
-		getCtx()->_nodes.erase(Id);
+		useCtx()->_nodes.erase(Id);
 
 		if (YogaNode != nullptr)
 		{
@@ -246,9 +246,9 @@ namespace mocca::detail
 		{
 			if (child)
 			{
-				bounds = bounds.Union(transform.MapRect(
-					AccumulateSubtreeBounds(*child, x, y)
-				));
+				bounds = bounds.Union(
+					transform.MapRect(AccumulateSubtreeBounds(*child, x, y))
+				);
 			}
 		}
 
@@ -346,7 +346,7 @@ namespace mocca::detail
 
 			if (anyPartActive)
 			{
-				if (auto* ctx = getCtx(); ctx->_currentSurface != nullptr)
+				if (auto* ctx = useCtx(); ctx->_currentSurface != nullptr)
 				{
 					ctx->_currentSurface->MarkAnimating();
 				}
@@ -410,8 +410,9 @@ namespace mocca::detail
 		const styles::TransitionList& transitionList =
 			styles::detail::resolveTransition(transitionRef);
 
-		const styles::TransitionType* spec =
-			transitionList.Find(styles::PropertySet::Set(P));
+		const styles::TransitionType* spec = transitionList.Find(
+			styles::PropertySet::Set(P)
+		);
 
 		if (spec == nullptr)
 		{
@@ -524,7 +525,7 @@ namespace mocca::detail
 
 		if (anyActive)
 		{
-			if (auto* ctx = getCtx(); ctx->_currentSurface != nullptr)
+			if (auto* ctx = useCtx(); ctx->_currentSurface != nullptr)
 			{
 				ctx->_currentSurface->MarkAnimating();
 			}
@@ -544,9 +545,9 @@ namespace mocca::detail
 		visited.reserve(PartTransitions.size() + 8);
 
 		auto advanceParts = [&](auto&& self,
-									  std::span<const Part> parts,
-									  const styles::ComputedStyle& parentStyle,
-									  std::uint64_t parentKey) -> void
+								std::span<const Part> parts,
+								const styles::ComputedStyle& parentStyle,
+								std::uint64_t parentKey) -> void
 		{
 			for (std::size_t i = 0; i < parts.size(); ++i)
 			{
@@ -642,9 +643,9 @@ namespace mocca::detail
 		node->Key = element.Key;
 		node->Declared.Assign(element.Style);
 		node->DepGroups = node->Declared.DependentGroups();
-		node->Surface = getCtx()->_currentSurface;
+		node->Surface = useCtx()->_currentSurface;
 
-		getCtx()->_nodes[node->Id] = node.get();
+		useCtx()->_nodes[node->Id] = node.get();
 
 		std::visit(
 			[&](const auto& arm) -> auto
@@ -864,9 +865,8 @@ namespace mocca::detail
 	{
 		styles::BoxVisual deco = styles::resolveBoxVisual(Style, w, h);
 
-		Deco = deco.IsEmpty()
-				   ? nullptr
-				   : std::make_unique<styles::BoxVisual>(deco);
+		Deco = deco.IsEmpty() ? nullptr
+							  : std::make_unique<styles::BoxVisual>(deco);
 		DecoWidth = w;
 		DecoHeight = h;
 		DecoDirty = false;
@@ -1018,13 +1018,12 @@ namespace mocca::detail
 
 		return {
 			.Border = border,
-			.Content =
-				{
-					.X = border.X + left,
-					.Y = border.Y + top,
-					.Width = std::max(0.0F, border.Width - left - right),
-					.Height = std::max(0.0F, border.Height - top - bottom),
-				},
+			.Content = {
+				.X = border.X + left,
+				.Y = border.Y + top,
+				.Width = std::max(0.0F, border.Width - left - right),
+				.Height = std::max(0.0F, border.Height - top - bottom),
+			},
 		};
 	}
 
@@ -1146,8 +1145,9 @@ namespace mocca::detail
 				continue;
 			}
 
-			auto effectiveSpace =
-				part.Anchor.Tag == PartAnchor::Kind::Box ? part.Space : PartSpace::Content;
+			auto effectiveSpace = part.Anchor.Tag == PartAnchor::Kind::Box
+									  ? part.Space
+									  : PartSpace::Content;
 			if (effectiveSpace != space)
 			{
 				continue;
@@ -1370,8 +1370,7 @@ namespace mocca::detail
 			paintTextContent(node, canvas, refs.TextOrigin, textLayout);
 		}
 
-		Rectangle childCull =
-			narrowCull(cull, space, box, node.ScrollOffset);
+		Rectangle childCull = narrowCull(cull, space, box, node.ScrollOffset);
 		for (auto& child : node.Children)
 		{
 			child->Paint(canvas, childCull);
@@ -1540,12 +1539,12 @@ namespace mocca::detail
 		{
 			if (n)
 			{
-				getCtx()->_store->RemoveComponent(n.get());
+				useCtx()->_store->RemoveComponent(n.get());
 			}
 		}
 		for (size_t i = unkeyedCursor; i < oldUnkeyed.size(); i++)
 		{
-			getCtx()->_store->RemoveComponent(oldUnkeyed[i].get());
+			useCtx()->_store->RemoveComponent(oldUnkeyed[i].get());
 		}
 
 		return newChildren;
@@ -1591,7 +1590,7 @@ namespace mocca::detail
 			{
 				if (old[i])
 				{
-					getCtx()->_store->RemoveComponent(old[i].get());
+					useCtx()->_store->RemoveComponent(old[i].get());
 				}
 			}
 			return out;
@@ -1612,7 +1611,7 @@ namespace mocca::detail
 		}
 		if (newElement == nullptr) // oldNode != nullptr implied
 		{
-			getCtx()->_store->RemoveComponent(oldNode.get());
+			useCtx()->_store->RemoveComponent(oldNode.get());
 			return nullptr;
 		}
 
@@ -1626,7 +1625,7 @@ namespace mocca::detail
 		)
 		{
 			// TODO zombie later on
-			getCtx()->_store->RemoveComponent(oldNode.get());
+			useCtx()->_store->RemoveComponent(oldNode.get());
 			oldNode = BuildNodeTree(*newElement);
 		}
 
@@ -1653,7 +1652,7 @@ namespace mocca::detail
 		if (!sameA11y(oldNode->A11y, newElement->A11y))
 		{
 			oldNode->A11y = newElement->A11y;
-			if (auto* surface = getCtx()->_currentSurface; surface != nullptr)
+			if (auto* surface = useCtx()->_currentSurface; surface != nullptr)
 			{
 				surface->MarkA11yDirty();
 			}
@@ -1677,7 +1676,7 @@ namespace mocca::detail
 		if (newElement->Ref != nullptr)
 		{
 			newElement->Ref->_id = oldNode->Id;
-			newElement->Ref->_surface = getCtx()->_currentSurface;
+			newElement->Ref->_surface = useCtx()->_currentSurface;
 			newElement->Ref->_node = oldNode.get();
 		}
 
@@ -1773,11 +1772,11 @@ namespace mocca::detail
 
 	auto Node::FindNodeById(Node* root, NodeId id) -> Node*
 	{
-		if (getCtx() == nullptr)
+		if (useCtx() == nullptr)
 		{
 			return nullptr;
 		}
 
-		return getCtx()->FindNodeById(id);
+		return useCtx()->FindNodeById(id);
 	}
 }

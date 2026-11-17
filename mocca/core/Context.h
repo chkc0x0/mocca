@@ -50,5 +50,5 @@ namespace mocca
 		friend struct detail::Node;
 	};
 
-	auto getCtx() -> Context*;
+	auto useCtx() -> Context*;
 }

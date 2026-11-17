@@ -5,11 +5,11 @@
 
 namespace mocca
 {
-    // for the surface
+	// for the surface
 	auto Element::Render(const ComponentFn& fn, std::uint64_t id) -> Element
 	{
 		mc_profileFunction();
-		auto scope = getCtx()->_beginComponent(id);
+		auto scope = useCtx()->_beginComponent(id);
 		auto produced = fn();
 		return produced;
 	}
@@ -21,7 +21,7 @@ namespace mocca
 		std::uint64_t id
 	) -> Element
 	{
-		auto scope = getCtx()->_beginComponent(id);
+		auto scope = useCtx()->_beginComponent(id);
 		auto produced = fn(props);
 		return produced;
 	}

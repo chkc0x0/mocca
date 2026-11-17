@@ -186,6 +186,6 @@ namespace mocca
 		Context _context;
 
 		friend class Surface;
-		friend auto getCtx() -> Context*;
+		friend auto useCtx() -> Context*;
 	};
 }
