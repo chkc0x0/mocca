@@ -44,7 +44,7 @@ namespace mocca::aria
 		switch (role)
 		{
 		case Role::Button:
-		case Role::CheckBox:
+		case Role::Checkbox:
 		case Role::RadioButton:
 		case Role::Switch:
 		case Role::Link:
