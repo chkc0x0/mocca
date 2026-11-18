@@ -102,11 +102,7 @@ auto Sandbox() -> Element
 			},
 		.Children = {
 			buttonShowcase(),
-			widgets::Switch({
-				.Children = {
-					text("Airplane mode"),
-				},
-			}),
+			widgets::Switch({}),
 		},
 	});
 }

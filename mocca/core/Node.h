@@ -60,17 +60,18 @@ namespace mocca::detail
 		styles::StyleSet Declared;
 		styles::ComputedStyle Style;
 		std::vector<ActiveTransition> Transitions;
-		bool Styled = false;
 
+		bool Styled = false;
 		uint8_t DepGroups = styles::InheritedGroupBit;
 		uint8_t ChangedGroups = 0;
 		bool StyleDirty = false;
 		bool YogaDirty = true;
+		bool DecoDirty = true;
+		FocusMode Focus = FocusMode::None;
 
 		std::unique_ptr<styles::BoxVisual> Deco;
 		float DecoWidth = -1.0F;
 		float DecoHeight = -1.0F;
-		bool DecoDirty = true;
 
 		Vector2 ScrollOffset{.X = 0, .Y = 0};
 		Vector2 LayoutPos{.X = 0, .Y = 0};
@@ -79,7 +80,6 @@ namespace mocca::detail
 		std::variant<std::monostate, TextElement, ComponentElement> Kind;
 
 		std::shared_ptr<EventView> Events;
-		FocusMode Focus = FocusMode::None;
 		aria::A11y A11y = nullptr;
 		PartList Parts;
 		std::unordered_map<std::uint64_t, PartTransitionState> PartTransitions;

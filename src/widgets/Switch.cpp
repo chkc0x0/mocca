@@ -36,63 +36,51 @@ namespace mocca::widgets
 		return box({
 			.Style =
 				{
-					styles::GapHorizontal(10),
-					styles::Width(styles::FitContent),
+					styles::Width(33),
+					styles::Height(18),
+					styles::BorderRadius(styles::percent(50)),
+					styles::BackgroundColor(Color(value ? 0xe5e5e5 : 0x353535)),
+					styles::CursorShape(
+						props.Disabled ? CursorShapeType::NotAllowed
+									   : CursorShapeType::Pointer
+					),
+					styles::Transition(
+						styles::StyleProperty::All,
+						anim::presets::springs::Smooth
+					),
 				},
-			.Events = std::move(press.Events),
-			.Children = children(
-				box({
-					.Style =
-						{
-							styles::Width(33),
-							styles::Height(18),
-							styles::BorderRadius(styles::percent(50)),
-							styles::BackgroundColor(
-								Color(value ? 0xe5e5e5 : 0x353535)
-							),
-							styles::CursorShape(
-								props.Disabled ? CursorShapeType::NotAllowed
-											   : CursorShapeType::Pointer
-							),
-							styles::Transition(
-								styles::StyleProperty::All,
-								anim::presets::springs::Smooth
-							),
-						},
-					.Parts =
-						{
-							part(
-								"thumb",
-								{
-									styles::Margin(styles::px(2)),
-									styles::Width(
-										press.State.Hovered ? 18 : 14
-									),
-									styles::Height(14),
-									styles::Left(
-										value ? (press.State.Hovered ? 11 : 15)
-											  : 0
-									),
-									styles::BackgroundColor(
-										Color(value ? 0x171717 : 0xfafafa)
-									),
-									styles::BorderRadius(styles::percent(50)),
-									styles::Transition(
-										styles::StyleProperty::All,
-										anim::presets::springs::Lively
-									),
-								}
-							),
-						},
-				}),
-				props.Children
-			),
+			.Events = press.Events,
+			.Parts = {
+				part(
+					"thumb",
+					{
+						styles::Margin(styles::px(2)),
+						styles::Width(press.State.Hovered ? 18 : 14),
+						styles::Height(14),
+						styles::Left(
+							value ? (press.State.Hovered ? 11 : 15) : 0
+						),
+						styles::BackgroundColor(
+							Color(value ? 0x171717 : 0xfafafa)
+						),
+						styles::BorderRadius(styles::percent(50)),
+						styles::Transition(
+							styles::StyleProperty::All,
+							anim::presets::springs::Lively
+						),
+					}
+				),
+			},
 			.Ref = node,
 		});
 	}
 
 	auto Switch(SwitchProps props) -> Element
 	{
-		return component(switchImpl, std::move(props), {.Key = props.Key});
+		return component(
+			switchImpl,
+			std::move(props),
+			{.Key = props.Key, .Style = props.Style}
+		);
 	}
 }

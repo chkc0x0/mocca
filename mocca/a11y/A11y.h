@@ -13,57 +13,187 @@ namespace mocca::aria
 	enum class Role : uint8_t
 	{
 		None,
-		Window,
-		Button,
-		CheckBox,
-		RadioButton,
-		Switch,
+		TextRun,
+		Cell,
+		Label,
+		Image,
 		Link,
+		Row,
+		ListItem,
+		ListMarker,
+		TreeItem,
+		ListBoxOption,
+		MenuItem,
+		MenuListOption,
+		Paragraph,
+		GenericContainer,
+		Checkbox,
+		RadioButton,
 		TextInput,
+		Button,
+		DefaultButton,
+		Pane,
+		RowHeader,
+		ColumnHeader,
+		RowGroup,
+		List,
+		Table,
+		LayoutTableCell,
+		LayoutTableRow,
+		LayoutTable,
+		Switch,
+		Menu,
 		MultilineTextInput,
 		SearchInput,
+		DateInput,
+		DateTimeInput,
+		WeekInput,
+		MonthInput,
+		TimeInput,
+		EmailInput,
+		NumberInput,
 		PasswordInput,
-		Slider,
-		SpinButton,
-		ProgressIndicator,
-		Meter,
-		List,
-		ListItem,
-		ListBox,
-		ListBoxOption,
-		Menu,
-		MenuItem,
-		MenuBar,
-		TabList,
-		Tab,
-		TabPanel,
-		Tree,
-		TreeItem,
+		PhoneNumberInput,
+		UrlInput,
+		Abbr,
+		Alert,
+		AlertDialog,
+		Application,
+		Article,
+		Audio,
+		Banner,
+		Blockquote,
+		Canvas,
+		Caption,
+		Caret,
+		Code,
+		ColorWell,
+		ComboBox,
+		EditableComboBox,
+		Complementary,
+		Comment,
+		ContentDeletion,
+		ContentInsertion,
+		ContentInfo,
+		Definition,
+		DescriptionList,
+		Details,
+		Dialog,
+		DisclosureTriangle,
+		Document,
+		EmbeddedObject,
+		Emphasis,
+		Feed,
+		FigureCaption,
+		Figure,
+		Footer,
+		Form,
 		Grid,
 		GridCell,
-		Table,
-		Row,
-		ColumnHeader,
-		RowHeader,
 		Group,
-		Region,
-		Article,
-		Navigation,
-		Main,
-		Banner,
-		ContentInfo,
-		Form,
-		Dialog,
-		AlertDialog,
-		Tooltip,
-		Status,
-		Alert,
-		Image,
-		Label,
-		Paragraph,
+		Header,
 		Heading,
-		Separator,
+		Iframe,
+		IframePresentational,
+		ImeCandidate,
+		Keyboard,
+		Legend,
+		LineBreak,
+		ListBox,
+		Log,
+		Main,
+		Mark,
+		Marquee,
+		Math,
+		MenuBar,
+		MenuItemCheckbox,
+		MenuItemRadio,
+		MenuListPopup,
+		Meter,
+		Navigation,
+		Note,
+		PluginObject,
+		ProgressIndicator,
+		RadioGroup,
+		Region,
+		RootWebArea,
+		Ruby,
+		RubyAnnotation,
 		Scrollbar,
+		ScrollView,
+		Search,
+		Section,
+		SectionFooter,
+		SectionHeader,
+		Slider,
+		SpinButton,
+		Splitter,
+		Status,
+		Strong,
+		Suggestion,
+		SvgRoot,
+		Tab,
+		TabList,
+		TabPanel,
+		Term,
+		Time,
+		Timer,
+		TitleBar,
+		Toolbar,
+		Tooltip,
+		Tree,
+		TreeGrid,
+		Video,
+		WebView,
+		Window,
+		PdfActionableHighlight,
+		PdfRoot,
+		GfxDocument,
+		GfxObject,
+		GfxSymbol,
+		DocAbstract,
+		DocAcknowledgements,
+		DocAfterword,
+		DocAppendix,
+		DocBackLink,
+		DocBiblioEntry,
+		DocBibliography,
+		DocBiblioRef,
+		DocChapter,
+		DocColophon,
+		DocConclusion,
+		DocCover,
+		DocCredit,
+		DocCredits,
+		DocDedication,
+		DocEndnote,
+		DocEndnotes,
+		DocEpigraph,
+		DocEpilogue,
+		DocErrata,
+		DocExample,
+		DocFootnote,
+		DocForeword,
+		DocGlossary,
+		DocGlossRef,
+		DocIndex,
+		DocIntroduction,
+		DocNoteRef,
+		DocNotice,
+		DocPageBreak,
+		DocPageFooter,
+		DocPageHeader,
+		DocPageList,
+		DocPart,
+		DocPreface,
+		DocPrologue,
+		DocPullquote,
+		DocQna,
+		DocSubtitle,
+		DocTip,
+		DocToc,
+		ListGrid,
+		Terminal,
 	};
 
 	enum class Toggled : uint8_t
@@ -192,12 +322,13 @@ namespace mocca::aria
 		auto operator()(const Props& props) const noexcept -> size_t;
 	};
 
+	// TODO: extend
 	constexpr auto isInteractiveRole(Role role) -> bool
 	{
 		switch (role)
 		{
 		case Role::Button:
-		case Role::CheckBox:
+		case Role::Checkbox:
 		case Role::RadioButton:
 		case Role::Switch:
 		case Role::Link:
@@ -220,6 +351,10 @@ namespace mocca::aria
 		case Role::MultilineTextInput:
 		case Role::SearchInput:
 		case Role::PasswordInput:
+		case Role::PhoneNumberInput:
+		case Role::EmailInput:
+		case Role::UrlInput:
+		case Role::NumberInput:
 			return true;
 		default:
 			return false;
@@ -228,7 +363,7 @@ namespace mocca::aria
 
 	inline auto id(std::string_view name) -> uint64_t
 	{
-		return mocca::detail::hashString(name); // FNV-1a, same as ElementKey
+		return mocca::detail::hashString(name);
 	}
 
 	using A11y = std::shared_ptr<const aria::Props>;
@@ -254,12 +389,13 @@ namespace mocca::detail
 		}
 		return *a == *b;
 	}
-	
+
 	class A11yInterner
 	{
 	public:
 		auto Intern(aria::Props props) -> aria::A11y;
 		void Prune();
+
 	private:
 		struct Entry
 		{

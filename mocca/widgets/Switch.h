@@ -5,7 +5,7 @@ namespace mocca::widgets
 {
 	struct SwitchProps
 	{
-		mc_childComponentProps;
+		mc_baseComponentProps;
 		std::optional<bool> Value = false;
 		std::function<void(bool)> OnValueChange;
 		bool DefaultValue = false;
