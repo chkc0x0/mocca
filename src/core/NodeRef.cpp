@@ -49,7 +49,7 @@ namespace mocca
 	{
 		const auto& text = std::get<TextElement>(node.Kind);
 		return mtext::detail::TextLayoutBuilder::ResolveTextLayout(
-			node.Style,
+			node.ResolveStyle(),
 			text.Content,
 			detail::contentRect(node).Width,
 			true
@@ -200,7 +200,7 @@ namespace mocca
 			*layout,
 			{.X = surfacePoint.X - rect.X, .Y = surfacePoint.Y - rect.Y},
 			rect.Width,
-			node->Style.Get<styles::StyleProperty::TextAlign>()
+			node->ResolveStyle().Get<styles::StyleProperty::TextAlign>()
 		);
 	}
 
@@ -218,7 +218,7 @@ namespace mocca
 			*layout,
 			position,
 			rect.Width,
-			node->Style.Get<styles::StyleProperty::TextAlign>()
+			node->ResolveStyle().Get<styles::StyleProperty::TextAlign>()
 		);
 
 		return Rectangle{

@@ -40,7 +40,7 @@ namespace mocca::detail
 	struct PartTransitionState
 	{
 	public:
-		styles::ComputedStyle Current;
+		styles::StyleId Current = styles::DefaultStyleId;
 		std::vector<ActiveTransition> Transitions;
 		bool Initialized = false;
 	};
@@ -58,7 +58,7 @@ namespace mocca::detail
 		YGNodeRef YogaNode{nullptr};
 
 		styles::StyleSet Declared;
-		styles::ComputedStyle Style;
+		styles::StyleId Style = styles::DefaultStyleId;
 		std::vector<ActiveTransition> Transitions;
 
 		bool Styled = false;
@@ -122,15 +122,21 @@ namespace mocca::detail
 		void UpdateSubtreeBounds();
 		void ApplyLayoutStyles() const;
 		void ComputeStyle(
-			styles::ComputedStyle& parentComputed,
+			const styles::ComputedStyle& parentComputed,
 			double dt,
 			uint8_t parentChangedGroups
 		);
-		void AdvanceTransitions(styles::ComputedStyle& target, double dt);
+		void AdvanceTransitions(
+			styles::ComputedStyle& current,
+			styles::ComputedStyle& goal,
+			double dt
+		);
 		void AdvancePartTransitions(double dt, bool& anyActive);
 		auto FindTransition(styles::StyleProperty prop) -> ActiveTransition*;
 		void RemoveTransition(styles::StyleProperty prop);
 
+		[[nodiscard]] auto ResolveStyle() const
+			-> const styles::ComputedStyle&;
 
 		[[nodiscard]] auto GetX() const -> float;
 		[[nodiscard]] auto GetY() const -> float;

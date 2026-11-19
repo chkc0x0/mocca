@@ -302,7 +302,7 @@ namespace mtest
 		auto* child = root->Children.front().get();
 		ASSERT_NE(child, nullptr);
 		EXPECT_EQ(
-			child->Style.Get<StyleProperty::BorderColor>(),
+			child->ResolveStyle().Get<StyleProperty::BorderColor>(),
 			mocca::colors::Red
 		);
 
@@ -310,7 +310,7 @@ namespace mtest
 		Tick();
 
 		EXPECT_EQ(
-			child->Style.Get<StyleProperty::BorderColor>(),
+			child->ResolveStyle().Get<StyleProperty::BorderColor>(),
 			mocca::colors::Blue
 		);
 	}

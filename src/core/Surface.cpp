@@ -12,6 +12,7 @@
 #include "gfx/TextureRegistry.h"
 #include "style/ComputedStyle.h"
 #include "style/StyleProperty.h"
+#include "style/StyleStore.h"
 #include "utils/ScopedProfiler.h"
 #include "yoga/YGNode.h"
 #include "yoga/YGNodeLayout.h"
@@ -41,7 +42,7 @@ namespace mocca
 	{
 		for (const auto* n = &node; n != nullptr; n = n->Parent)
 		{
-			if (n->Style.Get<styles::StyleProperty::Display>() ==
+			if (n->ResolveStyle().Get<styles::StyleProperty::Display>() ==
 				styles::DisplayType::None)
 			{
 				return true;
@@ -122,7 +123,7 @@ namespace mocca
 	{
 		for (auto* n = node; n != nullptr; n = n->Parent)
 		{
-			auto cur = n->Style.Get<styles::StyleProperty::CursorShape>();
+			auto cur = n->ResolveStyle().Get<styles::StyleProperty::CursorShape>();
 			if (cur != CursorShapeType::Default)
 			{
 				return cur;
@@ -280,7 +281,7 @@ namespace mocca
 
 	void Surface::_advanceAnimations(double dt)
 	{
-		_root->ComputeStyle(styles::getDefaultStyle(), dt, 0);
+		_root->ComputeStyle(styles::detail::styleStore().Resolve(styles::DefaultStyleId), dt, 0);
 		_root->BuildYogaTree();
 		{
 			mc_profileScope("YGNodeCalculateLayout");
@@ -290,7 +291,7 @@ namespace mocca
 				_desc.Height,
 				static_cast<YGDirection>(
 					static_cast<int>(
-						_root->Style
+						_root->ResolveStyle()
 							.Get<styles::StyleProperty::LayoutDirection>()
 					) +
 					1

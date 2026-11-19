@@ -11,6 +11,10 @@
 
 namespace mocca::styles
 {
+	using StyleId = std::uint32_t;
+
+	inline constexpr StyleId DefaultStyleId = 0;
+
 	template <StyleProperty T> struct PropTraits
 	{
 	};
@@ -118,6 +122,8 @@ namespace mocca::styles
 			const ComputedStyle& b
 		) -> std::uint8_t;
 
+		[[nodiscard]] auto operator==(const ComputedStyle& b) const -> bool;
+
 	private:
 		template <StyleProperty P> auto _ref() -> PropTraits<P>::Value&;
 	};
@@ -178,6 +184,4 @@ namespace mocca::styles
 		using L = PropTraits<P>;
 		return (this->*L::Handle).*L::Field;
 	}
-
-	auto getDefaultStyle() -> ComputedStyle&;
 }

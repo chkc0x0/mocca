@@ -438,7 +438,7 @@ namespace mtest
 			mocca::detail::Node::FindNodeById(s->Tree(), target->Id());
 		ASSERT_NE(before, nullptr);
 		EXPECT_EQ(
-			before->Style.Get<mocca::styles::StyleProperty::BorderColor>().R,
+			before->ResolveStyle().Get<mocca::styles::StyleProperty::BorderColor>().R,
 			255
 		);
 
@@ -452,7 +452,7 @@ namespace mtest
 			mocca::detail::Node::FindNodeById(s->Tree(), target->Id());
 		ASSERT_NE(after, nullptr);
 		auto color =
-			after->Style.Get<mocca::styles::StyleProperty::BorderColor>();
+			after->ResolveStyle().Get<mocca::styles::StyleProperty::BorderColor>();
 		EXPECT_EQ(color.R, 0);
 		EXPECT_EQ(color.G, 255);
 		EXPECT_EQ(color.B, 0);

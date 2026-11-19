@@ -61,7 +61,7 @@ namespace mocca::aria
 
 	auto isDisplayNone(const detail::Node& node) -> bool
 	{
-		return node.Style.Get<styles::StyleProperty::Display>() ==
+		return node.ResolveStyle().Get<styles::StyleProperty::Display>() ==
 			   styles::DisplayType::None;
 	}
 
@@ -78,7 +78,7 @@ namespace mocca::aria
 	auto scrolls(const detail::Node& node) -> bool
 	{
 		return node.IsBox() &&
-			   node.Style.Get<styles::StyleProperty::Overflow>() ==
+			   node.ResolveStyle().Get<styles::StyleProperty::Overflow>() ==
 				   styles::OverflowType::Scroll;
 	}
 

@@ -10,6 +10,7 @@
 #include "text/TextLayout.h"
 #include "text/TextLayoutBuilder.h"
 #include "style/StyleApply.h"
+#include "style/StyleStore.h"
 #include "style/PaintApply.h"
 #include "style/StyleHelpers.h"
 #include "utils/ScopedProfiler.h"
@@ -32,10 +33,23 @@ namespace mocca::detail
 	{
 		useCtx()->_nodes.erase(Id);
 
+		auto& store = styles::detail::styleStore();
+		store.Release(Style);
+
+		for (auto& [Key, state] : PartTransitions)
+		{
+			store.Release(state.Current);
+		}
+
 		if (YogaNode != nullptr)
 		{
 			YGNodeFree(YogaNode);
 		}
+	}
+
+	auto Node::ResolveStyle() const -> const styles::ComputedStyle&
+	{
+		return styles::detail::styleStore().Resolve(Style);
 	}
 
 	static void CollectFlatYogaChildren(Node& node, std::vector<YGNodeRef>& out)
@@ -134,14 +148,15 @@ namespace mocca::detail
 			return gfx::Matrix::Identity();
 		}
 
-		const auto& transform = node.Style.Transform;
+		const auto& style = node.ResolveStyle();
+		const auto& transform = style.Transform;
 		if (transform.Translate == styles::Vector2Length{} &&
 			transform.Scale == Vector2{1.0F, 1.0F} && transform.Rotate == 0.0F)
 		{
 			return gfx::Matrix::Identity();
 		}
 
-		float emBasis = node.Style.Inherited.FontSize.Value;
+		float emBasis = style.Inherited.FontSize.Value;
 		auto resolveX = [&](const styles::Length& value) -> float
 		{ return ResolveTransformLength(value, box.Width, emBasis); };
 		auto resolveY = [&](const styles::Length& value) -> float
@@ -265,12 +280,13 @@ namespace mocca::detail
 	void Node::ApplyLayoutStyles() const
 	{
 		mc_profileFunction();
+		const auto& style = ResolveStyle();
 #define mc_styleGroup LayoutSizing
 
 #define mc_styleProperty(name, ...)                                            \
 	styles::detail::applying::layout::apply##name(                             \
 		YogaNode,                                                              \
-		Style.mc_styleGroup.name                                               \
+		style.mc_styleGroup.name                                               \
 	);
 		mc_layoutSizingProps
 #undef mc_styleGroup
@@ -289,7 +305,7 @@ namespace mocca::detail
 	}
 
 	void Node::ComputeStyle(
-		styles::ComputedStyle& parentComputed,
+		const styles::ComputedStyle& parentComputed,
 		double dt,
 		uint8_t parentChangedGroups
 	)
@@ -300,6 +316,8 @@ namespace mocca::detail
 						(DepGroups & parentChangedGroups) != 0;
 		bool animating = !Transitions.empty();
 
+		auto& store = styles::detail::styleStore();
+
 		uint8_t changed = 0;
 
 		if (needGoal || animating)
@@ -309,14 +327,46 @@ namespace mocca::detail
 
 			if (!Styled)
 			{
-				Style = target;
+				Style = store.Intern(target);
 				Styled = true;
 				changed = styles::AllGroups;
 			}
 			else
 			{
-				changed = styles::ComputedStyle::ChangedGroups(Style, target);
-				AdvanceTransitions(target, dt);
+				const styles::ComputedStyle& current = store.Resolve(Style);
+				changed =
+					styles::ComputedStyle::ChangedGroups(current, target);
+
+				bool hasSpec =
+					target.Get<styles::StyleProperty::Transition>() != 0;
+
+				if (changed == 0 && Transitions.empty())
+				{
+					if (store.IsUnique(Style))
+					{
+						Style = store.Settle(Style);
+					}
+				}
+				else if (Transitions.empty() && !hasSpec)
+				{
+					store.Release(Style);
+					Style = store.Intern(target);
+				}
+				else
+				{
+					if (!store.IsUnique(Style))
+					{
+						Style = store.MakeUnique(store.Resolve(Style));
+					}
+
+					styles::ComputedStyle& live = store.Mut(Style);
+					AdvanceTransitions(live, target, dt);
+
+					if (Transitions.empty())
+					{
+						Style = store.Settle(Style);
+					}
+				}
 			}
 		}
 
@@ -357,7 +407,7 @@ namespace mocca::detail
 		{
 			if (child)
 			{
-				child->ComputeStyle(Style, dt, changed);
+				child->ComputeStyle(ResolveStyle(), dt, changed);
 			}
 		}
 	}
@@ -508,20 +558,24 @@ namespace mocca::detail
 #undef mc_animatable
 	}
 
-	void Node::AdvanceTransitions(styles::ComputedStyle& target, double dt)
+	void Node::AdvanceTransitions(
+		styles::ComputedStyle& current,
+		styles::ComputedStyle& goal,
+		double dt
+	)
 	{
 		if (Transitions.empty() &&
-			target.Get<styles::StyleProperty::Transition>() == 0)
+			goal.Get<styles::StyleProperty::Transition>() == 0)
 		{
-			Style = target;
+			current = goal;
 			return;
 		}
 
 		bool anyActive = false;
 
-		advanceAll(Style, Transitions, target, dt, anyActive);
+		advanceAll(current, Transitions, goal, dt, anyActive);
 
-		Style = target;
+		current = goal;
 
 		if (anyActive)
 		{
@@ -544,6 +598,8 @@ namespace mocca::detail
 		std::vector<std::uint64_t> visited;
 		visited.reserve(PartTransitions.size() + 8);
 
+		auto& store = styles::detail::styleStore();
+
 		auto advanceParts = [&](auto&& self,
 								std::span<const Part> parts,
 								const styles::ComputedStyle& parentStyle,
@@ -564,27 +620,56 @@ namespace mocca::detail
 
 				if (!state.Initialized)
 				{
-					state.Current = target;
+					state.Current = store.Intern(target);
 					state.Transitions.clear();
 					state.Initialized = true;
 				}
-				else if (
-					state.Transitions.empty() &&
-					target.Get<styles::StyleProperty::Transition>() == 0
-				)
-				{
-					state.Current = target;
-				}
 				else
 				{
-					advanceAll(
-						state.Current,
-						state.Transitions,
-						target,
-						dt,
-						anyActive
-					);
-					state.Current = target;
+					const styles::ComputedStyle& current =
+						store.Resolve(state.Current);
+					std::uint8_t changed =
+						styles::ComputedStyle::ChangedGroups(current, target);
+					bool hasSpec =
+						target.Get<styles::StyleProperty::Transition>() != 0;
+
+					if (changed == 0 && state.Transitions.empty())
+					{
+						if (store.IsUnique(state.Current))
+						{
+							state.Current = store.Settle(state.Current);
+						}
+					}
+					else if (state.Transitions.empty() && !hasSpec)
+					{
+						store.Release(state.Current);
+						state.Current = store.Intern(target);
+					}
+					else
+					{
+						if (!store.IsUnique(state.Current))
+						{
+							state.Current = store.MakeUnique(
+								store.Resolve(state.Current)
+							);
+						}
+
+						styles::ComputedStyle& live =
+							store.Mut(state.Current);
+						advanceAll(
+							live,
+							state.Transitions,
+							target,
+							dt,
+							anyActive
+						);
+						live = target;
+
+						if (state.Transitions.empty())
+						{
+							state.Current = store.Settle(state.Current);
+						}
+					}
 				}
 
 				self(self, part.Parts, target, key);
@@ -596,7 +681,7 @@ namespace mocca::detail
 			advanceParts(
 				advanceParts,
 				*Parts,
-				Style,
+				ResolveStyle(),
 				static_cast<std::uint64_t>(Id)
 			);
 		}
@@ -605,6 +690,7 @@ namespace mocca::detail
 		{
 			if (std::ranges::find(visited, it->first) == visited.end())
 			{
+				store.Release(it->second.Current);
 				it = PartTransitions.erase(it);
 			}
 			else
@@ -723,7 +809,8 @@ namespace mocca::detail
 
 		if (node.IsBox())
 		{
-			auto overflow = node.Style.Get<styles::StyleProperty::Overflow>();
+			auto overflow =
+				node.ResolveStyle().Get<styles::StyleProperty::Overflow>();
 			space.Clips = overflow == styles::OverflowType::Hidden ||
 						  overflow == styles::OverflowType::Scroll;
 			space.Scrolls = overflow == styles::OverflowType::Scroll;
@@ -863,7 +950,8 @@ namespace mocca::detail
 
 	void Node::_resolveDecoration(float w, float h)
 	{
-		styles::BoxVisual deco = styles::resolveBoxVisual(Style, w, h);
+		styles::BoxVisual deco =
+			styles::resolveBoxVisual(ResolveStyle(), w, h);
 
 		Deco = deco.IsEmpty() ? nullptr
 							  : std::make_unique<styles::BoxVisual>(deco);
@@ -884,7 +972,7 @@ namespace mocca::detail
 	auto contentExtentRect(const Node& node, const Rectangle& box) -> Rectangle
 	{
 		if (!node.IsBox() ||
-			node.Style.Get<styles::StyleProperty::Overflow>() !=
+			node.ResolveStyle().Get<styles::StyleProperty::Overflow>() !=
 				styles::OverflowType::Scroll)
 		{
 			return box;
@@ -919,7 +1007,7 @@ namespace mocca::detail
 			return nullptr;
 		}
 
-		return &it->second.Current;
+		return &styles::detail::styleStore().Resolve(it->second.Current);
 	}
 
 	struct PartBox
@@ -1257,19 +1345,20 @@ namespace mocca::detail
 		mc_profileFunction();
 
 		const auto& textElement = std::get<TextElement>(node.Kind);
+		const auto& nodeStyle = node.ResolveStyle();
 
 		canvas.DrawText(
 			gfx::cmds::DrawTextCmd{
 				.Position = {.X = contentBox.X, .Y = contentBox.Y},
 				.Content = textElement.Content,
 				.Paint = gfx::Paint::Fill(
-					node.Style.Get<styles::StyleProperty::TextColor>()
+					nodeStyle.Get<styles::StyleProperty::TextColor>()
 				),
-				.Size = node.Style.Get<styles::StyleProperty::FontSize>().Value,
+				.Size = nodeStyle.Get<styles::StyleProperty::FontSize>().Value,
 				.Face = layout->Face,
 				.Layout = layout,
 				.BoxWidth = contentBox.Width,
-				.Align = node.Style.Get<styles::StyleProperty::TextAlign>(),
+				.Align = nodeStyle.Get<styles::StyleProperty::TextAlign>(),
 			}
 		);
 	}
@@ -1286,6 +1375,7 @@ namespace mocca::detail
 	{
 		mc_profileFunction();
 
+		const auto& nodeStyle = node.ResolveStyle();
 		Rectangle box{.X = x, .Y = y, .Width = w, .Height = h};
 		NodeSpace space = computeNodeSpace(node, box);
 
@@ -1313,9 +1403,9 @@ namespace mocca::detail
 		if (node.IsText())
 		{
 			refs.TextOrigin = contentRect(node, box);
-			refs.Align = node.Style.Get<styles::StyleProperty::TextAlign>();
+			refs.Align = nodeStyle.Get<styles::StyleProperty::TextAlign>();
 			textLayout = mtext::detail::TextLayoutBuilder::ResolveTextLayout(
-				node.Style,
+				nodeStyle,
 				std::get<TextElement>(node.Kind).Content,
 				refs.TextOrigin.Width,
 				true
@@ -1330,7 +1420,7 @@ namespace mocca::detail
 				*node.Parts,
 				PartLayer::Behind,
 				PartSpace::Host,
-				node.Style,
+				nodeStyle,
 				refs,
 				&node.PartTransitions,
 				static_cast<std::uint64_t>(node.Id)
@@ -1358,7 +1448,7 @@ namespace mocca::detail
 				*node.Parts,
 				PartLayer::Behind,
 				PartSpace::Content,
-				node.Style,
+				nodeStyle,
 				refs,
 				&node.PartTransitions,
 				static_cast<std::uint64_t>(node.Id)
@@ -1383,7 +1473,7 @@ namespace mocca::detail
 				*node.Parts,
 				PartLayer::Above,
 				PartSpace::Content,
-				node.Style,
+				nodeStyle,
 				refs,
 				&node.PartTransitions,
 				static_cast<std::uint64_t>(node.Id)
@@ -1402,7 +1492,7 @@ namespace mocca::detail
 				*node.Parts,
 				PartLayer::Above,
 				PartSpace::Host,
-				node.Style,
+				nodeStyle,
 				refs,
 				&node.PartTransitions,
 				static_cast<std::uint64_t>(node.Id)

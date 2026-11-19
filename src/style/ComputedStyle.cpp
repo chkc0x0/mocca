@@ -206,11 +206,9 @@ namespace mocca::styles
 		return out;
 	}
 
-	auto getDefaultStyle() -> ComputedStyle&
+	auto ComputedStyle::operator==(const ComputedStyle& b) const -> bool
 	{
-		// TODO: make this interned so it's just a bunch of handles instead of this mess
-		static ComputedStyle style;
-		return style;
+		return ChangedGroups(*this, b) == 0;
 	}
 
 	auto ComputedStyle::ChangedGroups(

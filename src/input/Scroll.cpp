@@ -17,7 +17,7 @@ namespace mocca::detail
 		
 		for (Node* n = node; n != nullptr; n = n->Parent)
 		{
-			if (n->IsBox() && n->Style.Get<styles::StyleProperty::Overflow>() ==
+			if (n->IsBox() && n->ResolveStyle().Get<styles::StyleProperty::Overflow>() ==
 								  styles::OverflowType::Scroll)
 			{
 				return n;
@@ -60,7 +60,7 @@ namespace mocca::detail
 			 parent = parent->Parent)
 		{
 			if (parent->IsBox() &&
-				parent->Style.Get<styles::StyleProperty::Overflow>() ==
+				parent->ResolveStyle().Get<styles::StyleProperty::Overflow>() ==
 					styles::OverflowType::Scroll)
 			{
 				rect.X -= parent->ScrollOffset.X;
@@ -113,7 +113,7 @@ namespace mocca::detail
 			 parent = parent->Parent)
 		{
 			if (parent->IsBox() &&
-				parent->Style.Get<styles::StyleProperty::Overflow>() ==
+				parent->ResolveStyle().Get<styles::StyleProperty::Overflow>() ==
 					styles::OverflowType::Scroll)
 			{
 				scrollables.push_back(parent);
@@ -197,7 +197,7 @@ namespace mocca::detail
 		}
 
 		if (n->IsBox() &&
-			n->Style.Get<styles::StyleProperty::Overflow>() ==
+			n->ResolveStyle().Get<styles::StyleProperty::Overflow>() ==
 				styles::OverflowType::Scroll &&
 			n->YogaNode != nullptr)
 		{

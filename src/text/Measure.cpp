@@ -28,7 +28,7 @@ namespace mocca::mtext::detail
 		float maxWidth = wrap ? std::max(0.0F, width) : INFINITY;
 
 		auto layout = TextLayoutBuilder::ResolveTextLayout(
-			self->Style,
+			self->ResolveStyle(),
 			content,
 			maxWidth,
 			wrap

@@ -7,7 +7,6 @@
 - [ ] docs lol
 - [ ] css text properties
 - [ ] tab width prop
-- [ ] dedupe styles in node
 - [ ] skia backend and better platform specific to linux/wayland
 - [ ] enhance texture api part 2 (dirty rects and other stuff)
 - [ ] freetype module (should i though?)
@@ -26,6 +25,7 @@
 - [x] fade colors through alpha instead of oklab when an endpoint is transparent
 - [x] refactor Node::Paint
 - [x] refactor drawing api
+- [x] dedupe styles in node (per category later)
 - [x] a11y: aria struct
 - [x] a11y: [accesskit](https://github.com/AccessKit/accesskit-c)
 - [x] a11y: kbd nav
